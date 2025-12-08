@@ -26,6 +26,12 @@ importers:
       astro:
         specifier: ^5.16.4
         version: 5.16.4(@types/node@20.19.25)(@vercel/functions@2.2.13)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.53.3)(typescript@5.9.3)(yaml@2.8.2)
+      react:
+        specifier: ^19.2.1
+        version: 19.2.1
+      react-dom:
+        specifier: ^19.2.1
+        version: 19.2.1(react@19.2.1)
       tailwindcss:
         specifier: ^4.1.13
         version: 4.1.17
@@ -36,6 +42,12 @@ importers:
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.25
+      '@types/react':
+        specifier: ^19.2.7
+        version: 19.2.7
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.7)
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
