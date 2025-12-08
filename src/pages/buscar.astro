@@ -1,0 +1,213 @@
+---
+import { supabase } from "../lib/supabase";
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import SearchBox from "../components/SearchBox.astro";
+import SearchResults from "../components/SearchResults.astro";
+import { categorias } from "../content/config";
+import type { Receta } from "../lib/types";
+
+// Obtener parámetros de búsqueda
+const url = Astro.url;
+const termino = url.searchParams.get("q") || "";
+const categoria = url.searchParams.get("categoria") || "";
+
+// Obtener todas las recetas desde Supabase
+const { data: todasLasRecetas, error } = await supabase
+  .from('recetas')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+if (error) {
+  console.error('Error al obtener recetas:', error);
+}
+
+const recetas = todasLasRecetas || [];
+
+// Función de búsqueda
+function buscarRecetas(recetas: Receta[], termino: string, categoria: string) {
+  let resultados = [...recetas];
+
+  // Filtrar por categoría
+  if (categoria && categoria in categorias) {
+    resultados = resultados.filter(
+      (receta) => receta.categoria === categoria
+    );
+  }
+
+  // Filtrar por término de búsqueda
+  if (termino.trim()) {
+    const terminoLower = termino.toLowerCase().trim();
+    resultados = resultados.filter((receta) => {
+      // Buscar en título
+      if (receta.title.toLowerCase().includes(terminoLower)) return true;
+
+      // Buscar en descripción
+      if (
+        receta.descripcion &&
+        receta.descripcion.toLowerCase().includes(terminoLower)
+      )
+        return true;
+
+      // Buscar en ingredientes
+      if (
+        receta.ingredientes &&
+        receta.ingredientes.some((ing: string) =>
+          ing.toLowerCase().includes(terminoLower)
+        )
+      )
+        return true;
+
+      // Buscar en pasos
+      if (
+        receta.pasos &&
+        receta.pasos.some((paso: string) =>
+          paso.toLowerCase().includes(terminoLower)
+        )
+      )
+        return true;
+
+      // Buscar en tags
+      if (
+        receta.tags &&
+        receta.tags.some((tag: string) =>
+          tag.toLowerCase().includes(terminoLower)
+        )
+      )
+        return true;
+
+      return false;
+    });
+  }
+
+  return resultados;
+}
+
+// Realizar búsqueda
+const recetasEncontradas = buscarRecetas(recetas, termino, categoria);
+const totalRecetas = recetasEncontradas.length;
+---
+
+<Layout
+  title={`${termino ? `Buscar: ${termino}` : "Buscar Recetas"} - Recetas de Casa`}
+>
+  <Header title="Buscar Recetas" />
+
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Buscador principal -->
+    <section class="mb-8">
+      <div class="max-w-2xl mx-auto">
+        <SearchBox
+          placeholder="Buscar por ingrediente, nombre, descripción..."
+          size="lg"
+          className="mb-6"
+        />
+
+        <!-- Búsquedas rápidas -->
+        <div class="text-center">
+          <p class="text-sm text-gray-600 mb-3">Búsquedas populares:</p>
+          <div class="flex flex-wrap justify-center gap-2">
+            <a
+              href="/buscar?q=chocolate"
+              class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
+            >
+              chocolate
+            </a>
+            <a
+              href="/buscar?q=pasta"
+              class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
+            >
+              pasta
+            </a>
+            <a
+              href="/buscar?q=crema"
+              class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
+            >
+              crema
+            </a>
+            <a
+              href="/buscar?q=huevos"
+              class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
+            >
+              huevos
+            </a>
+            <a
+              href="/buscar?q=arroz"
+              class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
+            >
+              arroz
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filtros por categoría -->
+    <section class="mb-8">
+      <h3 class="text-xl font-bold text-gray-900 mb-4">
+         Filtrar por Categoría
+      </h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+        {
+          Object.entries(categorias).map(([key, nombre]) => {
+            const recetasEnCategoria = recetas.filter(
+              (r) => r.categoria === key
+            );
+            const iconos: { [key: string]: string } = {
+              "arroz-paellas": "🥘",
+              "tortillas-pasta": "🥚",
+              "sopas-cremas": "🍲",
+              "carnes-aves": "🍖",
+              "pescados-mariscos": "🐟",
+              "pan-masas": "🥖",
+              postres: "🍰",
+              "tapas-aperitivos": "🍤",
+            };
+
+            const isActive = categoria === key;
+            const href = isActive
+              ? `/buscar${termino ? `?q=${encodeURIComponent(termino)}` : ""}`
+              : `/buscar?categoria=${key}${termino ? `&q=${encodeURIComponent(termino)}` : ""}`;
+            return (
+              <a
+                href={href}
+                class={`group border rounded-xl p-3 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
+                  isActive
+                    ? "bg-orange-100 border-orange-300 text-orange-800"
+                    : "bg-white hover:bg-orange-50 border-gray-200 hover:border-orange-300"
+                }`}
+              >
+                <div class="text-2xl mb-1 group-hover:scale-110 transition-transform duration-200">
+                  {iconos[key] || "🍽️"}
+                </div>
+                <div class="text-xs font-medium mb-1 line-clamp-2">
+                  {nombre}
+                </div>
+                <div class="text-xs text-gray-500">
+                  {recetasEnCategoria.length}
+                </div>
+              </a>
+            );
+          })
+        }
+      </div>
+    </section>
+
+    <!-- Resultados -->
+    <SearchResults
+      recetas={recetasEncontradas}
+      termino={termino}
+      categoria={categoria}
+      totalRecetas={totalRecetas}
+    />
+  </main>
+</Layout>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

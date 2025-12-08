@@ -1,0 +1,28 @@
+---
+import LoginForm from '../../components/admin/LoginForm';
+
+// Si ya está autenticado, redirigir al dashboard
+const authHeader = Astro.request.headers.get('cookie') || '';
+if (authHeader.includes('sb-')) {
+  // Hay una sesión, verificar si es válida
+  const { supabase } = await import('../../lib/supabase');
+  const { data } = await supabase.auth.getSession();
+  
+  if (data.session) {
+    return Astro.redirect('/admin/');
+  }
+}
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Admin - Recetas de Casa</title>
+</head>
+<body>
+  <LoginForm client:only="react" />
+</body>
+</html>
+

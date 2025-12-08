@@ -1,11 +1,17 @@
+---
+// Importar el CSS global aquí
+import '../styles/global.css';
+import { ViewTransitions } from 'astro:transitions';
+---
+
 <!doctype html>
-<html lang="en">
+<html lang="es">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+		<title>Recetas de Casa</title>
+		<ViewTransitions />
 	</head>
 	<body>
 		<slot />

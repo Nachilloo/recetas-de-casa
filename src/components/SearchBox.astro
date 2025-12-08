@@ -1,0 +1,64 @@
+---
+export interface Props {
+  placeholder?: string;
+  size?: 'sm' | 'md' | 'lg';
+  showButton?: boolean;
+  className?: string;
+}
+
+const { 
+  placeholder = "Buscar recetas...", 
+  size = 'md',
+  showButton = true,
+  className = ""
+} = Astro.props;
+
+const sizeClasses = {
+  sm: 'px-4 py-2 text-sm',
+  md: 'px-6 py-3 text-base',
+  lg: 'px-8 py-4 text-lg'
+};
+
+const buttonSizeClasses = {
+  sm: 'px-4 py-2 text-sm',
+  md: 'px-6 py-3 text-base', 
+  lg: 'px-8 py-4 text-lg'
+};
+
+const baseUrl = import.meta.env.BASE_URL;
+---
+
+<div class={`search-box ${className}`}>
+  <form action={`${baseUrl}buscar`} method="get" class="relative">
+    <div class="flex bg-white rounded-full shadow-lg border border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 transition-all duration-200">
+      <input 
+        type="search" 
+        name="q" 
+        placeholder={placeholder}
+        class={`flex-1 ${sizeClasses[size]} rounded-l-full border-0 focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-500`}
+        required
+      />
+      {showButton && (
+        <button 
+          type="submit" 
+          class={`bg-orange-500 hover:bg-orange-600 text-white rounded-r-full transition-colors duration-200 font-semibold flex items-center gap-2 ${buttonSizeClasses[size]}`}
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <span class="hidden sm:inline">Buscar</span>
+        </button>
+      )}
+    </div>
+  </form>
+</div>
+
+<style>
+  .search-box input::placeholder {
+    color: #6b7280;
+  }
+  
+  .search-box input:focus::placeholder {
+    color: #9ca3af;
+  }
+</style>

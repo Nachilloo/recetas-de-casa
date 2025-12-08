@@ -1,0 +1,291 @@
+---
+// src/pages/recetas/index.astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import RecetaCard from '../../components/RecetaCard.astro';
+import { supabase } from '../../lib/supabase';
+import { categorias } from '../../content/config';
+
+// Obtener todas las recetas desde Supabase
+const { data: todasLasRecetas, error } = await supabase
+  .from('recetas')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+if (error) {
+  console.error('Error al obtener recetas:', error);
+}
+
+const recetas = todasLasRecetas || [];
+---
+
+<script define:vars={{ baseUrl: import.meta.env.BASE_URL }}>
+  // Script inline en lugar de importar archivo externo
+  // Estado de filtros
+  let categoriaActiva = null;
+  let busquedaActiva = '';
+
+  // Elementos del DOM
+  const searchInput = document.getElementById('searchInput');
+  const categoryFilters = document.querySelectorAll('.category-filter');
+  const recetaItems = document.querySelectorAll('.receta-item');
+  const activeFilters = document.getElementById('activeFilters');
+  const filterTags = document.getElementById('filterTags');
+  const clearAllFilters = document.getElementById('clearAllFilters');
+  const sectionTitle = document.getElementById('sectionTitle');
+  const resultCount = document.getElementById('resultCount');
+  const recetasContainer = document.getElementById('recetasContainer');
+  const emptyState = document.getElementById('emptyState');
+  const showAllRecetas = document.getElementById('showAllRecetas');
+
+  // Categorías
+  const categorias = {
+    'arroz-paellas': 'Arroces y Paellas',
+    'tortillas-pasta': 'Tortillas y Pasta', 
+    'sopas-cremas': 'Sopas y Cremas',
+    'carnes-aves': 'Carnes y Aves',
+    'pescados-mariscos': 'Pescados y Mariscos',
+    'pan-masas': 'Pan y Masas',
+    'postres': 'Postres',
+    'tapas-aperitivos': 'Tapas y Aperitivos'
+  };
+
+  function leerParametrosURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoria = urlParams.get('categoria');
+    const busqueda = urlParams.get('q');
+
+    if (categoria && categorias.hasOwnProperty(categoria)) {
+      categoriaActiva = categoria;
+      categoryFilters.forEach(btn => {
+        if (btn.dataset.categoria === categoria) {
+          btn.classList.remove('bg-white', 'border-gray-200');
+          btn.classList.add('bg-orange-100', 'border-orange-300', 'text-orange-800');
+        }
+      });
+    }
+
+    if (busqueda) {
+      busquedaActiva = busqueda;
+      if (searchInput) searchInput.value = busqueda;
+    }
+
+    if (categoria || busqueda) {
+      aplicarFiltros();
+      window.history.replaceState({}, '', baseUrl + 'recetas');
+    }
+  }
+
+  function aplicarFiltros() {
+    let recetasVisibles = 0;
+
+    recetaItems.forEach(item => {
+      let mostrar = true;
+
+      if (categoriaActiva && item.dataset.categoria !== categoriaActiva) {
+        mostrar = false;
+      }
+
+      if (busquedaActiva) {
+        const termino = busquedaActiva.toLowerCase();
+        const titulo = item.dataset.titulo;
+        const descripcion = item.dataset.descripcion;
+        const tags = item.dataset.tags;
+
+        if (!titulo.includes(termino) && !descripcion.includes(termino) && !tags.includes(termino)) {
+          mostrar = false;
+        }
+      }
+
+      item.style.display = mostrar ? 'block' : 'none';
+      if (mostrar) recetasVisibles++;
+    });
+
+    actualizarUI(recetasVisibles);
+  }
+
+  function actualizarUI(recetasVisibles) {
+    if (recetasVisibles === 0) {
+      if (recetasContainer) recetasContainer.style.display = 'none';
+      if (emptyState) emptyState.classList.remove('hidden');
+    } else {
+      if (recetasContainer) recetasContainer.style.display = 'grid';
+      if (emptyState) emptyState.classList.add('hidden');
+    }
+
+    if (resultCount) {
+      resultCount.textContent = `${recetasVisibles} receta${recetasVisibles !== 1 ? 's' : ''} encontrada${recetasVisibles !== 1 ? 's' : ''}`;
+    }
+
+    let titulo = '🍽️ Todas las Recetas';
+    if (categoriaActiva) {
+      titulo = `🍽️ ${categorias[categoriaActiva]}`;
+    }
+    if (busquedaActiva) {
+      titulo = `🔍 Resultados para "${busquedaActiva}"`;
+    }
+    if (sectionTitle) sectionTitle.textContent = titulo;
+
+    actualizarFiltrosActivos();
+  }
+
+  function actualizarFiltrosActivos() {
+    if (!filterTags) return;
+
+    filterTags.innerHTML = '';
+    let hayFiltros = false;
+
+    if (categoriaActiva) {
+      hayFiltros = true;
+      const tag = document.createElement('div');
+      tag.className = 'flex items-center bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm';
+      tag.innerHTML = `
+        <span>${categorias[categoriaActiva]}</span>
+        <button class="ml-2 hover:text-orange-600" onclick="limpiarCategoria()">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      `;
+      filterTags.appendChild(tag);
+    }
+
+    if (busquedaActiva) {
+      hayFiltros = true;
+      const tag = document.createElement('div');
+      tag.className = 'flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm';
+      tag.innerHTML = `
+        <span>"${busquedaActiva}"</span>
+        <button class="ml-2 hover:text-blue-600" onclick="limpiarBusqueda()">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      `;
+      filterTags.appendChild(tag);
+    }
+
+    if (activeFilters) {
+      activeFilters.classList.toggle('hidden', !hayFiltros);
+    }
+  }
+
+  categoryFilters.forEach(button => {
+    button.addEventListener('click', () => {
+      const categoria = button.dataset.categoria;
+
+      if (categoriaActiva === categoria) {
+        categoriaActiva = null;
+        button.classList.remove('bg-orange-100', 'border-orange-300', 'text-orange-800');
+        button.classList.add('bg-white', 'border-gray-200');
+      } else {
+        categoryFilters.forEach(btn => {
+          btn.classList.remove('bg-orange-100', 'border-orange-300', 'text-orange-800');
+          btn.classList.add('bg-white', 'border-gray-200');
+        });
+
+        categoriaActiva = categoria;
+        button.classList.remove('bg-white', 'border-gray-200');
+        button.classList.add('bg-orange-100', 'border-orange-300', 'text-orange-800');
+      }
+
+      aplicarFiltros();
+    });
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      busquedaActiva = e.target.value.trim();
+      aplicarFiltros();
+    });
+  }
+
+  window.limpiarCategoria = () => {
+    categoriaActiva = null;
+    categoryFilters.forEach(btn => {
+      btn.classList.remove('bg-orange-100', 'border-orange-300', 'text-orange-800');
+      btn.classList.add('bg-white', 'border-gray-200');
+    });
+    aplicarFiltros();
+  };
+
+  window.limpiarBusqueda = () => {
+    busquedaActiva = '';
+    if (searchInput) searchInput.value = '';
+    aplicarFiltros();
+  };
+
+  if (clearAllFilters) {
+    clearAllFilters.addEventListener('click', () => {
+      window.limpiarCategoria();
+      window.limpiarBusqueda();
+    });
+  }
+
+  if (showAllRecetas) {
+    showAllRecetas.addEventListener('click', () => {
+      window.limpiarCategoria();
+      window.limpiarBusqueda();
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    leerParametrosURL();
+  });
+</script>
+
+<Layout title="Recetas de Casa">
+  <Header title="Recetas de Casa" showBackButton={true} />
+  <main class="bg-white">
+    <section class="max-w-7xl mx-auto px-6 py-12">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
+        <div>
+          <h1 id="sectionTitle" class="text-3xl font-bold text-gray-900">🍽️ Todas las Recetas</h1>
+          <p id="resultCount" class="text-gray-500 mt-1"></p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="clearAllFilters" class="text-sm text-gray-600 hover:text-orange-600">Limpiar filtros</button>
+          <button id="showAllRecetas" class="text-sm text-orange-600 hover:text-orange-700">Mostrar todas</button>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <input id="searchInput" type="search" placeholder="Buscar por nombre, ingrediente o tag..."
+          class="w-full md:w-96 px-4 py-3 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-300" />
+      </div>
+
+      <div class="flex flex-wrap gap-2 mb-4" id="activeFilters">
+        <div id="filterTags" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div class="flex flex-wrap gap-3 mb-10">
+        {Object.entries(categorias).map(([key, nombre]) => (
+          <button class="category-filter bg-white border border-gray-200 hover:border-orange-300 text-gray-700 hover:text-orange-700 px-3 py-1.5 rounded-full text-sm transition"
+                  data-categoria={key}>
+            {nombre}
+          </button>
+        ))}
+      </div>
+
+      <div id="recetasContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {recetas.map(receta => {
+          const tags = (receta.tags || []).join(' ').toLowerCase();
+          const descripcion = (receta.descripcion || '').toLowerCase();
+          return (
+            <div class="receta-item"
+                data-categoria={receta.categoria}
+                data-titulo={receta.title.toLowerCase()}
+                data-descripcion={descripcion}
+                data-tags={tags}>
+              <RecetaCard receta={receta} />
+            </div>
+          );
+        })}
+      </div>
+
+      <div id="emptyState" class="hidden text-center text-gray-600 py-16">
+        No se han encontrado recetas con los filtros aplicados.
+      </div>
+    </section>
+  </main>
+</Layout>

@@ -1,0 +1,7 @@
+{
+  "buildCommand": "wsl pnpm build",
+  "framework": "astro",
+  "devCommand": "wsl pnpm dev",
+  "installCommand": "wsl pnpm install"
+}
+

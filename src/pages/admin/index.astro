@@ -1,0 +1,243 @@
+---
+import { createServerSupabaseClient } from '../../lib/supabase';
+import Layout from '../../layouts/Layout.astro';
+
+const supabase = createServerSupabaseClient(Astro.request);
+
+// Obtener sesión del usuario
+const { data: { session } } = await supabase.auth.getSession();
+
+if (!session) {
+  return Astro.redirect('/admin/login');
+}
+
+// Obtener todas las recetas
+const { data: recetas, error } = await supabase
+  .from('recetas')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+if (error) {
+  console.error('Error al obtener recetas:', error);
+}
+
+const todasLasRecetas = recetas || [];
+const totalRecetas = todasLasRecetas.length;
+const recetasDestacadas = todasLasRecetas.filter(r => r.destacada).length;
+---
+
+<Layout title="Panel Admin - Recetas de Casa">
+  <div class="min-h-screen bg-gray-50">
+    <!-- Header del Admin -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">🔧 Panel de Administración</h1>
+            <p class="text-sm text-gray-600 mt-1">Bienvenido, {session.user.email}</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <a href="/" class="text-sm text-gray-600 hover:text-orange-600 transition">
+              ← Ver sitio
+            </a>
+            <form action="/api/auth/logout" method="POST">
+              <button type="submit" class="text-sm bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-lg transition">
+                Cerrar Sesión
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+      <!-- Estadísticas -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Total Recetas</p>
+              <p class="text-3xl font-bold text-gray-900">{totalRecetas}</p>
+            </div>
+            <div class="text-4xl">📚</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Destacadas</p>
+              <p class="text-3xl font-bold text-orange-600">{recetasDestacadas}</p>
+            </div>
+            <div class="text-4xl">⭐</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Última actualización</p>
+              <p class="text-sm font-medium text-gray-900">
+                {todasLasRecetas[0] ? new Date(todasLasRecetas[0].updated_at).toLocaleDateString('es-ES') : 'N/A'}
+              </p>
+            </div>
+            <div class="text-4xl">📅</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones principales -->
+      <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold text-gray-900">Gestionar Recetas</h2>
+          <a 
+            href="/admin/recetas/nueva" 
+            class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg transition transform hover:-translate-y-0.5 shadow-sm"
+          >
+            ➕ Nueva Receta
+          </a>
+        </div>
+      </div>
+
+      <!-- Lista de recetas -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Todas las Recetas ({totalRecetas})</h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Receta
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Categoría
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Dificultad
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fecha
+                </th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {todasLasRecetas.map((receta) => (
+                <tr class="hover:bg-gray-50 transition">
+                  <td class="px-6 py-4">
+                    <div class="flex items-center">
+                      <img 
+                        src={`${import.meta.env.BASE_URL}${receta.imagen.replace('/', '')}`}
+                        alt={receta.title}
+                        class="w-12 h-12 rounded-lg object-cover mr-3"
+                      />
+                      <div>
+                        <div class="text-sm font-medium text-gray-900">{receta.title}</div>
+                        <div class="text-xs text-gray-500">{receta.slug}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="text-sm text-gray-900">{receta.categoria}</span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      receta.dificultad === 'facil' ? 'bg-green-100 text-green-800' :
+                      receta.dificultad === 'media' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {receta.dificultad}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    {receta.destacada && (
+                      <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                        ⭐ Destacada
+                      </span>
+                    )}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(receta.created_at).toLocaleDateString('es-ES')}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div class="flex items-center justify-end gap-2">
+                      <a 
+                        href={`/recetas/${receta.slug}`}
+                        target="_blank"
+                        class="text-blue-600 hover:text-blue-800 transition"
+                        title="Ver receta"
+                      >
+                        👁️
+                      </a>
+                      <a 
+                        href={`/admin/recetas/${receta.id}`}
+                        class="text-orange-600 hover:text-orange-800 transition"
+                        title="Editar"
+                      >
+                        ✏️
+                      </a>
+                      <button 
+                        class="text-red-600 hover:text-red-800 transition delete-btn"
+                        data-id={receta.id}
+                        data-title={receta.title}
+                        title="Eliminar"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Script para manejar la eliminación de recetas
+    document.addEventListener('DOMContentLoaded', () => {
+      const deleteButtons = document.querySelectorAll('.delete-btn');
+      
+      deleteButtons.forEach(button => {
+        button.addEventListener('click', async (e) => {
+          const target = e.currentTarget as HTMLButtonElement;
+          const id = target.dataset.id;
+          const title = target.dataset.title;
+          
+          if (!confirm(`¿Estás seguro de que quieres eliminar "${title}"?`)) {
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/api/recetas/${id}`, {
+              method: 'DELETE',
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              alert('Receta eliminada exitosamente');
+              window.location.reload();
+            } else {
+              alert('Error al eliminar la receta: ' + result.error);
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            alert('Error al eliminar la receta');
+          }
+        });
+      });
+    });
+  </script>
+</Layout>
+

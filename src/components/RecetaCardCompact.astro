@@ -1,0 +1,95 @@
+---
+export interface Props {
+  receta: {
+    slug: string;
+    data: {
+      title: string;
+      imagen: string;
+      imagenAlt?: string;
+      tiempo: string;
+      porciones: number;
+      categoria: string;
+      dificultad: string;
+    }
+  }
+}
+
+const { receta } = Astro.props;
+const { slug, data } = receta;
+const { title, imagen, imagenAlt, tiempo, porciones, categoria, dificultad } = data;
+
+// Función para obtener el emoji de la categoría
+const getCategoriaEmoji = (cat: string) => {
+  const iconos: { [key: string]: string } = {
+    'arroz-paellas': '🥘',
+    'tortillas-pasta': '🥚',
+    'sopas-cremas': '🍲',
+    'carnes-aves': '🍖',
+    'pescados-mariscos': '🐟',
+    'pan-masas': '🥖',
+    'postres': '🍰',
+    'tapas-aperitivos': '🍤'
+  };
+  return iconos[cat] || '🍽️';
+};
+
+// Función para obtener el color de la dificultad
+const getDificultadColor = (dif: string) => {
+  if (dif === 'facil') return 'bg-green-100 text-green-800';
+  if (dif === 'media') return 'bg-yellow-100 text-yellow-800';
+  return 'bg-red-100 text-red-800';
+};
+---
+
+<article class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-orange-200 group">
+  <a href={`/recetas/${slug}/`} class="block">
+    <div class="flex items-center p-4 space-x-4">
+      <!-- Imagen miniatura -->
+      <div class="flex-shrink-0 relative">
+        <img 
+          src={`${import.meta.env.BASE_URL}${imagen.replace('/', '')}`} 
+          alt={imagenAlt || title} 
+          class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+        />
+        <div class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+          {getCategoriaEmoji(categoria)}
+        </div>
+      </div>
+
+      <!-- Contenido -->
+      <div class="flex-1 min-w-0">
+        <h3 class="text-lg font-semibold text-gray-900 group-hover:text-orange-600 transition-colors duration-200 truncate">
+          {title}
+        </h3>
+        
+        <div class="flex items-center space-x-3 mt-2 text-sm text-gray-500">
+          <span class="flex items-center space-x-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>{tiempo}</span>
+          </span>
+          
+          <span class="flex items-center space-x-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+            </svg>
+            <span>{porciones}</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Dificultad y arrow -->
+      <div class="flex-shrink-0 flex items-center space-x-3">
+        <span class={`text-xs px-2 py-1 rounded-full font-medium ${getDificultadColor(dificultad)}`}>
+          {dificultad === 'facil' ? 'Fácil' : dificultad === 'media' ? 'Media' : 'Difícil'}
+        </span>
+        
+        <svg class="w-5 h-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </div>
+    </div>
+  </a>
+</article>

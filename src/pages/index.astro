@@ -1,11 +1,148 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
+import RecetaCard from "../components/RecetaCard.astro";
+import SearchBox from "../components/SearchBox.astro";
+import { supabase } from "../lib/supabase";
+import { categorias } from "../content/config";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// Obtener todas las recetas desde Supabase
+const { data: todasLasRecetas, error } = await supabase
+  .from('recetas')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+if (error) {
+  console.error('Error al obtener recetas:', error);
+}
+
+const recetas = todasLasRecetas || [];
+
+// Obtener recetas destacadas
+const recetasDestacadas = recetas.filter(receta => receta.destacada).slice(0, 3);
+
+// Obtener las últimas recetas (ya ordenadas por fecha)
+const ultimasRecetas = recetas.slice(0, 6);
+
+// Estadísticas
+const totalRecetas = recetas.length;
+const totalCategorias = Object.keys(categorias).length;
+const baseUrl = import.meta.env.BASE_URL;
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Recetas de Casa">
+  <main>
+    <!-- Hero Section con imagen de fondo -->
+    <section class="relative min-h-screen flex items-center justify-center text-center overflow-hidden">
+      <!-- Imagen de fondo responsive -->
+      <picture class="absolute inset-0 w-full h-full">
+        <!-- WebP para navegadores modernos -->
+        <source media="(min-width: 1440px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1920.webp`} type="image/webp" />
+        <source media="(min-width: 1024px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1440.webp`} type="image/webp" />
+        <source media="(min-width: 768px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1024.webp`} type="image/webp" />
+        <source srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-768.webp`} type="image/webp" />
+        <!-- Fallback JPEG -->
+        <source media="(min-width: 1440px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1920.jpg`} />
+        <source media="(min-width: 1024px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1440.jpg`} />
+        <source media="(min-width: 768px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1024.jpg`} />
+        <img src={`${import.meta.env.BASE_URL}images/hero-ingredientes-768.webp`} alt="Ingredientes españoles tradicionales" class="w-full h-full object-cover" loading="eager" />
+      </picture>
+      
+      <!-- Overlay para legibilidad del texto -->
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-[0.5px]"></div>
+      
+      <!-- Contenido del hero -->
+      <div class="relative z-10 max-w-4xl mx-auto px-6 py-20">
+        <h1 class="text-5xl md:text-7xl font-black text-white mb-6 drop-shadow-lg">
+          🍽️ Recetas de Casa
+        </h1>
+        <p class="text-xl md:text-2xl text-white/95 mb-12 font-light max-w-2xl mx-auto leading-relaxed">
+          Compendio de las Recetas de Casa que no se pueden perder, actualmente -> {totalRecetas} recetas
+        </p>
+        
+        <!-- Buscador -->
+        <div class="mb-8">
+          <SearchBox 
+            placeholder="Buscar recetas por ingrediente, nombre..."
+            size="lg"
+            className="max-w-md mx-auto"
+          />
+        </div>
+        
+        <!-- CTA Principal -->
+        <div class="space-y-4">
+          <a href={`${baseUrl}recetas/`} class="inline-block bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-8 py-4 rounded-full font-bold text-lg border-2 border-white/30 hover:border-white/50 transition-all duration-300 hover:-translate-y-1">
+            📚 Ver Todas las Recetas
+          </a>
+          <div class="flex items-center justify-center space-x-4 text-white/90 text-sm">
+            <span>{totalRecetas} recetas</span>
+            <span>•</span>
+            <span>{totalCategorias} categorías</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categorías Populares -->
+    <section class="py-16 bg-white">
+      <div class="max-w-7xl mx-auto px-6">
+        <h2 class="text-4xl font-bold text-gray-900 text-center mb-12">Explora por Categorías</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {Object.entries(categorias).map(([key, nombre]) => {
+            const recetasEnCategoria = todasLasRecetas.filter(r => r.data.categoria === key);
+            const iconos = {
+              'arroz-paellas': '🥘',
+              'tortillas-pasta': '🥚',
+              'sopas-cremas': '🍲',
+              'carnes-aves': '🍖',
+              'pescados-mariscos': '🐟',
+              'pan-masas': '🥖',
+              'postres': '🍰',
+              'tapas-aperitivos': '🍤'
+            };
+            
+            return (
+              <a href={`${baseUrl}buscar?categoria=${key}`} class="group bg-white hover:bg-orange-50 border-2 border-gray-100 hover:border-orange-300 rounded-2xl p-6 text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+                <div class="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                  {iconos[key] || '🍽️'}
+                </div>
+                <h3 class="font-bold text-gray-900 mb-1 text-sm lg:text-base">{nombre}</h3>
+                <span class="text-xs text-gray-500">{recetasEnCategoria.length} recetas</span>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+
+    <!-- Últimas Recetas -->
+    <section class="py-16 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-12">
+          <div></div> <!-- Espaciador izquierdo -->
+          <h2 class="text-4xl font-bold text-gray-900 text-center">Últimas Recetas</h2>
+          <div class="text-right">
+            <a href={`${baseUrl}recetas/`} class="text-orange-500 hover:text-orange-600 font-semibold text-lg transition-colors duration-200">
+              Ver todas →
+            </a>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {ultimasRecetas.map(receta => (
+            <RecetaCard receta={receta} />
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section class="py-20 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 text-center">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-4xl font-bold text-white mb-4">¿Listo para cocinar?</h2>
+        <p class="text-xl text-white/90 mb-8">Descubre todas nuestras recetas y empieza a cocinar hoy mismo</p>
+        <a href={`${baseUrl}recetas/`} class="inline-block bg-white text-purple-600 hover:text-purple-700 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+          Explorar Todas las Recetas
+        </a>
+      </div>
+    </section>
+  </main>
 </Layout>

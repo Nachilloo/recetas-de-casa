@@ -1,0 +1,88 @@
+---
+import { supabase } from '../../lib/supabase';
+import Layout from '../../layouts/Layout.astro';
+
+const { id } = Astro.params;
+
+// Obtener la receta por slug
+const { data: receta, error } = await supabase
+  .from('recetas')
+  .select('*')
+  .eq('slug', id)
+  .single();
+
+if (error || !receta) {
+  return Astro.redirect('/404');
+}
+
+const { 
+  title, 
+  descripcion, 
+  imagen, 
+  imagen_alt, 
+  tiempo, 
+  porciones, 
+  ingredientes, 
+  pasos, 
+  tips, 
+  calorias, 
+  tags,
+  historia
+} = receta;
+---
+
+<Layout title={title}>
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">{title}</h1>
+                {descripcion && <p class="text-lg text-gray-600 mb-6">{descripcion}</p>}
+                <img src={`${import.meta.env.BASE_URL}${imagen.replace('/', '')}`} alt={imagen_alt || title} class="w-full rounded-lg shadow-lg" />
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-3">Ingredientes</h2>
+                    <ul class="list-disc list-inside space-y-1">{ingredientes.map((ingrediente: string) => <li class="text-gray-700">{ingrediente}</li>)}</ul>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-3">Pasos</h2>
+                    <ol class="list-decimal list-inside space-y-2">{pasos.map((paso: string) => <li class="text-gray-700">{paso}</li>)}</ol>
+                </div>
+                {tips && tips.length > 0 && (
+                  <div>
+                      <h2 class="text-2xl font-semibold text-gray-800 mb-3">Tips</h2>
+                      <ul class="list-disc list-inside space-y-1">{tips.map((tip: string) => <li class="text-gray-700">{tip}</li>)}</ul>
+                  </div>
+                )}
+                <div class="grid grid-cols-2 gap-4">
+                    {calorias && (
+                      <div>
+                          <h3 class="font-semibold text-gray-800">Calorías</h3>
+                          <p class="text-gray-600">{calorias} kcal</p>
+                      </div>
+                    )}
+                    <div>
+                        <h3 class="font-semibold text-gray-800">Tiempo</h3>
+                        <p class="text-gray-600">{tiempo}</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">Porciones</h3>
+                        <p class="text-gray-600">{porciones}</p>
+                    </div>
+                </div>
+                {tags && tags.length > 0 && (
+                  <div>
+                      <h3 class="font-semibold text-gray-800 mb-2">Tags</h3>
+                      <div class="flex flex-wrap gap-2">{tags.map((tag: string) => <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">{tag}</span>)}</div>
+                  </div>
+                )}
+            </div>
+        </div>
+        {historia && (
+          <div class="mt-12 prose prose-lg max-w-none">
+              <h2>Historia</h2>
+              <p>{historia}</p>
+          </div>
+        )}
+    </div>
+</Layout>

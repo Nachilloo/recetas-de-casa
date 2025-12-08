@@ -1,0 +1,43 @@
+---
+import { createServerSupabaseClient } from '../../../lib/supabase';
+import Layout from '../../../layouts/Layout.astro';
+import RecipeForm from '../../../components/admin/RecipeForm';
+
+const supabase = createServerSupabaseClient(Astro.request);
+
+// Verificar autenticación
+const { data: { session } } = await supabase.auth.getSession();
+
+if (!session) {
+  return Astro.redirect('/admin/login');
+}
+
+// Obtener el ID de la receta
+const { id } = Astro.params;
+
+// Obtener la receta
+const { data: receta, error } = await supabase
+  .from('recetas')
+  .select('*')
+  .eq('id', id)
+  .single();
+
+if (error || !receta) {
+  return Astro.redirect('/admin/');
+}
+---
+
+<Layout title={`Editar ${receta.title} - Admin`}>
+  <div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="mb-6">
+        <a href="/admin/" class="text-orange-600 hover:text-orange-700 text-sm">
+          ← Volver al panel admin
+        </a>
+      </div>
+      
+      <RecipeForm client:only="react" receta={receta} isEdit={true} />
+    </div>
+  </div>
+</Layout>
+
