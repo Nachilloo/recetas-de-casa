@@ -1,6 +1,8 @@
 ---
 import { supabase } from '../../lib/supabase';
 import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import { categorias, dificultades } from '../../content/config';
 
 const { id } = Astro.params;
 
@@ -27,62 +29,240 @@ const {
   tips, 
   calorias, 
   tags,
-  historia
+  historia,
+  categoria,
+  dificultad
 } = receta;
+
+// Obtener emoji de la categoría
+const getCategoriaEmoji = (cat: string) => {
+  const iconos: { [key: string]: string } = {
+    'arroz-paellas': '🥘',
+    'tortillas-pasta': '🥚',
+    'sopas-cremas': '🍲',
+    'carnes-aves': '🍖',
+    'pescados-mariscos': '🐟',
+    'pan-masas': '🥖',
+    'postres': '🍰',
+    'tapas-aperitivos': '🍤'
+  };
+  return iconos[cat] || '🍽️';
+};
+
+const categoriaNombre = categorias[categoria as keyof typeof categorias] || categoria;
+const dificultadNombre = dificultades[dificultad as keyof typeof dificultades] || dificultad;
 ---
 
-<Layout title={title}>
-    <div class="max-w-4xl mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
-                <h1 class="text-4xl font-bold text-gray-900 mb-4">{title}</h1>
-                {descripcion && <p class="text-lg text-gray-600 mb-6">{descripcion}</p>}
-                <img src={`${import.meta.env.BASE_URL}${imagen.replace('/', '')}`} alt={imagen_alt || title} class="w-full rounded-lg shadow-lg" />
+<Layout title={`${title} - Recetas de Casa`}>
+  <Header title={title} />
+  
+  <main class="bg-gray-50 min-h-screen">
+    <!-- Hero Section con imagen -->
+    <section class="relative bg-gradient-to-b from-orange-50 to-white">
+      <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <!-- Imagen principal -->
+          <div class="order-2 lg:order-1">
+            <div class="relative rounded-2xl overflow-hidden shadow-2xl group">
+              <img 
+                src={`${import.meta.env.BASE_URL}${imagen.replace('/', '')}`} 
+                alt={imagen_alt || title} 
+                class="w-full h-[400px] lg:h-[500px] object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg">
+                <span class="text-2xl">{getCategoriaEmoji(categoria)}</span>
+              </div>
             </div>
-            <div class="space-y-6">
-                <div>
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-3">Ingredientes</h2>
-                    <ul class="list-disc list-inside space-y-1">{ingredientes.map((ingrediente: string) => <li class="text-gray-700">{ingrediente}</li>)}</ul>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-3">Pasos</h2>
-                    <ol class="list-decimal list-inside space-y-2">{pasos.map((paso: string) => <li class="text-gray-700">{paso}</li>)}</ol>
-                </div>
-                {tips && tips.length > 0 && (
-                  <div>
-                      <h2 class="text-2xl font-semibold text-gray-800 mb-3">Tips</h2>
-                      <ul class="list-disc list-inside space-y-1">{tips.map((tip: string) => <li class="text-gray-700">{tip}</li>)}</ul>
-                  </div>
-                )}
-                <div class="grid grid-cols-2 gap-4">
-                    {calorias && (
-                      <div>
-                          <h3 class="font-semibold text-gray-800">Calorías</h3>
-                          <p class="text-gray-600">{calorias} kcal</p>
-                      </div>
-                    )}
-                    <div>
-                        <h3 class="font-semibold text-gray-800">Tiempo</h3>
-                        <p class="text-gray-600">{tiempo}</p>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-gray-800">Porciones</h3>
-                        <p class="text-gray-600">{porciones}</p>
-                    </div>
-                </div>
-                {tags && tags.length > 0 && (
-                  <div>
-                      <h3 class="font-semibold text-gray-800 mb-2">Tags</h3>
-                      <div class="flex flex-wrap gap-2">{tags.map((tag: string) => <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">{tag}</span>)}</div>
-                  </div>
-                )}
-            </div>
-        </div>
-        {historia && (
-          <div class="mt-12 prose prose-lg max-w-none">
-              <h2>Historia</h2>
-              <p>{historia}</p>
           </div>
-        )}
-    </div>
+
+          <!-- Información principal -->
+          <div class="order-1 lg:order-2 space-y-6">
+            <div>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
+                  {categoriaNombre}
+                </span>
+                <span class={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                  dificultad === 'facil' ? 'bg-green-100 text-green-800' :
+                  dificultad === 'media' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {dificultadNombre}
+                </span>
+              </div>
+              
+              <h1 class="text-4xl lg:text-5xl font-black text-gray-900 mb-4 leading-tight">
+                {title}
+              </h1>
+              
+              {descripcion && (
+                <p class="text-xl text-gray-600 leading-relaxed">
+                  {descripcion}
+                </p>
+              )}
+            </div>
+
+            <!-- Stats cards -->
+            <div class="grid grid-cols-3 gap-4">
+              <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+                <div class="text-3xl mb-2">⏱️</div>
+                <div class="text-sm text-gray-500 mb-1">Tiempo</div>
+                <div class="font-bold text-gray-900">{tiempo}</div>
+              </div>
+              
+              <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+                <div class="text-3xl mb-2">👥</div>
+                <div class="text-sm text-gray-500 mb-1">Porciones</div>
+                <div class="font-bold text-gray-900">{porciones}</div>
+              </div>
+              
+              {calorias && (
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+                  <div class="text-3xl mb-2">🔥</div>
+                  <div class="text-sm text-gray-500 mb-1">Calorías</div>
+                  <div class="font-bold text-gray-900">{calorias}</div>
+                </div>
+              )}
+            </div>
+
+            <!-- Tags -->
+            {tags && tags.length > 0 && (
+              <div class="flex flex-wrap gap-2">
+                {tags.map((tag: string) => (
+                  <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contenido principal -->
+    <section class="max-w-7xl mx-auto px-6 py-12">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Ingredientes (Sidebar) -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-24 border border-gray-100">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <span class="text-2xl">🛒</span>
+              </div>
+              <h2 class="text-2xl font-bold text-gray-900">Ingredientes</h2>
+            </div>
+            
+            <ul class="space-y-3">
+              {ingredientes.map((ingrediente: string) => (
+                <li class="flex items-start gap-3 group">
+                  <div class="mt-1 w-5 h-5 rounded-full border-2 border-orange-300 group-hover:bg-orange-100 transition-colors flex-shrink-0"></div>
+                  <span class="text-gray-700 leading-tight">{ingrediente}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <!-- Pasos (Contenido principal) -->
+        <div class="lg:col-span-2 space-y-8">
+          <!-- Preparación -->
+          <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+            <div class="flex items-center gap-3 mb-8">
+              <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <span class="text-2xl">👨‍🍳</span>
+              </div>
+              <h2 class="text-2xl font-bold text-gray-900">Preparación</h2>
+            </div>
+            
+            <div class="space-y-6">
+              {pasos.map((paso: string, index: number) => (
+                <div class="flex gap-6 group">
+                  <!-- Número circular elegante -->
+                  <div class="flex-shrink-0">
+                    <div class="relative">
+                      <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200">
+                        <span class="text-white font-bold text-lg">{index + 1}</span>
+                      </div>
+                      {index < pasos.length - 1 && (
+                        <div class="absolute top-12 left-1/2 -translate-x-1/2 w-0.5 h-6 bg-gradient-to-b from-orange-300 to-transparent"></div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <!-- Contenido del paso -->
+                  <div class="flex-1 pt-2">
+                    <p class="text-gray-700 leading-relaxed text-lg">
+                      {paso}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <!-- Tips -->
+          {tips && tips.length > 0 && (
+            <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl shadow-lg p-8 border border-yellow-200">
+              <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <span class="text-2xl">💡</span>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Tips del Chef</h2>
+              </div>
+              
+              <ul class="space-y-4">
+                {tips.map((tip: string) => (
+                  <li class="flex items-start gap-3">
+                    <span class="text-yellow-500 text-xl flex-shrink-0">✨</span>
+                    <span class="text-gray-700 leading-relaxed">{tip}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <!-- Historia -->
+          {historia && (
+            <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+              <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <span class="text-2xl">📖</span>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Historia</h2>
+              </div>
+              
+              <p class="text-gray-700 leading-relaxed text-lg">
+                {historia}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA de navegación -->
+    <section class="bg-gradient-to-r from-orange-500 to-orange-600 py-12">
+      <div class="max-w-7xl mx-auto px-6 text-center">
+        <h3 class="text-2xl font-bold text-white mb-4">¿Te gustó esta receta?</h3>
+        <p class="text-orange-100 mb-6">Descubre más recetas deliciosas</p>
+        <div class="flex flex-wrap justify-center gap-4">
+          <a 
+            href={`${import.meta.env.BASE_URL}buscar?categoria=${categoria}`}
+            class="inline-flex items-center gap-2 bg-white text-orange-600 hover:bg-orange-50 px-6 py-3 rounded-full font-semibold transition-all duration-200 hover:scale-105 shadow-lg"
+          >
+            <span>{getCategoriaEmoji(categoria)}</span>
+            <span>Más de {categoriaNombre}</span>
+          </a>
+          <a 
+            href={`${import.meta.env.BASE_URL}recetas/`}
+            class="inline-flex items-center gap-2 bg-white/20 text-white hover:bg-white/30 px-6 py-3 rounded-full font-semibold transition-all duration-200 hover:scale-105 backdrop-blur-sm"
+          >
+            <span>📚</span>
+            <span>Ver todas las recetas</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
 </Layout>

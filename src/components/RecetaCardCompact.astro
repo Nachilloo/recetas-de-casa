@@ -1,22 +1,29 @@
 ---
 export interface Props {
-  receta: {
-    slug: string;
-    data: {
-      title: string;
-      imagen: string;
-      imagenAlt?: string;
-      tiempo: string;
-      porciones: number;
-      categoria: string;
-      dificultad: string;
-    }
-  }
+  // Acepta ambas formas: Content Collections (con data) y Supabase (sin data)
+  receta: any;
 }
 
 const { receta } = Astro.props;
-const { slug, data } = receta;
-const { title, imagen, imagenAlt, tiempo, porciones, categoria, dificultad } = data;
+
+// Detectar formato y normalizar
+const isSupabase = receta && !('data' in receta);
+const slug = receta?.slug;
+const data = isSupabase ? receta : receta?.data;
+
+const {
+  title,
+  imagen,
+  imagen_alt,
+  imagenAlt,
+  tiempo,
+  porciones,
+  categoria,
+  dificultad
+} = data || {};
+
+const alt = imagen_alt || imagenAlt || title || '';
+const imageSrc = `${import.meta.env.BASE_URL}${(imagen || '').replace(/^\//, '')}`;
 
 // Función para obtener el emoji de la categoría
 const getCategoriaEmoji = (cat: string) => {
@@ -47,8 +54,8 @@ const getDificultadColor = (dif: string) => {
       <!-- Imagen miniatura -->
       <div class="flex-shrink-0 relative">
         <img 
-          src={`${import.meta.env.BASE_URL}${imagen.replace('/', '')}`} 
-          alt={imagenAlt || title} 
+          src={imageSrc} 
+          alt={alt} 
           class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
