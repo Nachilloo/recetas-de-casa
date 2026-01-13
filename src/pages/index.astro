@@ -29,7 +29,12 @@ const totalCategorias = Object.keys(categorias).length;
 const baseUrl = import.meta.env.BASE_URL;
 ---
 
-<Layout title="Recetas de Casa">
+<Layout 
+  title="Recetas de Casa"
+  description={`Descubre ${totalRecetas} deliciosas recetas caseras de la cocina española. Platos tradicionales, postres, tapas y mucho más para cocinar en casa.`}
+  image="/images/hero-ingredientes-1024.webp"
+  type="website"
+>
   <main>
     <!-- Hero Section con imagen de fondo -->
     <section class="relative min-h-screen flex items-center justify-center text-center overflow-hidden">

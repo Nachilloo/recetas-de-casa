@@ -234,7 +234,11 @@ const recetas = todasLasRecetas || [];
   });
 </script>
 
-<Layout title="Recetas de Casa">
+<Layout 
+  title="Todas las Recetas"
+  description={`Explora nuestra colección de ${recetas.length} recetas caseras españolas. Desde arroces y paellas hasta postres tradicionales.`}
+  image="/images/hero-ingredientes-1024.webp"
+>
   <Header title="Recetas de Casa" showBackButton={true} />
   <main class="bg-white">
     <section class="max-w-7xl mx-auto px-6 py-12">

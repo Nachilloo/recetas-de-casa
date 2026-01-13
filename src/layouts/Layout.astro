@@ -2,16 +2,72 @@
 // Importar el CSS global aquí
 import '../styles/global.css';
 import { ViewTransitions } from 'astro:transitions';
+
+export interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  canonicalUrl?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description = 'Descubre deliciosas recetas caseras de la cocina española. Platos tradicionales, postres, tapas y mucho más para cocinar en casa.',
+  image = '/images/hero-ingredientes-1024.webp',
+  canonicalUrl,
+  type = 'website',
+  noindex = false,
+} = Astro.props;
+
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') || '';
+const currentUrl = canonicalUrl || Astro.url.href;
+const fullImageUrl = image.startsWith('http') ? image : `${siteUrl}${image.startsWith('/') ? '' : '/'}${image}`;
+const siteName = 'Recetas de Casa';
+const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
 ---
 
 <!doctype html>
 <html lang="es">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
-		<title>Recetas de Casa</title>
+		
+		<!-- Primary Meta Tags -->
+		<title>{fullTitle}</title>
+		<meta name="title" content={fullTitle} />
+		<meta name="description" content={description} />
+		{noindex && <meta name="robots" content="noindex, nofollow" />}
+		
+		<!-- Canonical URL -->
+		<link rel="canonical" href={currentUrl} />
+		
+		<!-- Open Graph / Facebook -->
+		<meta property="og:type" content={type} />
+		<meta property="og:url" content={currentUrl} />
+		<meta property="og:title" content={fullTitle} />
+		<meta property="og:description" content={description} />
+		<meta property="og:image" content={fullImageUrl} />
+		<meta property="og:site_name" content={siteName} />
+		<meta property="og:locale" content="es_ES" />
+		
+		<!-- Twitter -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:url" content={currentUrl} />
+		<meta name="twitter:title" content={fullTitle} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={fullImageUrl} />
+		
+		<!-- Additional SEO -->
+		<meta name="author" content={siteName} />
+		<meta name="theme-color" content="#f97316" />
+		
 		<ViewTransitions />
+		
+		<!-- Slot for page-specific head content (like JSON-LD) -->
+		<slot name="head" />
 	</head>
 	<body>
 		<slot />

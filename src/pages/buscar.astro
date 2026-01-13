@@ -89,7 +89,12 @@ const totalRecetas = recetasEncontradas.length;
 ---
 
 <Layout
-  title={`${termino ? `Buscar: ${termino}` : "Buscar Recetas"} - Recetas de Casa`}
+  title={termino ? `Buscar: ${termino}` : "Buscar Recetas"}
+  description={termino 
+    ? `Resultados de búsqueda para "${termino}". Encuentra recetas caseras españolas con ${termino}.`
+    : "Busca entre nuestra colección de recetas caseras españolas. Filtra por ingredientes, categorías o nombres."
+  }
+  noindex={true}
 >
   <Header title="Buscar Recetas" />
 

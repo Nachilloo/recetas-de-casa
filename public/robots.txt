@@ -1,0 +1,13 @@
+# robots.txt for Recetas de Casa
+# https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+Allow: /
+
+# Disallow admin and API routes
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap location (update domain as needed)
+Sitemap: https://recetas-de-casa.vercel.app/sitemap-index.xml
+

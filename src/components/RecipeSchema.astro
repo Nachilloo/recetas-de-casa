@@ -1,0 +1,113 @@
+---
+/**
+ * RecipeSchema Component
+ * Generates JSON-LD structured data for recipes following schema.org Recipe specification
+ * This enables rich snippets in Google search results
+ */
+
+export interface Props {
+  title: string;
+  descripcion?: string | null;
+  imagen: string;
+  imagen_alt?: string | null;
+  tiempo: string;
+  porciones: number;
+  ingredientes: string[];
+  pasos: string[];
+  categoria: string;
+  dificultad: string;
+  calorias?: number | null;
+  tags?: string[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const {
+  title,
+  descripcion,
+  imagen,
+  tiempo,
+  porciones,
+  ingredientes,
+  pasos,
+  calorias,
+  tags,
+  created_at,
+  updated_at,
+} = Astro.props;
+
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') || '';
+const currentUrl = Astro.url.href;
+
+// Parse tiempo to ISO 8601 duration format (e.g., "45 minutos" -> "PT45M")
+function parseTimeToISO(tiempo: string): string {
+  const match = tiempo.toLowerCase().match(/(\d+)\s*(min|hora|h)/);
+  if (!match) return 'PT30M'; // Default fallback
+  
+  const value = parseInt(match[1]);
+  const unit = match[2];
+  
+  if (unit === 'hora' || unit === 'h') {
+    return `PT${value}H`;
+  }
+  return `PT${value}M`;
+}
+
+// Build the full image URL
+const fullImageUrl = imagen.startsWith('http') 
+  ? imagen 
+  : `${siteUrl}${imagen.startsWith('/') ? '' : '/'}${imagen}`;
+
+// Create the JSON-LD schema
+const recipeSchema = {
+  "@context": "https://schema.org",
+  "@type": "Recipe",
+  "name": title,
+  "description": descripcion || `Receta casera de ${title}`,
+  "image": [fullImageUrl],
+  "author": {
+    "@type": "Organization",
+    "name": "Recetas de Casa"
+  },
+  "datePublished": created_at,
+  "dateModified": updated_at,
+  "prepTime": parseTimeToISO(tiempo),
+  "totalTime": parseTimeToISO(tiempo),
+  "recipeYield": `${porciones} porciones`,
+  "recipeCategory": getCategoryName(Astro.props.categoria),
+  "recipeCuisine": "Española",
+  "recipeIngredient": ingredientes,
+  "recipeInstructions": pasos.map((paso, index) => ({
+    "@type": "HowToStep",
+    "position": index + 1,
+    "text": paso
+  })),
+  "url": currentUrl,
+  ...(calorias && {
+    "nutrition": {
+      "@type": "NutritionInformation",
+      "calories": `${calorias} calories`
+    }
+  }),
+  ...(tags && tags.length > 0 && {
+    "keywords": tags.join(", ")
+  })
+};
+
+function getCategoryName(categoria: string): string {
+  const categorias: Record<string, string> = {
+    'arroz-paellas': 'Arroces y Paellas',
+    'tortillas-pasta': 'Tortillas y Pasta',
+    'sopas-cremas': 'Sopas y Cremas',
+    'carnes-aves': 'Carnes y Aves',
+    'pescados-mariscos': 'Pescados y Mariscos',
+    'pan-masas': 'Pan y Masas',
+    'postres': 'Postres',
+    'tapas-aperitivos': 'Tapas y Aperitivos'
+  };
+  return categorias[categoria] || categoria;
+}
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(recipeSchema)} />
+

@@ -1,6 +1,17 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
 ---
-<Layout title="About">
-    <h1>About</h1>
+<Layout 
+  title="Sobre Nosotros"
+  description="Conoce la historia detrás de Recetas de Casa. Un proyecto para preservar y compartir las mejores recetas caseras de la cocina española."
+>
+  <Header title="Sobre Nosotros" />
+  <main class="max-w-4xl mx-auto px-6 py-12">
+    <h1 class="text-4xl font-bold text-gray-900 mb-6">Sobre Recetas de Casa</h1>
+    <p class="text-lg text-gray-600 leading-relaxed">
+      Bienvenido a Recetas de Casa, un proyecto dedicado a preservar y compartir las mejores recetas 
+      caseras de la cocina española tradicional.
+    </p>
+  </main>
 </Layout>

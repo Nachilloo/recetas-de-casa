@@ -2,6 +2,7 @@
 import { supabase } from '../../lib/supabase';
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
+import RecipeSchema from '../../components/RecipeSchema.astro';
 import { categorias, dificultades } from '../../content/config';
 
 const { id } = Astro.params;
@@ -53,7 +54,29 @@ const categoriaNombre = categorias[categoria as keyof typeof categorias] || cate
 const dificultadNombre = dificultades[dificultad as keyof typeof dificultades] || dificultad;
 ---
 
-<Layout title={`${title} - Recetas de Casa`}>
+<Layout 
+  title={title}
+  description={descripcion || `Aprende a preparar ${title}. Receta casera con ingredientes, pasos detallados y consejos del chef.`}
+  image={`${import.meta.env.BASE_URL}${imagen.replace('/', '')}`}
+  type="article"
+>
+  <RecipeSchema
+    slot="head"
+    title={title}
+    descripcion={descripcion}
+    imagen={`${import.meta.env.BASE_URL}${imagen.replace('/', '')}`}
+    imagen_alt={imagen_alt}
+    tiempo={tiempo}
+    porciones={porciones}
+    ingredientes={ingredientes}
+    pasos={pasos}
+    categoria={categoria}
+    dificultad={dificultad}
+    calorias={calorias}
+    tags={tags}
+    created_at={receta.created_at}
+    updated_at={receta.updated_at}
+  />
   <Header title={title} />
   
   <main class="bg-gray-50 min-h-screen">
