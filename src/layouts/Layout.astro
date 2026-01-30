@@ -69,6 +69,7 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
 		
 		<!-- Slot for page-specific head content (like JSON-LD) -->
 		<slot name="head" />
+		<Analytics />
 	</head>
 	<body>
 		<slot />
