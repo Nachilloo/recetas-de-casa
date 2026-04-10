@@ -28,5 +28,7 @@ pnpm-debug.log*
 recetas_reescritas.json
 errores.json
 venv/
+fix_imagenes.py
+seed_recetas.py
 requirements.txt
 seed_recetas.py
