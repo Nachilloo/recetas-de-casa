@@ -22,3 +22,11 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Script de importación de recetas
+*.pdf
+recetas_reescritas.json
+errores.json
+venv/
+requirements.txt
+seed_recetas.py

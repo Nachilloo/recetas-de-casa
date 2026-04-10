@@ -23,7 +23,10 @@ const {
 } = data || {};
 
 const alt = imagen_alt || imagenAlt || title || '';
-const imageSrc = `${import.meta.env.BASE_URL}${(imagen || '').replace(/^\//, '')}`;
+const _base = import.meta.env.BASE_URL;
+const imageSrc = (imagen || '').startsWith('http')
+  ? imagen
+  : `${_base}${(imagen || '').replace(/^\//, '')}`;
 
 // Función para obtener el emoji de la categoría
 const getCategoriaEmoji = (cat: string) => {

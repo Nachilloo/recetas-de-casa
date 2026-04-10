@@ -30,13 +30,17 @@ const {
 const alt = imagen_alt || imagenAlt;
 
 const baseUrl = import.meta.env.BASE_URL;
+
+// Soporta rutas locales (/images/...) y URLs externas (https://...)
+const getImageSrc = (img: string) =>
+  img.startsWith('http') ? img : `${baseUrl}${img.replace(/^\//, '')}`;
 ---
 
 <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
   <a href={`${baseUrl}recetas/${slug}/`} class="block">
     <div class="relative">
       <img 
-        src={`${baseUrl}${imagen.replace('/', '')}`} 
+        src={getImageSrc(imagen)} 
         alt={alt || title} 
         class="w-full h-48 object-cover"
         loading="lazy"

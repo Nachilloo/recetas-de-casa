@@ -52,19 +52,23 @@ const getCategoriaEmoji = (cat: string) => {
 
 const categoriaNombre = categorias[categoria as keyof typeof categorias] || categoria;
 const dificultadNombre = dificultades[dificultad as keyof typeof dificultades] || dificultad;
+
+// Soporta rutas locales (/images/...) y URLs externas (https://...)
+const getImageSrc = (img: string) =>
+  img.startsWith('http') ? img : `${import.meta.env.BASE_URL}${img.replace(/^\//, '')}`;
 ---
 
 <Layout 
   title={title}
   description={descripcion || `Aprende a preparar ${title}. Receta casera con ingredientes, pasos detallados y consejos del chef.`}
-  image={`${import.meta.env.BASE_URL}${imagen.replace('/', '')}`}
+  image={getImageSrc(imagen)}
   type="article"
 >
   <RecipeSchema
     slot="head"
     title={title}
     descripcion={descripcion}
-    imagen={`${import.meta.env.BASE_URL}${imagen.replace('/', '')}`}
+    imagen={getImageSrc(imagen)}
     imagen_alt={imagen_alt}
     tiempo={tiempo}
     porciones={porciones}
@@ -88,7 +92,7 @@ const dificultadNombre = dificultades[dificultad as keyof typeof dificultades] |
           <div class="order-2 lg:order-1">
             <div class="relative rounded-2xl overflow-hidden shadow-2xl group">
               <img 
-                src={`${import.meta.env.BASE_URL}${imagen.replace('/', '')}`} 
+                src={getImageSrc(imagen)} 
                 alt={imagen_alt || title} 
                 class="w-full h-[400px] lg:h-[500px] object-cover group-hover:scale-105 transition-transform duration-500"
               />
