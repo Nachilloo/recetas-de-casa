@@ -29,6 +29,6 @@ recetas_reescritas.json
 errores.json
 venv/
 fix_imagenes.py
+borrar_recetas.py
 seed_recetas.py
 requirements.txt
-seed_recetas.py
