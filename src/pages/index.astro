@@ -16,12 +16,22 @@ if (error) {
   console.error('Error al obtener recetas:', error);
 }
 
-// Conteo total y por categoría
-const { data: todasParaConteo = [] } = await supabase
-  .from('recetas')
-  .select('categoria, destacada');
-
-const todasLasRecetas = todasParaConteo || [];
+// Conteo total y por categoría (paginado para superar límite de 1000)
+let todasLasRecetas: any[] = [];
+{
+  const PAGE = 1000;
+  let offset = 0;
+  while (true) {
+    const { data } = await supabase
+      .from('recetas')
+      .select('categoria, destacada')
+      .range(offset, offset + PAGE - 1);
+    if (!data || data.length === 0) break;
+    todasLasRecetas = todasLasRecetas.concat(data);
+    if (data.length < PAGE) break;
+    offset += PAGE;
+  }
+}
 const totalRecetas = todasLasRecetas.length;
 const totalCategorias = Object.keys(categorias).length;
 
@@ -61,7 +71,7 @@ const baseUrl = import.meta.env.BASE_URL;
           🍽️ Recetas de Casa
         </h1>
         <p class="text-xl md:text-2xl text-white/95 mb-12 font-light max-w-2xl mx-auto leading-relaxed">
-          Compendio de las Recetas de Casa que no se pueden perder, actualmente -> {totalRecetas} recetas
+          Compendio de las Recetas de Casa que no se pueden perder
         </p>
         
         <!-- Buscador -->
@@ -83,6 +93,10 @@ const baseUrl = import.meta.env.BASE_URL;
             <span>•</span>
             <span>{totalCategorias} categorías</span>
           </div>
+          <a href={`${baseUrl}menu-semanal`} class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500/80 to-teal-500/80 backdrop-blur-sm hover:from-emerald-500 hover:to-teal-500 text-white px-6 py-3 rounded-full font-semibold text-base border border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+            🤖 Prueba nuestro Menú Semanal Inteligente
+            <span class="bg-white/25 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Beta</span>
+          </a>
         </div>
       </div>
     </section>
