@@ -17,27 +17,85 @@ if (categoria && categoria in categorias) {
   query = query.eq('categoria', categoria);
 }
 
-if (termino.trim()) {
-  const t = `%${termino.trim()}%`;
-  query = query.or(
-    `title.ilike.${t},descripcion.ilike.${t},ingredientes::text.ilike.${t},tags::text.ilike.${t}`
-  );
-}
-
 query = query.order('created_at', { ascending: false });
 
-const { data: recetasEncontradas, error } = await query;
-if (error) {
-  console.error('Error al buscar recetas:', error);
+if (termino.trim()) {
+  const t = `%${termino.trim()}%`;
+  query = query.or(`title.ilike.${t},descripcion.ilike.${t}`);
 }
-const recetas = recetasEncontradas || [];
+
+// Paginar para traer todas (superar límite de 1000)
+let recetas: any[] = [];
+let offset = 0;
+const PAGE = 1000;
+while (true) {
+  const { data, error } = await query.range(offset, offset + PAGE - 1);
+  if (error) {
+    console.error('Error al buscar recetas:', error);
+    break;
+  }
+  if (!data || data.length === 0) break;
+  recetas = recetas.concat(data);
+  if (data.length < PAGE) break;
+  offset += PAGE;
+}
+
+// Si hay término, búsqueda adicional en ingredientes y tags (arrays, en JS)
+if (termino.trim()) {
+  const terminoLower = termino.toLowerCase().trim();
+  
+  // Cargar todas las recetas con solo los campos necesarios para buscar en arrays
+  let todasRaw: any[] = [];
+  let off2 = 0;
+  let q2 = supabase.from('recetas').select('slug, title, ingredientes, tags').order('created_at', { ascending: false });
+  if (categoria && categoria in categorias) {
+    q2 = q2.eq('categoria', categoria);
+  }
+  while (true) {
+    const { data: d2 } = await q2.range(off2, off2 + PAGE - 1);
+    if (!d2 || d2.length === 0) break;
+    todasRaw = todasRaw.concat(d2);
+    if (d2.length < PAGE) break;
+    off2 += PAGE;
+  }
+
+  // Buscar en ingredientes y tags
+  const slugsYaEncontrados = new Set(recetas.map((r: any) => r.slug));
+  const slugsExtra = new Set<string>();
+  
+  for (const r of todasRaw) {
+    if (slugsYaEncontrados.has(r.slug)) continue;
+    const enIngredientes = r.ingredientes?.some((ing: string) => ing.toLowerCase().includes(terminoLower));
+    const enTags = r.tags?.some((tag: string) => tag.toLowerCase().includes(terminoLower));
+    if (enIngredientes || enTags) {
+      slugsExtra.add(r.slug);
+    }
+  }
+
+  // Cargar recetas completas de los extras encontrados
+  if (slugsExtra.size > 0) {
+    const { data: extras } = await supabase
+      .from('recetas')
+      .select('*')
+      .in('slug', [...slugsExtra]);
+    if (extras) {
+      recetas = recetas.concat(extras);
+    }
+  }
+}
+
 const totalRecetas = recetas.length;
 
-// Para los contadores de categoría, cargamos todos los counts
-const { data: todasParaConteo } = await supabase
-  .from('recetas')
-  .select('categoria');
-const allRecetas = todasParaConteo || [];
+// Para los contadores de categoría
+let allRecetas: any[] = [];
+let off3 = 0;
+while (true) {
+  const { data: d3 } = await supabase.from('recetas').select('categoria').range(off3, off3 + PAGE - 1);
+  if (!d3 || d3.length === 0) break;
+  allRecetas = allRecetas.concat(d3);
+  if (d3.length < PAGE) break;
+  off3 += PAGE;
+}
 ---
 
 <Layout
