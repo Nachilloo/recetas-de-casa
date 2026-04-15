@@ -39,6 +39,13 @@ const baseUrl = import.meta.env.BASE_URL;
       <!-- Botón de búsqueda o navegación -->
       <div class="flex items-center space-x-4">
         <a 
+          href={`${baseUrl}menu-semanal`}
+          class="hidden md:inline-flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors duration-200 group"
+        >
+          <span class="text-lg group-hover:scale-110 transition-transform">🗓️</span>
+          <span class="font-medium">Menú</span>
+        </a>
+        <a 
           href={`${baseUrl}buscar`}
           class="hidden md:inline-flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors duration-200 group"
         >

@@ -6,17 +6,26 @@ import RecetaCard from '../../components/RecetaCard.astro';
 import { supabase } from '../../lib/supabase';
 import { categorias } from '../../content/config';
 
-// Obtener todas las recetas desde Supabase
-const { data: todasLasRecetas, error } = await supabase
-  .from('recetas')
-  .select('*')
-  .order('created_at', { ascending: false });
+// Obtener TODAS las recetas desde Supabase (paginando para superar el límite de 1000)
+let recetas: any[] = [];
+let offset = 0;
+const PAGE_SIZE = 1000;
+while (true) {
+  const { data, error } = await supabase
+    .from('recetas')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + PAGE_SIZE - 1);
 
-if (error) {
-  console.error('Error al obtener recetas:', error);
+  if (error) {
+    console.error('Error al obtener recetas:', error);
+    break;
+  }
+  if (!data || data.length === 0) break;
+  recetas = recetas.concat(data);
+  if (data.length < PAGE_SIZE) break;
+  offset += PAGE_SIZE;
 }
-
-const recetas = todasLasRecetas || [];
 ---
 
 <script define:vars={{ baseUrl: import.meta.env.BASE_URL }}>

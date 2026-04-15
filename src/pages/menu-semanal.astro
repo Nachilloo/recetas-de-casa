@@ -1,0 +1,31 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import MenuSemanal from '../components/MenuSemanal.tsx';
+---
+
+<Layout
+  title="Menú Semanal"
+  description="Genera un menú semanal equilibrado y personalizado con nuestras recetas caseras. Nutrición inteligente con IA."
+>
+  <Header title="Menú Semanal" />
+
+  <main class="bg-gray-50 min-h-screen">
+    <!-- Hero -->
+    <section class="bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 py-12 text-center">
+      <div class="max-w-3xl mx-auto px-6">
+        <h1 class="text-4xl md:text-5xl font-black text-white mb-4">
+          🗓️ Menú Semanal Inteligente
+        </h1>
+        <p class="text-lg text-orange-100 leading-relaxed">
+          Genera un menú semanal equilibrado y personalizado.
+          Nuestro nutricionista virtual elige las mejores combinaciones
+          para ti y tu familia.
+        </p>
+      </div>
+    </section>
+
+    <!-- Componente interactivo React -->
+    <MenuSemanal client:load />
+  </main>
+</Layout>

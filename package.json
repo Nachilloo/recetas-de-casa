@@ -19,6 +19,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "@vercel/analytics": "^1.6.1",
     "astro": "^5.16.4",
+    "openai": "^6.34.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "tailwindcss": "^4.1.13",

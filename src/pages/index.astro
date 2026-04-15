@@ -5,27 +5,27 @@ import SearchBox from "../components/SearchBox.astro";
 import { supabase } from "../lib/supabase";
 import { categorias } from "../content/config";
 
-// Obtener todas las recetas desde Supabase
-const { data: todasLasRecetas, error } = await supabase
+// Últimas 6 recetas para el listado
+const { data: ultimasRecetas = [], error } = await supabase
   .from('recetas')
   .select('*')
-  .order('created_at', { ascending: false });
+  .order('created_at', { ascending: false })
+  .limit(6);
 
 if (error) {
   console.error('Error al obtener recetas:', error);
 }
 
-const recetas = todasLasRecetas || [];
+// Conteo total y por categoría
+const { data: todasParaConteo = [] } = await supabase
+  .from('recetas')
+  .select('categoria, destacada');
 
-// Obtener recetas destacadas
-const recetasDestacadas = recetas.filter(receta => receta.destacada).slice(0, 3);
-
-// Obtener las últimas recetas (ya ordenadas por fecha)
-const ultimasRecetas = recetas.slice(0, 6);
-
-// Estadísticas
-const totalRecetas = recetas.length;
+const todasLasRecetas = todasParaConteo || [];
+const totalRecetas = todasLasRecetas.length;
 const totalCategorias = Object.keys(categorias).length;
+
+const recetasDestacadas = (ultimasRecetas || []).filter((r: any) => r.destacada).slice(0, 3);
 const baseUrl = import.meta.env.BASE_URL;
 ---
 

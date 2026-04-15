@@ -5,87 +5,39 @@ import Header from "../components/Header.astro";
 import SearchBox from "../components/SearchBox.astro";
 import SearchResults from "../components/SearchResults.astro";
 import { categorias } from "../content/config";
-import type { Receta } from "../lib/types";
 
-// Obtener parámetros de búsqueda
 const url = Astro.url;
 const termino = url.searchParams.get("q") || "";
 const categoria = url.searchParams.get("categoria") || "";
 
-// Obtener todas las recetas desde Supabase
-const { data: todasLasRecetas, error } = await supabase
-  .from('recetas')
-  .select('*')
-  .order('created_at', { ascending: false });
+// Búsqueda directa en Supabase (sin límite de 1000)
+let query = supabase.from('recetas').select('*');
 
+if (categoria && categoria in categorias) {
+  query = query.eq('categoria', categoria);
+}
+
+if (termino.trim()) {
+  const t = `%${termino.trim()}%`;
+  query = query.or(
+    `title.ilike.${t},descripcion.ilike.${t},ingredientes::text.ilike.${t},tags::text.ilike.${t}`
+  );
+}
+
+query = query.order('created_at', { ascending: false });
+
+const { data: recetasEncontradas, error } = await query;
 if (error) {
-  console.error('Error al obtener recetas:', error);
+  console.error('Error al buscar recetas:', error);
 }
+const recetas = recetasEncontradas || [];
+const totalRecetas = recetas.length;
 
-const recetas = todasLasRecetas || [];
-
-// Función de búsqueda
-function buscarRecetas(recetas: Receta[], termino: string, categoria: string) {
-  let resultados = [...recetas];
-
-  // Filtrar por categoría
-  if (categoria && categoria in categorias) {
-    resultados = resultados.filter(
-      (receta) => receta.categoria === categoria
-    );
-  }
-
-  // Filtrar por término de búsqueda
-  if (termino.trim()) {
-    const terminoLower = termino.toLowerCase().trim();
-    resultados = resultados.filter((receta) => {
-      // Buscar en título
-      if (receta.title.toLowerCase().includes(terminoLower)) return true;
-
-      // Buscar en descripción
-      if (
-        receta.descripcion &&
-        receta.descripcion.toLowerCase().includes(terminoLower)
-      )
-        return true;
-
-      // Buscar en ingredientes
-      if (
-        receta.ingredientes &&
-        receta.ingredientes.some((ing: string) =>
-          ing.toLowerCase().includes(terminoLower)
-        )
-      )
-        return true;
-
-      // Buscar en pasos
-      if (
-        receta.pasos &&
-        receta.pasos.some((paso: string) =>
-          paso.toLowerCase().includes(terminoLower)
-        )
-      )
-        return true;
-
-      // Buscar en tags
-      if (
-        receta.tags &&
-        receta.tags.some((tag: string) =>
-          tag.toLowerCase().includes(terminoLower)
-        )
-      )
-        return true;
-
-      return false;
-    });
-  }
-
-  return resultados;
-}
-
-// Realizar búsqueda
-const recetasEncontradas = buscarRecetas(recetas, termino, categoria);
-const totalRecetas = recetasEncontradas.length;
+// Para los contadores de categoría, cargamos todos los counts
+const { data: todasParaConteo } = await supabase
+  .from('recetas')
+  .select('categoria');
+const allRecetas = todasParaConteo || [];
 ---
 
 <Layout
@@ -155,7 +107,7 @@ const totalRecetas = recetasEncontradas.length;
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {
           Object.entries(categorias).map(([key, nombre]) => {
-            const recetasEnCategoria = recetas.filter(
+            const recetasEnCategoria = allRecetas.filter(
               (r) => r.categoria === key
             );
             const iconos: { [key: string]: string } = {
