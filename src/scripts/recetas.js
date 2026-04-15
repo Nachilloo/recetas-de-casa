@@ -24,7 +24,7 @@ const categorias = {
   'pescados-mariscos': 'Pescados y Mariscos',
   'pan-masas': 'Pan y Masas',
   'postres': 'Postres',
-  'tapas-aperitivos': 'Tapas y Aperitivos'
+  'ensaladas-tapas': 'Ensaladas y Tapas'
 };
 
 // Función para leer parámetros URL del navegador

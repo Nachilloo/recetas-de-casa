@@ -51,7 +51,7 @@ export default function RecipeForm({ receta, isEdit = false }: RecipeFormProps) 
     'pescados-mariscos': 'Pescados y Mariscos',
     'pan-masas': 'Pan y Masas',
     'postres': 'Postres',
-    'tapas-aperitivos': 'Tapas y Aperitivos'
+    'ensaladas-tapas': 'Ensaladas y Tapas'
   };
 
   const dificultades = {
