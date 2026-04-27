@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface RecetaMenu {
   slug: string;
@@ -8,6 +8,8 @@ interface RecetaMenu {
   tiempo: string;
   imagen: string;
   razon: string;
+  ingredientes?: string[];
+  porciones?: number;
 }
 
 interface DiaMenu {
@@ -23,6 +25,17 @@ interface MenuData {
   aprovechamiento?: string;
 }
 
+interface MenuGuardado {
+  id: string;
+  fecha: string;
+  nombre: string;
+  menuData: MenuData;
+  personas: number;
+  tipo: string;
+}
+
+const STORAGE_KEY = 'menus_guardados';
+
 const CATEGORIAS: Record<string, string> = {
   'arroz-paellas': '🥘',
   'tortillas-pasta': '🥚',
@@ -32,6 +45,7 @@ const CATEGORIAS: Record<string, string> = {
   'pan-masas': '🥖',
   'postres': '🍰',
   'ensaladas-tapas': '🥗',
+  'air-fryer': '🍗',
 };
 
 const DIFICULTAD_COLORES: Record<string, string> = {
@@ -51,9 +65,48 @@ export default function MenuSemanal() {
   const [personas, setPersonas] = useState(4);
   const [dificultadMax, setDificultadMax] = useState('dificil');
   const [aprovechamiento, setAprovechamiento] = useState(false);
+  const [temporada, setTemporada] = useState(false);
   const [loading, setLoading] = useState(false);
   const [menuData, setMenuData] = useState<MenuData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [menusGuardados, setMenusGuardados] = useState<MenuGuardado[]>([]);
+  const [guardadoOk, setGuardadoOk] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      setMenusGuardados(saved);
+    } catch { /* ignore */ }
+  }, []);
+
+  const guardarMenu = () => {
+    if (!menuData) return;
+    const nuevo: MenuGuardado = {
+      id: Date.now().toString(),
+      fecha: new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
+      nombre: `Menú ${tipo === 'ambos' ? 'completo' : tipo} · ${personas} pers.`,
+      menuData,
+      personas,
+      tipo,
+    };
+    const updated = [nuevo, ...menusGuardados].slice(0, 10);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setMenusGuardados(updated);
+    setGuardadoOk(true);
+    setTimeout(() => setGuardadoOk(false), 2000);
+  };
+
+  const cargarMenu = (saved: MenuGuardado) => {
+    setMenuData(saved.menuData);
+    setPersonas(saved.personas);
+    setTipo(saved.tipo as 'comida' | 'cena' | 'ambos');
+  };
+
+  const borrarMenu = (id: string) => {
+    const updated = menusGuardados.filter(m => m.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setMenusGuardados(updated);
+  };
 
   const generarMenu = async () => {
     setLoading(true);
@@ -69,6 +122,7 @@ export default function MenuSemanal() {
           personas,
           dificultadMax,
           aprovechamiento,
+          temporada,
         }),
       });
 
@@ -208,24 +262,44 @@ export default function MenuSemanal() {
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Opciones
             </label>
-            <button
-              onClick={() => setAprovechamiento(!aprovechamiento)}
-              className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all text-left ${
-                aprovechamiento
-                  ? 'bg-green-100 border-2 border-green-400 text-green-800'
-                  : 'bg-gray-50 border-2 border-gray-200 text-gray-600 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-xl">♻️</span>
-                <div>
-                  <div className="font-semibold">Menú aprovechamiento</div>
-                  <div className="text-xs opacity-75">
-                    Reutiliza ingredientes entre días
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setAprovechamiento(!aprovechamiento)}
+                className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all text-left ${
+                  aprovechamiento
+                    ? 'bg-green-100 border-2 border-green-400 text-green-800'
+                    : 'bg-gray-50 border-2 border-gray-200 text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">♻️</span>
+                  <div>
+                    <div className="font-semibold">Aprovechamiento</div>
+                    <div className="text-xs opacity-75">
+                      Reutiliza ingredientes entre días
+                    </div>
                   </div>
                 </div>
-              </div>
-            </button>
+              </button>
+              <button
+                onClick={() => setTemporada(!temporada)}
+                className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all text-left ${
+                  temporada
+                    ? 'bg-amber-100 border-2 border-amber-400 text-amber-800'
+                    : 'bg-gray-50 border-2 border-gray-200 text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🍅</span>
+                  <div>
+                    <div className="font-semibold">Productos de temporada</div>
+                    <div className="text-xs opacity-75">
+                      Prioriza ingredientes de temporada en España
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -301,6 +375,12 @@ export default function MenuSemanal() {
               🔄 Regenerar menú
             </button>
             <button
+              onClick={guardarMenu}
+              className="px-6 py-3 bg-white border-2 border-green-300 text-green-600 rounded-full font-semibold hover:bg-green-50 transition-all"
+            >
+              {guardadoOk ? '✅ Guardado' : '💾 Guardar menú'}
+            </button>
+            <button
               onClick={exportarCalendar}
               className="px-6 py-3 bg-white border-2 border-blue-300 text-blue-600 rounded-full font-semibold hover:bg-blue-50 transition-all"
             >
@@ -349,8 +429,415 @@ export default function MenuSemanal() {
               </div>
             ))}
           </div>
+
+          {/* Lista de la compra */}
+          <ListaCompra menuData={menuData} personas={personas} />
         </div>
       )}
+
+      {/* Menús guardados */}
+      {menusGuardados.length > 0 && (
+        <div className="mt-8 bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <span>📋</span> Menús guardados
+            <span className="text-sm font-normal text-gray-400">({menusGuardados.length})</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {menusGuardados.map(saved => (
+              <div
+                key={saved.id}
+                className="border border-gray-200 rounded-xl p-4 hover:border-orange-300 hover:shadow-md transition-all group"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{saved.nombre}</p>
+                    <p className="text-xs text-gray-400">{saved.fecha}</p>
+                  </div>
+                  <button
+                    onClick={() => borrarMenu(saved.id)}
+                    className="text-gray-300 hover:text-red-500 transition-colors p-1"
+                    title="Eliminar"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+                    </svg>
+                  </button>
+                </div>
+                <div className="text-xs text-gray-500 mb-3">
+                  {saved.menuData.menu.length} días ·{' '}
+                  {saved.menuData.menu.filter(d => d.comida).length + saved.menuData.menu.filter(d => d.cena).length} recetas
+                </div>
+                <button
+                  onClick={() => cargarMenu(saved)}
+                  className="w-full px-3 py-2 bg-orange-50 text-orange-600 rounded-lg text-sm font-medium hover:bg-orange-100 transition-all"
+                >
+                  Cargar este menú
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Etiquetas de categorías para display
+const CAT_DISPLAY: Record<string, { label: string; emoji: string }> = {
+  carnes: { label: 'Carnes y aves', emoji: '🥩' },
+  pescados: { label: 'Pescados y mariscos', emoji: '🐟' },
+  verduras: { label: 'Verduras y hortalizas', emoji: '🥬' },
+  frutas: { label: 'Frutas', emoji: '🍎' },
+  lacteos: { label: 'Lácteos y huevos', emoji: '🧀' },
+  cereales: { label: 'Cereales y legumbres', emoji: '🌾' },
+  especias: { label: 'Especias y condimentos', emoji: '🧂' },
+  aceites: { label: 'Aceites y vinagres', emoji: '🫒' },
+  otros: { label: 'Otros', emoji: '🛒' },
+};
+
+// Diccionario canónico: [keyword, nombre canónico, categoría]
+// Los compuestos (multi-palabra) DEBEN ir antes que sus componentes simples
+const CANONICAL: [string, string, string][] = [
+  // Compuestos (primero, para que coincidan antes que los simples)
+  ['tomates cherry', 'Tomates cherry', 'verduras'], ['tomate cherry', 'Tomates cherry', 'verduras'],
+  ['salsa de tomate', 'Salsa de tomate', 'otros'], ['pimiento morrón', 'Pimiento morrón', 'verduras'],
+  ['judías verdes', 'Judías verdes', 'verduras'], ['judía verde', 'Judías verdes', 'verduras'],
+  ['aceite de oliva', 'Aceite de oliva', 'aceites'], ['aceite de girasol', 'Aceite de girasol', 'aceites'],
+  ['pan rallado', 'Pan rallado', 'cereales'], ['pan tostado', 'Pan', 'cereales'],
+  ['pimienta negra', 'Pimienta', 'especias'], ['pimienta blanca', 'Pimienta', 'especias'],
+  ['nuez moscada', 'Nuez moscada', 'especias'],
+  ['leche evaporada', 'Leche evaporada', 'lacteos'], ['leche condensada', 'Leche condensada', 'lacteos'],
+  ['queso gruyer', 'Queso gruyère', 'lacteos'], ['queso gruyère', 'Queso gruyère', 'lacteos'],
+  ['queso parmesano', 'Queso parmesano', 'lacteos'], ['queso manchego', 'Queso manchego', 'lacteos'],
+  ['queso fresco', 'Queso fresco', 'lacteos'], ['queso rallado', 'Queso rallado', 'lacteos'],
+  ['vino blanco', 'Vino blanco', 'otros'], ['vino tinto', 'Vino tinto', 'otros'],
+  ['pasta de sésamo', 'Tahini', 'otros'], ['tortilla de maíz', 'Tortillas de maíz', 'cereales'],
+  ['maíz dulce', 'Maíz dulce', 'verduras'],
+  // Verduras
+  ['acelga', 'Acelgas', 'verduras'], ['aguacate', 'Aguacate', 'verduras'],
+  ['ajo', 'Ajo', 'verduras'], ['alcachofa', 'Alcachofas', 'verduras'],
+  ['alcaparra', 'Alcaparras', 'verduras'], ['apio', 'Apio', 'verduras'],
+  ['berenjena', 'Berenjena', 'verduras'], ['boniato', 'Boniato', 'verduras'],
+  ['brócoli', 'Brócoli', 'verduras'], ['brocoli', 'Brócoli', 'verduras'],
+  ['calabacín', 'Calabacín', 'verduras'], ['calabaza', 'Calabaza', 'verduras'],
+  ['cebolleta', 'Cebolleta', 'verduras'], ['cebollino', 'Cebollino', 'verduras'],
+  ['cebolla', 'Cebolla', 'verduras'],
+  ['champiñón', 'Champiñones', 'verduras'], ['champiñon', 'Champiñones', 'verduras'],
+  ['coliflor', 'Coliflor', 'verduras'], ['endibia', 'Endibia', 'verduras'],
+  ['espárrago', 'Espárragos', 'verduras'], ['espinaca', 'Espinacas', 'verduras'],
+  ['guisante', 'Guisantes', 'verduras'], ['haba', 'Habas', 'verduras'],
+  ['hinojo', 'Hinojo', 'verduras'], ['jengibre', 'Jengibre', 'verduras'],
+  ['lechuga', 'Lechuga', 'verduras'], ['nabo', 'Nabo', 'verduras'],
+  ['patata', 'Patata', 'verduras'], ['papa', 'Patata', 'verduras'],
+  ['pepinillo', 'Pepinillos', 'verduras'], ['pepino', 'Pepino', 'verduras'],
+  ['pimiento', 'Pimiento', 'verduras'], ['puerro', 'Puerro', 'verduras'],
+  ['rabanito', 'Rabanitos', 'verduras'], ['rábano', 'Rabanitos', 'verduras'],
+  ['remolacha', 'Remolacha', 'verduras'],
+  ['rúcula', 'Rúcula', 'verduras'], ['rucula', 'Rúcula', 'verduras'],
+  ['seta', 'Setas', 'verduras'], ['tomate', 'Tomate', 'verduras'],
+  ['zanahoria', 'Zanahoria', 'verduras'], ['aceituna', 'Aceitunas', 'verduras'],
+  ['germinado', 'Germinados', 'verduras'], ['maíz', 'Maíz', 'verduras'],
+  ['col', 'Col', 'verduras'], ['repollo', 'Repollo', 'verduras'],
+  // Carnes
+  ['bacon', 'Bacon', 'carnes'], ['cerdo', 'Cerdo', 'carnes'],
+  ['chorizo', 'Chorizo', 'carnes'], ['codorniz', 'Codorniz', 'carnes'],
+  ['conejo', 'Conejo', 'carnes'], ['cordero', 'Cordero', 'carnes'],
+  ['costilla', 'Costillas', 'carnes'], ['foie', 'Foie', 'carnes'],
+  ['jamón', 'Jamón', 'carnes'], ['jamon', 'Jamón', 'carnes'],
+  ['lomo', 'Lomo', 'carnes'], ['morcilla', 'Morcilla', 'carnes'],
+  ['muslo', 'Pollo (muslos)', 'carnes'], ['oreja', 'Oreja', 'carnes'],
+  ['panceta', 'Panceta', 'carnes'], ['pavo', 'Pavo', 'carnes'],
+  ['pechuga', 'Pollo (pechuga)', 'carnes'], ['pollo', 'Pollo', 'carnes'],
+  ['salchicha', 'Salchichas', 'carnes'], ['solomillo', 'Solomillo', 'carnes'],
+  ['ternera', 'Ternera', 'carnes'], ['carne', 'Carne', 'carnes'],
+  ['hueso', 'Hueso', 'carnes'],
+  // Pescados y mariscos
+  ['almeja', 'Almejas', 'pescados'], ['anchoa', 'Anchoas', 'pescados'],
+  ['atún', 'Atún', 'pescados'], ['atun', 'Atún', 'pescados'],
+  ['bacalao', 'Bacalao', 'pescados'], ['boquerón', 'Boquerones', 'pescados'],
+  ['calamar', 'Calamares', 'pescados'], ['dorada', 'Dorada', 'pescados'],
+  ['gamba', 'Gambas', 'pescados'], ['langostino', 'Langostinos', 'pescados'],
+  ['lubina', 'Lubina', 'pescados'],
+  ['mejillón', 'Mejillones', 'pescados'], ['mejillon', 'Mejillones', 'pescados'],
+  ['merluza', 'Merluza', 'pescados'], ['pescadilla', 'Pescadilla', 'pescados'],
+  ['pulpo', 'Pulpo', 'pescados'], ['rape', 'Rape', 'pescados'],
+  ['salmón', 'Salmón', 'pescados'], ['salmon', 'Salmón', 'pescados'],
+  ['sardina', 'Sardinas', 'pescados'], ['sepia', 'Sepia', 'pescados'],
+  ['trucha', 'Trucha', 'pescados'], ['pescado', 'Pescado', 'pescados'],
+  ['marisco', 'Marisco', 'pescados'],
+  // Frutas
+  ['limón', 'Limón', 'frutas'], ['limon', 'Limón', 'frutas'],
+  ['naranja', 'Naranja', 'frutas'], ['manzana', 'Manzana', 'frutas'],
+  ['fresa', 'Fresas', 'frutas'], ['kiwi', 'Kiwi', 'frutas'],
+  ['plátano', 'Plátano', 'frutas'], ['pera', 'Pera', 'frutas'],
+  ['uva', 'Uvas', 'frutas'], ['melocotón', 'Melocotón', 'frutas'],
+  ['frambuesa', 'Frambuesas', 'frutas'], ['arándano', 'Arándanos', 'frutas'],
+  ['piña', 'Piña', 'frutas'], ['mango', 'Mango', 'frutas'],
+  // Lácteos y huevos
+  ['huevo', 'Huevos', 'lacteos'], ['leche', 'Leche', 'lacteos'],
+  ['nata', 'Nata', 'lacteos'], ['queso', 'Queso', 'lacteos'],
+  ['yogur', 'Yogur', 'lacteos'], ['mantequilla', 'Mantequilla', 'lacteos'],
+  ['requesón', 'Requesón', 'lacteos'], ['mozzarella', 'Mozzarella', 'lacteos'],
+  // Cereales y legumbres
+  ['arroz', 'Arroz', 'cereales'], ['cuscús', 'Cuscús', 'cereales'], ['cuscus', 'Cuscús', 'cereales'],
+  ['espagueti', 'Espaguetis', 'cereales'], ['fideo', 'Fideos', 'cereales'],
+  ['garbanzo', 'Garbanzos', 'cereales'], ['harina', 'Harina', 'cereales'],
+  ['lenteja', 'Lentejas', 'cereales'], ['levadura', 'Levadura', 'cereales'],
+  ['macarrón', 'Macarrones', 'cereales'],
+  ['pan', 'Pan', 'cereales'], ['pasta', 'Pasta', 'cereales'],
+  ['pochas', 'Pochas', 'cereales'], ['polenta', 'Polenta', 'cereales'],
+  ['alubia', 'Alubias', 'cereales'], ['judión', 'Judiones', 'cereales'],
+  ['avena', 'Avena', 'cereales'], ['sémola', 'Sémola', 'cereales'],
+  // Especias y condimentos
+  ['albahaca', 'Albahaca', 'especias'], ['azafrán', 'Azafrán', 'especias'],
+  ['canela', 'Canela', 'especias'], ['cilantro', 'Cilantro', 'especias'],
+  ['comino', 'Comino', 'especias'], ['curry', 'Curry', 'especias'],
+  ['guindilla', 'Guindilla', 'especias'], ['laurel', 'Laurel', 'especias'],
+  ['orégano', 'Orégano', 'especias'], ['perejil', 'Perejil', 'especias'],
+  ['pimentón', 'Pimentón', 'especias'], ['pimenton', 'Pimentón', 'especias'],
+  ['pimienta', 'Pimienta', 'especias'], ['romero', 'Romero', 'especias'],
+  ['sal', 'Sal', 'especias'], ['tomillo', 'Tomillo', 'especias'],
+  ['clavo', 'Clavo', 'especias'],
+  // Aceites y vinagres
+  ['aceite', 'Aceite', 'aceites'], ['vinagre', 'Vinagre', 'aceites'],
+  // Frutos secos y otros
+  ['almendra', 'Almendras', 'otros'], ['avellana', 'Avellanas', 'otros'],
+  ['nuez', 'Nueces', 'otros'], ['nuec', 'Nueces', 'otros'],
+  ['piñón', 'Piñones', 'otros'], ['piñon', 'Piñones', 'otros'],
+  ['sésamo', 'Sésamo', 'otros'], ['sesamo', 'Sésamo', 'otros'],
+  ['tahini', 'Tahini', 'otros'], ['cacahuete', 'Cacahuetes', 'otros'],
+  ['cerveza', 'Cerveza', 'otros'], ['caldo', 'Caldo', 'otros'],
+  ['miel', 'Miel', 'otros'], ['azúcar', 'Azúcar', 'otros'], ['azucar', 'Azúcar', 'otros'],
+  ['chocolate', 'Chocolate', 'otros'], ['txakoli', 'Txakoli', 'otros'],
+];
+
+// Ingredientes que no son de compra (pantry/agua/hielo)
+const EXCLUIR_LISTA = ['agua', 'hielo', 'cubito'];
+
+// Comprueba si un keyword coincide respetando fronteras de palabra (evita "sal" en "salmón")
+function matchKeyword(text: string, keyword: string): boolean {
+  const lower = text.toLowerCase();
+  const kw = keyword.toLowerCase();
+  if (kw.includes(' ')) return lower.includes(kw);
+  const idx = lower.indexOf(kw);
+  if (idx === -1) return false;
+  if (idx > 0 && /[a-záéíóúüñ]/i.test(lower[idx - 1])) return false;
+  const endIdx = idx + kw.length;
+  if (endIdx < lower.length) {
+    const rest = lower.slice(endIdx);
+    if (/^[a-záéíóúüñ]/.test(rest) && !/^(s|es|as)([^a-záéíóúüñ]|$)/.test(rest)) return false;
+  }
+  return true;
+}
+
+// Resuelve un ingrediente raw → { nombre canónico, categoría }
+function resolverIngrediente(raw: string): { nombre: string; cat: string } | null {
+  const lower = raw.toLowerCase();
+  if (EXCLUIR_LISTA.some(e => matchKeyword(lower, e))) return null;
+  for (const [kw, canonical, cat] of CANONICAL) {
+    if (matchKeyword(raw, kw)) return { nombre: canonical, cat };
+  }
+  // Fallback: limpiar básicamente sin destruir palabras
+  let cleaned = raw.trim()
+    .replace(/^[\d½¼¾⅓⅔,./-]+\s*/, '')
+    .replace(/^(kg|g|gr|ml|cl|dl|l|cucharadas?|cucharaditas?|vasos?|tazas?|lonchas?|filetes?|rebanadas?|ramas?|dientes?|hojas?)\s+(de\s+)?/i, '')
+    .replace(/^de\s+/i, '')
+    .replace(/\s+(al gusto|opcional|para .*)$/i, '')
+    .replace(/\s*\(.*?\)/g, '')
+    .trim();
+  if (!cleaned) return null;
+  const nombre = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  return { nombre, cat: 'otros' };
+}
+
+interface IngredienteAgrupado {
+  nombre: string;
+  menciones: string[];
+}
+
+function agruparIngredientes(todosRaw: string[]): Record<string, IngredienteAgrupado[]> {
+  const mapa = new Map<string, { nombre: string; menciones: string[]; cat: string }>();
+
+  for (const raw of todosRaw) {
+    if (!raw || raw.trim().length < 2) continue;
+    const resolved = resolverIngrediente(raw);
+    if (!resolved) continue;
+
+    const key = `${resolved.cat}::${resolved.nombre}`;
+    if (mapa.has(key)) {
+      mapa.get(key)!.menciones.push(raw.trim());
+    } else {
+      mapa.set(key, { nombre: resolved.nombre, menciones: [raw.trim()], cat: resolved.cat });
+    }
+  }
+
+  const resultado: Record<string, IngredienteAgrupado[]> = {};
+  for (const item of mapa.values()) {
+    if (!resultado[item.cat]) resultado[item.cat] = [];
+    resultado[item.cat].push({ nombre: item.nombre, menciones: item.menciones });
+  }
+  for (const cat of Object.keys(resultado)) {
+    resultado[cat].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  }
+  return resultado;
+}
+
+function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: number }) {
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [expandido, setExpandido] = useState<Set<string>>(new Set());
+  const [copiadoOk, setCopiadoOk] = useState(false);
+
+  const todosIngredientes: string[] = [];
+  for (const dia of menuData.menu) {
+    if (dia.comida?.ingredientes) todosIngredientes.push(...dia.comida.ingredientes);
+    if (dia.cena?.ingredientes) todosIngredientes.push(...dia.cena.ingredientes);
+  }
+
+  const agrupados = agruparIngredientes(todosIngredientes);
+  const ordenCategorias = ['carnes', 'pescados', 'verduras', 'frutas', 'lacteos', 'cereales', 'especias', 'aceites', 'otros'];
+  const categoriasConItems = ordenCategorias.filter(cat => agrupados[cat]?.length);
+
+  const totalItems = Object.values(agrupados).reduce((sum, arr) => sum + arr.length, 0);
+  const totalChecked = checked.size;
+
+  const toggle = (nombre: string) => {
+    setChecked(prev => {
+      const next = new Set(prev);
+      if (next.has(nombre)) next.delete(nombre);
+      else next.add(nombre);
+      return next;
+    });
+  };
+
+  const toggleDetalle = (nombre: string) => {
+    setExpandido(prev => {
+      const next = new Set(prev);
+      if (next.has(nombre)) next.delete(nombre);
+      else next.add(nombre);
+      return next;
+    });
+  };
+
+  const copiarLista = () => {
+    const lines: string[] = [`🛒 Lista de la compra (${personas} personas)\n`];
+    for (const cat of categoriasConItems) {
+      const info = CAT_DISPLAY[cat];
+      lines.push(`\n${info.emoji} ${info.label}:`);
+      for (const item of agrupados[cat]) {
+        const mark = checked.has(item.nombre) ? '✅' : '⬜';
+        const detalle = item.menciones.length > 1 ? ` (×${item.menciones.length} recetas)` : '';
+        lines.push(`  ${mark} ${item.nombre}${detalle}`);
+        if (item.menciones.length > 1) {
+          for (const m of item.menciones) lines.push(`      · ${m}`);
+        }
+      }
+    }
+    navigator.clipboard.writeText(lines.join('\n'));
+    setCopiadoOk(true);
+    setTimeout(() => setCopiadoOk(false), 2000);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <h3 className="text-white font-bold text-xl flex items-center gap-2">
+          🛒 Lista de la Compra
+        </h3>
+        <div className="flex items-center gap-3">
+          <span className="text-white/80 text-sm">
+            {totalChecked}/{totalItems}
+          </span>
+          <button
+            onClick={copiarLista}
+            className="px-4 py-1.5 bg-white/20 hover:bg-white/30 text-white text-sm rounded-full font-medium transition-all"
+          >
+            {copiadoOk ? '✅ Copiada' : '📋 Copiar lista'}
+          </button>
+        </div>
+      </div>
+
+      {totalChecked > 0 && (
+        <div className="bg-blue-50 px-6 py-2">
+          <div className="w-full bg-blue-200 rounded-full h-2">
+            <div
+              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(totalChecked / totalItems) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {categoriasConItems.map(cat => {
+          const info = CAT_DISPLAY[cat];
+          const items = agrupados[cat];
+          return (
+            <div key={cat}>
+              <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
+                <span className="text-lg">{info.emoji}</span>
+                {info.label}
+                <span className="text-gray-400 font-normal">({items.length})</span>
+              </h4>
+              <ul className="space-y-1">
+                {items.map(item => (
+                  <li key={item.nombre}>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => toggle(item.nombre)}
+                        className={`flex-1 text-left flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all ${
+                          checked.has(item.nombre)
+                            ? 'bg-green-50 text-gray-400 line-through'
+                            : 'hover:bg-gray-50 text-gray-700'
+                        }`}
+                      >
+                        <span className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                          checked.has(item.nombre)
+                            ? 'bg-green-500 border-green-500 text-white'
+                            : 'border-gray-300'
+                        }`}>
+                          {checked.has(item.nombre) && (
+                            <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+                              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </span>
+                        <span>{item.nombre}</span>
+                        {item.menciones.length > 1 && (
+                          <span className="text-xs text-orange-500 font-medium ml-auto whitespace-nowrap">
+                            en {item.menciones.length} recetas
+                          </span>
+                        )}
+                      </button>
+                      {item.menciones.length > 1 && (
+                        <button
+                          onClick={() => toggleDetalle(item.nombre)}
+                          className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                          title="Ver cantidades"
+                        >
+                          <svg className={`w-4 h-4 transition-transform ${expandido.has(item.nombre) ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    {expandido.has(item.nombre) && item.menciones.length > 1 && (
+                      <ul className="ml-10 mt-1 mb-2 space-y-0.5">
+                        {item.menciones.map((m, i) => (
+                          <li key={i} className="text-xs text-gray-400 italic">• {m}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 text-center text-sm text-gray-500">
+        Ingredientes de <strong>{menuData.menu.length} días</strong> para <strong>{personas} personas</strong> · Pulsa ▾ para ver cantidades por receta
+      </div>
     </div>
   );
 }
@@ -366,6 +853,19 @@ function RecetaCard({
   emoji: string;
   getImageSrc: (img: string) => string;
 }) {
+  if (!receta.title) {
+    return (
+      <div>
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          {emoji} {momento}
+        </div>
+        <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-400 italic">
+          Receta no disponible
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
@@ -373,6 +873,8 @@ function RecetaCard({
       </div>
       <a
         href={`/recetas/${receta.slug}/`}
+        target="_blank"
+        rel="noopener noreferrer"
         className="group block"
       >
         {receta.imagen && (

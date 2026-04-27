@@ -9,7 +9,8 @@ export const categorias = {
   'pescados-mariscos': 'Pescados y Mariscos',
   'pan-masas': 'Pan y Masas',
   'postres': 'Postres',
-  'ensaladas-tapas': 'Ensaladas y Tapas'
+  'ensaladas-tapas': 'Ensaladas y Tapas',
+  'air-fryer': 'Air Fryer'
 } as const;
 
 // Definir los niveles de dificultad

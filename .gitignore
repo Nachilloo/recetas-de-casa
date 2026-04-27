@@ -1,5 +1,6 @@
 # build output
 dist/
+.vercel/
 
 # generated types
 .astro/
@@ -26,9 +27,12 @@ pnpm-debug.log*
 # Script de importación de recetas
 *.pdf
 recetas_reescritas.json
+recetas_airfryer_reescritas.json
 errores.json
+errores_airfryer.json
 venv/
 fix_imagenes.py
 borrar_recetas.py
 seed_recetas.py
+seed_recetas_airfryer.py
 requirements.txt
