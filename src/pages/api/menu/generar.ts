@@ -1,11 +1,13 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import OpenAI from 'openai';
+import { getCategoriasList, recetaTieneCategoria } from '../../../lib/recetaCategorias';
 
 interface RecetaRow {
   slug: string;
   title: string;
   categoria: string;
+  categorias?: string[] | null;
   dificultad: string;
   tiempo: string;
   porciones: number;
@@ -49,14 +51,8 @@ export const POST: APIRoute = async ({ request }) => {
     while (true) {
       let query = supabase
         .from('recetas')
-        .select('slug, title, categoria, dificultad, tiempo, porciones, ingredientes, imagen')
+        .select('slug, title, categoria, categorias, dificultad, tiempo, porciones, ingredientes, imagen')
         .in('dificultad', dificultades);
-
-      if (excluirCategorias.length > 0) {
-        for (const cat of excluirCategorias) {
-          query = query.neq('categoria', cat);
-        }
-      }
 
       const { data, error: fetchError } = await query.range(offset, offset + PAGE - 1);
       if (fetchError) {
@@ -71,6 +67,12 @@ export const POST: APIRoute = async ({ request }) => {
       offset += PAGE;
     }
 
+    if (excluirCategorias.length > 0) {
+      recetas = recetas.filter(
+        (r) => !excluirCategorias.some((ex) => recetaTieneCategoria(r, ex))
+      );
+    }
+
     if (recetas.length === 0) {
       return new Response(JSON.stringify({ error: 'No se encontraron recetas' }), {
         status: 500,
@@ -80,7 +82,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Preparar lista compacta de recetas para el prompt
     const listaRecetas = recetas.map(r =>
-      `- "${r.title}" [${r.categoria}] [${r.dificultad}] [${r.tiempo}] [slug:${r.slug}] [ingredientes: ${r.ingredientes.slice(0, 5).join(', ')}]`
+      `- "${r.title}" [${getCategoriasList(r).join('+')}] [${r.dificultad}] [${r.tiempo}] [slug:${r.slug}] [ingredientes: ${r.ingredientes.slice(0, 5).join(', ')}]`
     ).join('\n');
 
     const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -171,12 +173,6 @@ IMPORTANTE: Usa EXACTAMENTE los slugs de la lista. Los días son: ${dias.join(',
 
     // Enriquecer y validar el menú con los datos completos de cada receta
     const recetasMap = new Map<string, RecetaRow>(recetas.map(r => [r.slug, r]));
-    const recetasPorCategoria = new Map<string, RecetaRow[]>();
-    for (const r of recetas) {
-      const list = recetasPorCategoria.get(r.categoria) || [];
-      list.push(r);
-      recetasPorCategoria.set(r.categoria, list);
-    }
 
     const slugsUsados = new Set<string>();
 

@@ -4,19 +4,23 @@ import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import RecipeSchema from '../../components/RecipeSchema.astro';
 import { categorias, dificultades } from '../../content/config';
+import { getCategoriasList, primaryCategoria } from '../../lib/recetaCategorias';
+import type { Receta } from '../../lib/types';
 
 const { id } = Astro.params;
 
 // Obtener la receta por slug
-const { data: receta, error } = await supabase
+const { data: recetaRaw, error } = await supabase
   .from('recetas')
   .select('*')
   .eq('slug', id)
   .single();
 
-if (error || !receta) {
+if (error || !recetaRaw) {
   return Astro.redirect('/404');
 }
+
+const receta = recetaRaw as Receta;
 
 const { 
   title, 
@@ -31,9 +35,12 @@ const {
   calorias, 
   tags,
   historia,
-  categoria,
   dificultad
 } = receta;
+
+const listaCategorias = getCategoriasList(receta);
+const categoria = primaryCategoria(listaCategorias);
+const categoriaNombre = categorias[categoria as keyof typeof categorias] || categoria;
 
 // Obtener emoji de la categoría
 const getCategoriaEmoji = (cat: string) => {
@@ -51,7 +58,6 @@ const getCategoriaEmoji = (cat: string) => {
   return iconos[cat] || '🍽️';
 };
 
-const categoriaNombre = categorias[categoria as keyof typeof categorias] || categoria;
 const dificultadNombre = dificultades[dificultad as keyof typeof dificultades] || dificultad;
 
 // Soporta rutas locales (/images/...) y URLs externas (https://...)
@@ -76,6 +82,7 @@ const getImageSrc = (img: string) =>
     ingredientes={ingredientes}
     pasos={pasos}
     categoria={categoria}
+    categoriasClaves={listaCategorias}
     dificultad={dificultad}
     calorias={calorias}
     tags={tags}
@@ -106,10 +113,13 @@ const getImageSrc = (img: string) =>
           <!-- Información principal -->
           <div class="order-1 lg:order-2 space-y-6">
             <div>
-              <div class="flex items-center gap-2 mb-3">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
-                  {categoriaNombre}
-                </span>
+              <div class="flex flex-wrap items-center gap-2 mb-3">
+                {listaCategorias.map((catKey: string) => (
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
+                    <span>{getCategoriaEmoji(catKey)}</span>
+                    <span>{categorias[catKey as keyof typeof categorias] || catKey}</span>
+                  </span>
+                ))}
                 <span class={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                   dificultad === 'facil' ? 'bg-green-100 text-green-800' :
                   dificultad === 'media' ? 'bg-yellow-100 text-yellow-800' :

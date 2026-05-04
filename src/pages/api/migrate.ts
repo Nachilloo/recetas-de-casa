@@ -50,6 +50,7 @@ export const POST: APIRoute = async ({ request }) => {
         title: receta.data.title,
         slug: slug,
         categoria: receta.data.categoria,
+        categorias: [receta.data.categoria],
         dificultad: receta.data.dificultad,
         tiempo: receta.data.tiempo,
         porciones: receta.data.porciones,

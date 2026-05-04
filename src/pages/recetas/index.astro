@@ -5,6 +5,7 @@ import Header from '../../components/Header.astro';
 import RecetaCard from '../../components/RecetaCard.astro';
 import { supabase } from '../../lib/supabase';
 import { categorias } from '../../content/config';
+import { getCategoriasList } from '../../lib/recetaCategorias';
 
 // Obtener TODAS las recetas desde Supabase (paginando para superar el límite de 1000)
 let recetas: any[] = [];
@@ -92,8 +93,11 @@ while (true) {
     recetaItems.forEach(item => {
       let mostrar = true;
 
-      if (categoriaActiva && item.dataset.categoria !== categoriaActiva) {
-        mostrar = false;
+      if (categoriaActiva) {
+        const cats = item.dataset.categorias
+          ? item.dataset.categorias.split(',').filter(Boolean)
+          : (item.dataset.categoria ? [item.dataset.categoria] : []);
+        if (!cats.includes(categoriaActiva)) mostrar = false;
       }
 
       if (busquedaActiva) {
@@ -287,6 +291,7 @@ while (true) {
           const descripcion = (receta.descripcion || '').toLowerCase();
           return (
             <div class="receta-item"
+                data-categorias={getCategoriasList(receta).join(',')}
                 data-categoria={receta.categoria}
                 data-titulo={receta.title.toLowerCase()}
                 data-descripcion={descripcion}

@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { createServerSupabaseClient, supabaseAdmin } from '../../../lib/supabase';
+import { normalizeRecetaCategorias } from '../../../lib/recetaCategorias';
 import { z } from 'zod';
 
 // Schema de validación para actualizar recetas (todos los campos opcionales excepto los críticos)
@@ -7,6 +8,7 @@ const recetaUpdateSchema = z.object({
   title: z.string().min(1).optional(),
   slug: z.string().min(1).optional(),
   categoria: z.string().optional(),
+  categorias: z.array(z.string()).optional(),
   dificultad: z.string().optional(),
   tiempo: z.string().optional(),
   porciones: z.number().min(1).optional(),
@@ -57,6 +59,31 @@ export const PUT: APIRoute = async ({ request, params }) => {
     const body = await request.json();
     const validatedData = recetaUpdateSchema.parse(body);
 
+    const patch: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(validatedData)) {
+      if (value === undefined || key === 'categorias' || key === 'categoria') continue;
+      patch[key] = value;
+    }
+
+    if (validatedData.categorias !== undefined || validatedData.categoria !== undefined) {
+      try {
+        const n = normalizeRecetaCategorias({
+          categorias: validatedData.categorias,
+          categoria: validatedData.categoria,
+        });
+        patch.categorias = n.categorias;
+        patch.categoria = n.categoria;
+      } catch (e) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: e instanceof Error ? e.message : 'Categorías inválidas',
+        }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     if (!supabaseAdmin) {
       return new Response(JSON.stringify({ 
         success: false, 
@@ -90,7 +117,7 @@ export const PUT: APIRoute = async ({ request, params }) => {
     // Actualizar receta
     const { data, error } = await supabaseAdmin
       .from('recetas')
-      .update(validatedData)
+      .update(patch)
       .eq('id', id)
       .select()
       .single();

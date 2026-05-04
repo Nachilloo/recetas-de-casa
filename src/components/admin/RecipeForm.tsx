@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Receta } from '../../lib/types';
+import { categorias as categoriasOpciones } from '../../lib/categoriasRecetas';
 
 interface RecipeFormProps {
   receta?: Receta;
@@ -13,7 +14,11 @@ export default function RecipeForm({ receta, isEdit = false }: RecipeFormProps) 
   // Estados del formulario
   const [title, setTitle] = useState(receta?.title || '');
   const [slug, setSlug] = useState(receta?.slug || '');
-  const [categoria, setCategoria] = useState(receta?.categoria || 'postres');
+  const [categoriasSel, setCategoriasSel] = useState<string[]>(() => {
+    if (receta?.categorias && receta.categorias.length > 0) return [...receta.categorias];
+    if (receta?.categoria) return [receta.categoria];
+    return ['postres'];
+  });
   const [dificultad, setDificultad] = useState(receta?.dificultad || 'facil');
   const [tiempo, setTiempo] = useState(receta?.tiempo || '');
   const [porciones, setPorciones] = useState(receta?.porciones || 4);
@@ -43,18 +48,6 @@ export default function RecipeForm({ receta, isEdit = false }: RecipeFormProps) 
     }
   }, [title, isEdit]);
 
-  const categorias = {
-    'arroz-paellas': 'Arroces y Paellas',
-    'tortillas-pasta': 'Tortillas y Pasta',
-    'sopas-cremas': 'Sopas y Cremas',
-    'carnes-aves': 'Carnes y Aves',
-    'pescados-mariscos': 'Pescados y Mariscos',
-    'pan-masas': 'Pan y Masas',
-    'postres': 'Postres',
-    'ensaladas-tapas': 'Ensaladas y Tapas',
-    'air-fryer': 'Air Fryer'
-  };
-
   const dificultades = {
     'facil': 'Fácil',
     'media': 'Media',
@@ -76,6 +69,16 @@ export default function RecipeForm({ receta, isEdit = false }: RecipeFormProps) 
     setter(newArr);
   };
 
+  function toggleCategoria(key: string) {
+    setCategoriasSel((prev) => {
+      if (prev.includes(key)) {
+        if (prev.length <= 1) return prev;
+        return prev.filter((k) => k !== key);
+      }
+      return [...prev, key];
+    });
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -88,10 +91,16 @@ export default function RecipeForm({ receta, isEdit = false }: RecipeFormProps) 
       return;
     }
 
+    if (categoriasSel.length === 0) {
+      setError('Selecciona al menos una categoría');
+      setLoading(false);
+      return;
+    }
+
     const recetaData = {
       title,
       slug,
-      categoria,
+      categorias: categoriasSel,
       dificultad,
       tiempo,
       porciones: Number(porciones),
@@ -176,20 +185,23 @@ export default function RecipeForm({ receta, isEdit = false }: RecipeFormProps) 
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Categoría *
-            </label>
-            <select
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-            >
-              {Object.entries(categorias).map(([key, nombre]) => (
-                <option key={key} value={key}>{nombre}</option>
+          <div className="md:col-span-2">
+            <span className="block text-sm font-medium text-gray-700 mb-2">
+              Categorías * <span className="font-normal text-gray-500">(puedes marcar varias, p. ej. Postres + Air Fryer)</span>
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+              {Object.entries(categoriasOpciones).map(([key, nombre]) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-800">
+                  <input
+                    type="checkbox"
+                    checked={categoriasSel.includes(key)}
+                    onChange={() => toggleCategoria(key)}
+                    className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                  />
+                  {nombre}
+                </label>
               ))}
-            </select>
+            </div>
           </div>
 
           <div>

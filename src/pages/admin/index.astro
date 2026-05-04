@@ -1,6 +1,8 @@
 ---
 import { createServerSupabaseClient } from '../../lib/supabase';
 import Layout from '../../layouts/Layout.astro';
+import { getCategoriasList } from '../../lib/recetaCategorias';
+import { categorias } from '../../content/config';
 
 const supabase = createServerSupabaseClient(Astro.request);
 
@@ -145,8 +147,12 @@ const recetasDestacadas = todasLasRecetas.filter(r => r.destacada).length;
                       </div>
                     </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="text-sm text-gray-900">{receta.categoria}</span>
+                  <td class="px-6 py-4">
+                    <span class="text-sm text-gray-900">
+                      {getCategoriasList(receta)
+                        .map((k) => categorias[k as keyof typeof categorias] || k)
+                        .join(' · ')}
+                    </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

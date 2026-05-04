@@ -5,6 +5,7 @@ import Header from "../components/Header.astro";
 import SearchBox from "../components/SearchBox.astro";
 import SearchResults from "../components/SearchResults.astro";
 import { categorias } from "../content/config";
+import { recetaTieneCategoria } from "../lib/recetaCategorias";
 
 const url = Astro.url;
 const termino = url.searchParams.get("q") || "";
@@ -20,7 +21,8 @@ async function fetchAll(table: string, select: string, filters?: { categoria?: s
     let q = supabase.from(table).select(select).order('created_at', { ascending: false });
 
     if (filters?.categoria) {
-      q = q.eq('categoria', filters.categoria);
+      const k = filters.categoria;
+      q = q.or(`categoria.eq.${k},categorias.cs.{${k}}`);
     }
     if (filters?.termino) {
       const t = `%${filters.termino}%`;
@@ -77,7 +79,7 @@ if (termino.trim()) {
 const totalRecetas = recetas.length;
 
 // Contadores de categoría (todos los registros, sin filtro de búsqueda)
-const allRecetas = await fetchAll('recetas', 'categoria, created_at');
+const allRecetas = await fetchAll('recetas', 'categoria, categorias, created_at');
 ---
 
 <Layout
@@ -147,8 +149,8 @@ const allRecetas = await fetchAll('recetas', 'categoria, created_at');
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {
           Object.entries(categorias).map(([key, nombre]) => {
-            const recetasEnCategoria = allRecetas.filter(
-              (r) => r.categoria === key
+            const recetasEnCategoria = allRecetas.filter((r) =>
+              recetaTieneCategoria(r, key)
             );
             const iconos: { [key: string]: string } = {
               "arroz-paellas": "🥘",

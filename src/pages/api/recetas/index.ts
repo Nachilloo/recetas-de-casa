@@ -1,12 +1,15 @@
 import type { APIRoute } from 'astro';
 import { createServerSupabaseClient, supabaseAdmin } from '../../../lib/supabase';
+import { normalizeRecetaCategorias } from '../../../lib/recetaCategorias';
+import type { RecetaInsert } from '../../../lib/types';
 import { z } from 'zod';
 
 // Schema de validación para recetas
 const recetaSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
   slug: z.string().min(1, 'El slug es obligatorio'),
-  categoria: z.string(),
+  categoria: z.string().optional(),
+  categorias: z.array(z.string()).optional(),
   dificultad: z.string(),
   tiempo: z.string().min(1, 'El tiempo es obligatorio'),
   porciones: z.number().min(1, 'Debe haber al menos 1 porción'),
@@ -20,7 +23,10 @@ const recetaSchema = z.object({
   tags: z.array(z.string()).optional().nullable(),
   calorias: z.number().optional().nullable(),
   destacada: z.boolean().default(false)
-});
+}).refine(
+  (d) => (d.categorias != null && d.categorias.length > 0) || !!d.categoria,
+  { message: 'Indica categoría(s): categorias o categoria' }
+);
 
 /**
  * POST /api/recetas - Crear nueva receta
@@ -44,6 +50,41 @@ export const POST: APIRoute = async ({ request }) => {
     // Obtener y validar datos
     const body = await request.json();
     const validatedData = recetaSchema.parse(body);
+    let normalizedCat: { categorias: string[]; categoria: string };
+    try {
+      normalizedCat = normalizeRecetaCategorias({
+        categorias: validatedData.categorias,
+        categoria: validatedData.categoria,
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: e instanceof Error ? e.message : 'Categorías inválidas',
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const row: RecetaInsert = {
+      title: validatedData.title,
+      slug: validatedData.slug,
+      categoria: normalizedCat.categoria,
+      categorias: normalizedCat.categorias,
+      dificultad: validatedData.dificultad,
+      tiempo: validatedData.tiempo,
+      porciones: validatedData.porciones,
+      imagen: validatedData.imagen,
+      imagen_alt: validatedData.imagen_alt ?? null,
+      descripcion: validatedData.descripcion ?? null,
+      historia: validatedData.historia ?? null,
+      ingredientes: validatedData.ingredientes,
+      pasos: validatedData.pasos,
+      tips: validatedData.tips ?? null,
+      tags: validatedData.tags ?? null,
+      calorias: validatedData.calorias ?? null,
+      destacada: validatedData.destacada,
+    };
 
     if (!supabaseAdmin) {
       return new Response(JSON.stringify({ 
@@ -72,10 +113,10 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // Insertar receta
     const { data, error } = await supabaseAdmin
       .from('recetas')
-      .insert([validatedData])
+      // @ts-expect-error — fila alineada con RecetaInsert; el cliente a veces infiere insert como never
+      .insert([row])
       .select()
       .single();
 

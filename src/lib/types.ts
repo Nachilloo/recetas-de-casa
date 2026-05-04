@@ -16,6 +16,7 @@ export interface Database {
           title: string
           slug: string
           categoria: string
+          categorias: string[] | null
           dificultad: string
           tiempo: string
           porciones: number
@@ -37,6 +38,7 @@ export interface Database {
           title: string
           slug: string
           categoria: string
+          categorias?: string[] | null
           dificultad: string
           tiempo: string
           porciones: number
@@ -58,6 +60,7 @@ export interface Database {
           title?: string
           slug?: string
           categoria?: string
+          categorias?: string[] | null
           dificultad?: string
           tiempo?: string
           porciones?: number

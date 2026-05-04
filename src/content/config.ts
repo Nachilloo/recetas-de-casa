@@ -1,24 +1,7 @@
 import { defineCollection, z } from 'astro:content';
+import { categorias, dificultades } from '../lib/categoriasRecetas';
 
-// Definir las categorías como enum para type safety
-export const categorias = {
-  'arroz-paellas': 'Arroces y Paellas',
-  'tortillas-pasta': 'Tortillas y Pasta', 
-  'sopas-cremas': 'Sopas y Cremas',
-  'carnes-aves': 'Carnes y Aves',
-  'pescados-mariscos': 'Pescados y Mariscos',
-  'pan-masas': 'Pan y Masas',
-  'postres': 'Postres',
-  'ensaladas-tapas': 'Ensaladas y Tapas',
-  'air-fryer': 'Air Fryer'
-} as const;
-
-// Definir los niveles de dificultad
-export const dificultades = {
-  'facil': 'Fácil',
-  'media': 'Media', 
-  'dificil': 'Difícil'
-} as const;
+export { categorias, dificultades };
 
 // Schema para las recetas
 const recetasSchema = z.object({

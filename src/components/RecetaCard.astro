@@ -1,5 +1,7 @@
 ---
 import type { Receta } from '../lib/types';
+import { categorias as categoriasNombres } from '../content/config';
+import { getCategoriasList, primaryCategoria } from '../lib/recetaCategorias';
 
 export interface Props {
   receta: Receta | any; // any para mantener compatibilidad con formato antiguo si es necesario
@@ -20,11 +22,16 @@ const {
   imagenAlt,
   tiempo, 
   porciones, 
-  categoria, 
   dificultad, 
   tags, 
   calorias 
 } = data;
+
+const cats = getCategoriasList(data);
+const catPrimary = primaryCategoria(cats);
+const nombreCategoria =
+  categoriasNombres[catPrimary as keyof typeof categoriasNombres] || catPrimary;
+const tambienAirFryer = cats.includes('air-fryer') && catPrimary !== 'air-fryer';
 
 // Normalizar campo imagen_alt (Supabase) vs imagenAlt (Content Collections)
 const alt = imagen_alt || imagenAlt;
@@ -68,12 +75,19 @@ const getImageSrc = (img: string) =>
         )}
       </div>
       
-      <div class="flex items-center justify-between">
-        <span class="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
-          {categoria.charAt(0).toUpperCase() + categoria.slice(1).replace('-', ' ')}
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <span class="flex flex-wrap items-center gap-1">
+          <span class="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
+            {nombreCategoria}
+          </span>
+          {tambienAirFryer && (
+            <span class="inline-block bg-amber-50 text-amber-900 text-xs px-2 py-1 rounded-full border border-amber-200">
+              Air Fryer
+            </span>
+          )}
         </span>
         
-        <span class={`text-xs px-2 py-1 rounded-full ${
+        <span class={`text-xs px-2 py-1 rounded-full shrink-0 ${
           dificultad === 'facil' ? 'bg-green-100 text-green-800' :
           dificultad === 'media' ? 'bg-yellow-100 text-yellow-800' :
           'bg-red-100 text-red-800'
