@@ -1,7 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import RecetaCard from "../components/RecetaCard.astro";
-import SearchBox from "../components/SearchBox.astro";
+import HeroSearch from "../components/HeroSearch.astro";
 import { supabase } from "../lib/supabase";
 import { categorias } from "../content/config";
 import { recetaTieneCategoria } from "../lib/recetaCategorias";
@@ -75,20 +75,12 @@ const baseUrl = import.meta.env.BASE_URL;
           Compendio de las Recetas de Casa que no se pueden perder
         </p>
         
-        <!-- Buscador -->
-        <div class="mb-8">
-          <SearchBox 
-            placeholder="Buscar recetas por ingrediente, nombre..."
-            size="lg"
-            className="max-w-md mx-auto"
-          />
+        <!-- Búsqueda y tiempo -->
+        <div class="mb-10 max-w-xl mx-auto text-center">
+          <HeroSearch placeholder="Buscar por ingrediente, nombre..." />
         </div>
-        
-        <!-- CTA Principal -->
+
         <div class="space-y-4">
-          <a href={`${baseUrl}recetas/`} class="inline-block bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-8 py-4 rounded-full font-bold text-lg border-2 border-white/30 hover:border-white/50 transition-all duration-300 hover:-translate-y-1">
-            📚 Ver Todas las Recetas
-          </a>
           <div class="flex items-center justify-center space-x-4 text-white/90 text-sm">
             <span>{totalRecetas} recetas</span>
             <span>•</span>

@@ -21,12 +21,12 @@ function formatICSDate(date: Date): string {
 }
 
 function createUID(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}@recetas-de-casa`;
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}@recetasdecasa.es`;
 }
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { menu, siteUrl = 'https://recetas-de-casa.vercel.app' } = await request.json() as {
+    const { menu, siteUrl = 'https://recetasdecasa.es' } = await request.json() as {
       menu: MenuDia[];
       siteUrl?: string;
     };

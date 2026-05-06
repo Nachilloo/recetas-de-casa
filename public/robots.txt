@@ -8,6 +8,6 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-# Sitemap location (update domain as needed)
-Sitemap: https://recetas-de-casa.vercel.app/sitemap-index.xml
+# Sitemap (dinámico: incluye todas las recetas desde la base de datos)
+Sitemap: https://recetasdecasa.es/sitemap.xml
 

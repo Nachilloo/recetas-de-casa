@@ -4,13 +4,24 @@ export interface Props {
   size?: 'sm' | 'md' | 'lg';
   showButton?: boolean;
   className?: string;
+  /** Si es false, se puede enviar búsqueda vacía solo con otros query params */
+  requireQuery?: boolean;
+  /** Valor inicial para ?q= (p. ej. en /buscar) */
+  initialQuery?: string;
+  /** Conservar ?tiempo= y ?categoria= al reenviar el formulario desde /buscar */
+  tiempoFiltro?: string;
+  categoriaFiltro?: string;
 }
 
 const { 
   placeholder = "Buscar recetas...", 
   size = 'md',
   showButton = true,
-  className = ""
+  className = "",
+  requireQuery = true,
+  initialQuery = '',
+  tiempoFiltro = '',
+  categoriaFiltro = '',
 } = Astro.props;
 
 const sizeClasses = {
@@ -30,13 +41,18 @@ const baseUrl = import.meta.env.BASE_URL;
 
 <div class={`search-box ${className}`}>
   <form action={`${baseUrl}buscar`} method="get" class="relative">
+    {categoriaFiltro ? <input type="hidden" name="categoria" value={categoriaFiltro} /> : null}
+    {tiempoFiltro && tiempoFiltro !== 'all' ? (
+      <input type="hidden" name="tiempo" value={tiempoFiltro} />
+    ) : null}
     <div class="flex bg-white rounded-full shadow-lg border border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 transition-all duration-200">
       <input 
         type="search" 
         name="q" 
+        value={initialQuery}
         placeholder={placeholder}
         class={`flex-1 ${sizeClasses[size]} rounded-l-full border-0 focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-500`}
-        required
+        required={requireQuery ? true : undefined}
       />
       {showButton && (
         <button 

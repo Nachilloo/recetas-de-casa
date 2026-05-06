@@ -4,12 +4,21 @@ import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import SearchBox from "../components/SearchBox.astro";
 import SearchResults from "../components/SearchResults.astro";
+import TiempoQuickLinks from "../components/TiempoQuickLinks.astro";
 import { categorias } from "../content/config";
 import { recetaTieneCategoria } from "../lib/recetaCategorias";
+import {
+  normalizaFiltroTiempo,
+  recetaCoincideFiltroTiempo,
+} from "../lib/recetaTiempo";
+import { buscarHref, TEXTO_FILTRO_TIEMPO } from "../lib/buscarQuery";
 
 const url = Astro.url;
 const termino = url.searchParams.get("q") || "";
 const categoria = url.searchParams.get("categoria") || "";
+const tiempoFiltro = normalizaFiltroTiempo(url.searchParams.get("tiempo"));
+
+const tiempoLabel = TEXTO_FILTRO_TIEMPO;
 
 // Helper: carga todas las filas paginando (supera el límite de 1000 de Supabase)
 async function fetchAll(table: string, select: string, filters?: { categoria?: string; termino?: string }) {
@@ -76,18 +85,46 @@ if (termino.trim()) {
   }
 }
 
+if (tiempoFiltro !== "all") {
+  recetas = recetas.filter((r: { tiempo?: string }) =>
+    recetaCoincideFiltroTiempo(r.tiempo, tiempoFiltro)
+  );
+}
+
 const totalRecetas = recetas.length;
 
-// Contadores de categoría (todos los registros, sin filtro de búsqueda)
+// Contadores de categoría (todos los registros, sin filtro de búsqueda ni tiempo — consistencia con el grid de categorías)
 const allRecetas = await fetchAll('recetas', 'categoria, categorias, created_at');
+
+const resultadoPartes = [
+  termino.trim() ? `"${termino.trim()}"` : null,
+  categoria && categoria in categorias
+    ? categorias[categoria as keyof typeof categorias]
+    : null,
+  tiempoFiltro !== "all" ? tiempoLabel[tiempoFiltro] : null,
+].filter(Boolean) as string[];
+
+const metaTitle =
+  resultadoPartes.length > 0
+    ? `Buscar: ${resultadoPartes.join(" · ")}`
+    : termino.trim()
+      ? `Buscar: ${termino.trim()}`
+      : "Buscar Recetas";
+
+const metaDescription =
+  resultadoPartes.length > 0
+    ? `Recetas caseras (${resultadoPartes.join(" · ")}). Filtra por nombre, ingrediente o tiempo.`
+    : termino.trim()
+      ? `Resultados para "${termino.trim()}". Recetas españolas por ingredientes y categorías.`
+      : "Busca recetas caseras españolas por texto, categoría y tiempo de cocina.";
+
+const categoriaValida =
+  categoria && categoria in categorias ? categoria : "";
 ---
 
 <Layout
-  title={termino ? `Buscar: ${termino}` : "Buscar Recetas"}
-  description={termino 
-    ? `Resultados de búsqueda para "${termino}". Encuentra recetas caseras españolas con ${termino}.`
-    : "Busca entre nuestra colección de recetas caseras españolas. Filtra por ingredientes, categorías o nombres."
-  }
+  title={metaTitle}
+  description={metaDescription}
   noindex={true}
 >
   <Header title="Buscar Recetas" />
@@ -99,7 +136,18 @@ const allRecetas = await fetchAll('recetas', 'categoria, categorias, created_at'
         <SearchBox
           placeholder="Buscar por ingrediente, nombre, descripción..."
           size="lg"
-          className="mb-6"
+          className="mb-4"
+          requireQuery={false}
+          initialQuery={termino}
+          tiempoFiltro={tiempoFiltro}
+          categoriaFiltro={categoriaValida}
+        />
+        <p class="text-center text-sm text-gray-600 mb-2">Tiempo de cocina</p>
+        <TiempoQuickLinks
+          termino={termino}
+          categoria={categoriaValida}
+          tiempoActivo={tiempoFiltro}
+          className="mb-8"
         />
 
         <!-- Búsquedas rápidas -->
@@ -107,31 +155,31 @@ const allRecetas = await fetchAll('recetas', 'categoria, categorias, created_at'
           <p class="text-sm text-gray-600 mb-3">Búsquedas populares:</p>
           <div class="flex flex-wrap justify-center gap-2">
             <a
-              href="/buscar?q=chocolate"
+              href={buscarHref({ termino: 'chocolate', tiempo: tiempoFiltro })}
               class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
             >
               chocolate
             </a>
             <a
-              href="/buscar?q=pasta"
+              href={buscarHref({ termino: 'pasta', tiempo: tiempoFiltro })}
               class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
             >
               pasta
             </a>
             <a
-              href="/buscar?q=crema"
+              href={buscarHref({ termino: 'crema', tiempo: tiempoFiltro })}
               class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
             >
               crema
             </a>
             <a
-              href="/buscar?q=huevos"
+              href={buscarHref({ termino: 'huevos', tiempo: tiempoFiltro })}
               class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
             >
               huevos
             </a>
             <a
-              href="/buscar?q=arroz"
+              href={buscarHref({ termino: 'arroz', tiempo: tiempoFiltro })}
               class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
             >
               arroz
@@ -166,8 +214,8 @@ const allRecetas = await fetchAll('recetas', 'categoria, categorias, created_at'
 
             const isActive = categoria === key;
             const href = isActive
-              ? `/buscar${termino ? `?q=${encodeURIComponent(termino)}` : ""}`
-              : `/buscar?categoria=${key}${termino ? `&q=${encodeURIComponent(termino)}` : ""}`;
+              ? buscarHref({ termino, tiempo: tiempoFiltro })
+              : buscarHref({ termino, categoria: key, tiempo: tiempoFiltro });
             return (
               <a
                 href={href}
@@ -197,7 +245,8 @@ const allRecetas = await fetchAll('recetas', 'categoria, categorias, created_at'
     <SearchResults
       recetas={recetas}
       termino={termino}
-      categoria={categoria}
+      categoria={categoriaValida}
+      tiempoFiltro={tiempoFiltro}
       totalRecetas={totalRecetas}
     />
   </main>
