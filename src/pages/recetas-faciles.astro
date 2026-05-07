@@ -1,0 +1,62 @@
+---
+import SeoRecetasLanding from '../components/SeoRecetasLanding.astro';
+import { fetchRecetasLandingFaciles } from '../lib/fetchRecetasSeoLandings';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
+
+const recetas = await fetchRecetasLandingFaciles();
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const enlacesInternos = [
+  { href: `${baseUrl}cenas-rapidas/`, texto: 'Cenas rápidas para la noche' },
+  { href: `${baseUrl}recetas-con-pollo/`, texto: 'Recetas con pollo' },
+  { href: `${baseUrl}recetas-baratas/`, texto: 'Recetas baratas' },
+  { href: `${baseUrl}recetas/`, texto: 'Ver todas las recetas' },
+];
+
+const introParagraphs = [
+  'Las recetas fáciles son el salvavidas de quien cocina cada día en casa: platos que no exigen técnicas complicadas ni ingredientes imposibles de encontrar. En Recetas de Casa entendemos por “recetas sencillas” aquellas que puedes asumir entre semana, incluso cuando llegas cansado, sin renunciar al sabor de la cocina tradicional española. Son comidas rápidas de preparar, con pasos claros y resultados fiables: tortilla, guiso sencillo, pasta con lo que hay en la despensa o un horno que hace casi todo el trabajo.',
+  'Este tipo de elaboraciones encajan en muchas situaciones: cuando empiezas en los fogones y buscas platos fáciles que te den confianza; cuando la familia tiene poco tiempo pero quereís comer en casa; o cuando quieres comidas rápidas que no sean solo “algo del micro”. Las recetas sencillas también ayudan a aprovechar lo que ya tienes en la nevera, reducir desperdicio y variar sin estrés.',
+  'Las ventajas son claras: menos tiempo delante del fuego, menos mise en place y la satisfacción de servir algo casero sin recetas de chef imposibles. Los platos fáciles no deben ser aburridos: con buen sofrito, hierbas y un buen pan, el resultado puede ser tan reconfortante como uno mucho más laborioso. Aquí encontrarás una selección mínima de diez recetas fáciles (y muchas más en el archivo) pensadas para que copies la idea, adaptes ingredientes y repitas.',
+  'Si buscas recetas sencillas en Google, cenas sin complicarte o ideas de batch cooking ligero, esta página resume nuestra oferta alrededor de la keyword recetas fáciles: contenido útil, listado real de platos y enlaces a otras colecciones (cenas rápidas, pollo, recetas económicas) para que sigas navegando y Google entienda la arquitectura del sitio.',
+];
+
+const faqs = [
+  {
+    pregunta: '¿Qué recetas fáciles puedo hacer en 10 o 15 minutos?',
+    respuesta:
+      'Piensa en platos con poca manipulación: tortillas variadas, ensaladas completas, sandwiches calientes o pastas con salsa rápida. En nuestro listado destacamos recetas de dificultad fácil; muchas llevan tiempos cortos. Mira siempre el tiempo indicado en la ficha y el número de pasos.',
+  },
+  {
+    pregunta: '¿Qué ingredientes básicos conviene tener para recetas sencillas?',
+    respuesta:
+      'Con aceite de oliva, ajo, cebolla, huevos, conservas de tomate, arroz, pasta, patatas y un buen caldo cubres la mayoría de platos fáciles y comidas rápidas caseras. Añade especias y hierbas secas y podrás variar sin comprar productos caros.',
+  },
+  {
+    pregunta: '¿Son saludables las recetas fáciles?',
+    respuesta:
+      'Pueden serlo tanto como cualquier otra receta: depende del equilibrio de ingredientes y del ocasional capricho. Las elaboraciones sencillas te permiten controlar sal, grasas y azúcares mejor que la comida ultraprocesada. No sustituimos consejo médico ni dietas terapéuticas; si tienes necesidades específicas, consulta con un profesional.',
+  },
+  {
+    pregunta: '¿Cómo convierto un plato difícil en receta fácil?',
+    respuesta:
+      'Simplifica: menos componentes, técnicas únicas (horno o olla), ingredientes precortados o congelados de calidad y versiones más cortas (por ejemplo un guiso en menos horas usando presión). Nuestras fichas ya están pensadas para el hogar, no para restaurante.',
+  },
+];
+---
+
+<SeoRecetasLanding
+  metaTitle="Recetas fáciles y rápidas para el día a día | Recetas de Casa"
+  metaDescription="Recetas fáciles y sencillas, comidas rápidas y platos caseros sin complicaciones. Ideas con pocos pasos para cocinar cada día. Más de 10 recetas seleccionadas."
+  canonicalPath="recetas-faciles/"
+  h1="Recetas fáciles y rápidas para el día a día"
+  badgeText={`${recetas.length}+ recetas · cocina sencilla sin renunciar al sabor`}
+  introParagraphs={introParagraphs}
+  recetas={recetas}
+  faqs={faqs}
+  enlacesInternos={enlacesInternos}
+/>

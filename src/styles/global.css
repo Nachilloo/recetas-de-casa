@@ -1,13 +1,70 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700&display=swap");
+
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Tokens premium — Fase A (ver DESIGN.md) */
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+
+  --color-canvas: #fafaf8;
+  --color-surface: #ffffff;
+  --color-fg: #171717;
+  --color-fg-muted: #525252;
+  --color-fg-subtle: #737373;
+  --color-border: #e5e5e5;
+  --color-accent: #b45309;
+  --color-accent-hover: #92400e;
+  --color-accent-soft: #fff7ed;
+  --color-danger: #b91c1c;
+  --color-success: #15803d;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-fg);
+    background-color: var(--color-canvas);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
 /* Animación para errores */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-  20%, 40%, 60%, 80% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-4px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(4px);
+  }
 }
 
 .animate-shake {
   animation: shake 0.5s ease-in-out;
+}
+
+/* Menú móvil: foco accesible */
+.nav-toggle:focus-visible + label,
+.nav-mobile-panel:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }

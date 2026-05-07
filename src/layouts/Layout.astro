@@ -2,7 +2,8 @@
 // Importar el CSS global aquí
 import '../styles/global.css';
 import { ViewTransitions } from 'astro:transitions';
-import Analytics from '@vercel/analytics/astro'
+import Analytics from '@vercel/analytics/astro';
+import Footer from '../components/Footer.astro';
 
 export interface Props {
   title: string;
@@ -11,6 +12,8 @@ export interface Props {
   canonicalUrl?: string;
   type?: 'website' | 'article';
   noindex?: boolean;
+  /** Oculta pie (p. ej. zona /admin) */
+  hideFooter?: boolean;
 }
 
 const {
@@ -20,6 +23,7 @@ const {
   canonicalUrl,
   type = 'website',
   noindex = false,
+  hideFooter = false,
 } = Astro.props;
 
 const siteUrl = Astro.site?.toString().replace(/\/$/, '') || '';
@@ -63,7 +67,7 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
 		
 		<!-- Additional SEO -->
 		<meta name="author" content={siteName} />
-		<meta name="theme-color" content="#f97316" />
+		<meta name="theme-color" content="#b45309" />
 		
 		<ViewTransitions />
 		
@@ -71,16 +75,17 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
 		<slot name="head" />
 		<Analytics />
 	</head>
-	<body>
-		<slot />
+	<body class="min-h-screen bg-canvas font-sans text-fg antialiased flex flex-col">
+		<div class="flex-1 flex flex-col">
+			<slot />
+		</div>
+		{!hideFooter && <Footer />}
 	</body>
 </html>
 
 <style>
-	html,
-	body {
+	html {
 		margin: 0;
 		width: 100%;
-		height: 100%;
 	}
 </style>

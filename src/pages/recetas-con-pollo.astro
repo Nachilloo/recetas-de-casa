@@ -1,0 +1,62 @@
+---
+import SeoRecetasLanding from '../components/SeoRecetasLanding.astro';
+import { fetchRecetasLandingPollo } from '../lib/fetchRecetasSeoLandings';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
+
+const recetas = await fetchRecetasLandingPollo();
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const enlacesInternos = [
+  { href: `${baseUrl}recetas-faciles/`, texto: 'Recetas fáciles' },
+  { href: `${baseUrl}cenas-rapidas/`, texto: 'Cenas rápidas' },
+  { href: `${baseUrl}recetas-baratas/`, texto: 'Recetas baratas' },
+  { href: `${baseUrl}recetas/`, texto: 'Todas las recetas' },
+];
+
+const introParagraphs = [
+  'Las recetas con pollo suelen ser de las más buscadas en España: es un ingrediente versátil, asequible cuando toca la oferta y admitido en muchas dietas familiares. Hablar de pollo en cocina casera es hablar de pechugas a la plancha, guisos de muslo, alitas al horno, croquetas, sopas reconfortantes y arroces mixtos. Esta página agrupa contenido alrededor de la keyword recetas con pollo para que encuentres inspiración rápida.',
+  '¿Cuándo usar estas ideas? Cuando quieres una cena rápida con pollo entre semana, un segundo plato que guste a niños y mayores, o cuando compras bandeja familiar y necesitas variar más allá del clásico filete. Las elaboraciones con pollo admiten especias dulces, ahumadas o mediterráneas y combinan bien con arroz, pasta, ensalada o verdura asada.',
+  'Las ventajas son prácticas: tiempo de cocción razonable, buen rendimiento y posibilidad de preparar más cantidad y usar las sobras en ensalada, sandwich o relleno. Aquí seleccionamos platos donde el pollo es protagonista en título, ingredientes o ambos; si el listado se queda corto en algún momento, completamos con el resto del archivo como hicimos en otras landings SEO.',
+  'Si te interesan cenas ligeras o recetas fáciles, enlazamos a esas secciones al final: la red de enlaces internos refuerza la temática de la web y facilita que pases más tiempo explorando recetas útiles, no páginas vacías.',
+];
+
+const faqs = [
+  {
+    pregunta: '¿Cómo evitar que el pollo quede seco?',
+    respuesta:
+      'Usa muslo para estofados y horno si toleras más grasa intrínseca; con pechuga, controla tiempos, marinar con yogur o aceite y dejar reposar tras cocinar. Cortar al bién o abrir ligeramente el grosor ayuda a una cocción uniforme.',
+  },
+  {
+    pregunta: '¿Puedo sustituir el pollo en estas recetas?',
+    respuesta:
+      'A menudo sí: muchos guisos admiten conejo, pavo o tofu según tus hábitos. Ajusta tiempos y el punto de sal; los caldos y aromáticos pueden mantenerse igual para conservar el perfil de sabor.',
+  },
+  {
+    pregunta: '¿Qué trozos de pollo elegir para recetas rápidas?',
+    respuesta:
+      'Filetes finos o taquitos para sartén y wok; muslo deshuesado para más jugosidad; alas o jamoncitos para horno relajado. El recetario indica el contexto en cada ficha.',
+  },
+  {
+    pregunta: '¿Hay recetas con pollo baratas o de olla rápida?',
+    respuesta:
+      'Sí; además puedes cruzar con nuestra página de recetas baratas y cenas rápidas desde los enlaces al pie. Muchos guisos de pollo escalan bien y congelan bien.',
+  },
+];
+---
+
+<SeoRecetasLanding
+  metaTitle="Recetas con pollo fáciles y deliciosas | Recetas de Casa"
+  metaDescription="Recetas con pollo: pechuga, muslo, alitas y guisos caseros. Ideas para cenas rápidas y comidas familiares. Listado con fotos y enlaces a más colecciones."
+  canonicalPath="recetas-con-pollo/"
+  h1="Recetas con pollo para cada día de la semana"
+  badgeText={`${recetas.length}+ recetas · del horno a la cazuela`}
+  introParagraphs={introParagraphs}
+  recetas={recetas}
+  faqs={faqs}
+  enlacesInternos={enlacesInternos}
+/>

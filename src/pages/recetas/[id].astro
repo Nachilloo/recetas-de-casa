@@ -35,7 +35,8 @@ const {
   calorias, 
   tags,
   historia,
-  dificultad
+  dificultad,
+  guia_casera
 } = receta;
 
 const listaCategorias = getCategoriasList(receta);
@@ -89,7 +90,7 @@ const getImageSrc = (img: string) =>
     created_at={receta.created_at}
     updated_at={receta.updated_at}
   />
-  <Header title={title} />
+  <Header />
   
   <main class="bg-gray-50 min-h-screen">
     <!-- Hero Section con imagen -->
@@ -257,6 +258,21 @@ const getImageSrc = (img: string) =>
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          <!-- Guía casera (contexto, cuándo hacerla, beneficios) -->
+          {guia_casera && (
+            <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl shadow-lg p-8 border border-emerald-200">
+              <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <span class="text-2xl">🏠</span>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Guía del chef</h2>
+              </div>
+              <div class="text-gray-700 leading-relaxed text-lg space-y-4 whitespace-pre-line">
+                {guia_casera}
+              </div>
             </div>
           )}
 

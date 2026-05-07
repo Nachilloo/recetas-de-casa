@@ -1,0 +1,140 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from './Header.astro';
+import RecetaCard from './RecetaCard.astro';
+import type { Receta } from '../lib/types';
+
+export interface FaqItem {
+  pregunta: string;
+  respuesta: string;
+}
+
+export interface EnlaceInterno {
+  href: string;
+  texto: string;
+}
+
+export interface Props {
+  metaTitle: string;
+  metaDescription: string;
+  canonicalPath: string;
+  h1: string;
+  badgeText: string;
+  introParagraphs: string[];
+  recetas: Receta[];
+  faqs: FaqItem[];
+  enlacesInternos: EnlaceInterno[];
+}
+
+const {
+  metaTitle,
+  metaDescription,
+  canonicalPath,
+  h1,
+  badgeText,
+  introParagraphs,
+  recetas,
+  faqs,
+  enlacesInternos,
+} = Astro.props;
+
+const base = Astro.site?.href ?? 'http://localhost:4321/';
+const canonicalUrl = new URL(canonicalPath.replace(/^\//, ''), base).href;
+
+const faqLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.pregunta,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.respuesta,
+    },
+  })),
+};
+---
+
+<Layout title={metaTitle} description={metaDescription} canonicalUrl={canonicalUrl} type="website">
+  <script type="application/ld+json" slot="head" is:inline set:html={JSON.stringify(faqLd)} />
+
+  <Header />
+
+  <main class="bg-gray-50 min-h-screen">
+    <article class="max-w-4xl mx-auto px-6 pt-10 pb-6">
+      <p
+        class="text-sm font-semibold uppercase tracking-wide text-orange-600 mb-3"
+      >
+        Recetas de Casa
+      </p>
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 leading-tight mb-4">
+        {h1}
+      </h1>
+      <p
+        class="inline-flex flex-wrap items-center gap-2 text-orange-800 bg-orange-100 border border-orange-200 rounded-full px-4 py-2 text-sm font-semibold mb-8"
+      >
+        {badgeText}
+      </p>
+
+      <div
+        class="prose prose-lg prose-gray max-w-none prose-p:text-gray-700 prose-p:leading-relaxed prose-headings:text-gray-900"
+      >
+        {introParagraphs.map((p) => (
+          <p>{p}</p>
+        ))}
+      </div>
+    </article>
+
+    <section class="max-w-7xl mx-auto px-6 pb-12" aria-labelledby="recetas-listado">
+      <h2 id="recetas-listado" class="sr-only">
+        Recetas seleccionadas
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {recetas.map((receta) => (
+          <RecetaCard receta={receta} />
+        ))}
+      </div>
+    </section>
+
+    <section class="max-w-4xl mx-auto px-6 pb-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-4">Sigue explorando</h2>
+      <ul class="flex flex-wrap gap-3">
+        {enlacesInternos.map((e) => (
+          <li>
+            <a
+              href={e.href}
+              class="inline-block bg-white border border-gray-200 hover:border-orange-300 hover:bg-orange-50 text-gray-800 hover:text-orange-800 px-4 py-2 rounded-full text-sm font-medium transition-colors"
+            >
+              {e.texto}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="max-w-4xl mx-auto px-6 pb-16" aria-labelledby="faq-titulo">
+      <h2 id="faq-titulo" class="text-2xl font-bold text-gray-900 mb-6">
+        Preguntas frecuentes
+      </h2>
+      <div class="space-y-3">
+        {faqs.map((f) => (
+          <details class="group bg-white rounded-xl border border-gray-200 shadow-sm open:shadow-md">
+            <summary class="cursor-pointer list-none font-semibold text-gray-900 px-5 py-4 flex justify-between items-center gap-4">
+              <span>{f.pregunta}</span>
+              <span class="text-orange-500 shrink-0 group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+            <div class="px-5 pb-4 pt-0 text-gray-700 leading-relaxed border-t border-gray-100">
+              <p class="pt-3">{f.respuesta}</p>
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  summary::-webkit-details-marker {
+    display: none;
+  }
+</style>

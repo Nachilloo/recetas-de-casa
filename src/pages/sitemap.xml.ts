@@ -10,7 +10,17 @@ function escapeXml(text: string): string {
     .replace(/'/g, '&apos;');
 }
 
-const STATIC_PATHS = ['/', '/about/', '/buscar/', '/menu-semanal/', '/recetas/'] as const;
+const STATIC_PATHS = [
+  '/',
+  '/about/',
+  '/buscar/',
+  '/menu-semanal/',
+  '/recetas/',
+  '/recetas-faciles/',
+  '/cenas-rapidas/',
+  '/recetas-con-pollo/',
+  '/recetas-baratas/',
+] as const;
 
 export const GET: APIRoute = async () => {
   const site = import.meta.env.SITE;

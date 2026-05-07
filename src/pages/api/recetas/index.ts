@@ -20,6 +20,7 @@ const recetaSchema = z.object({
   ingredientes: z.array(z.string()).min(1, 'Debe haber al menos un ingrediente'),
   pasos: z.array(z.string()).min(1, 'Debe haber al menos un paso'),
   tips: z.array(z.string()).optional().nullable(),
+  guia_casera: z.string().optional().nullable(),
   tags: z.array(z.string()).optional().nullable(),
   calorias: z.number().optional().nullable(),
   destacada: z.boolean().default(false)
@@ -81,6 +82,7 @@ export const POST: APIRoute = async ({ request }) => {
       ingredientes: validatedData.ingredientes,
       pasos: validatedData.pasos,
       tips: validatedData.tips ?? null,
+      guia_casera: validatedData.guia_casera?.trim() || null,
       tags: validatedData.tags ?? null,
       calorias: validatedData.calorias ?? null,
       destacada: validatedData.destacada,

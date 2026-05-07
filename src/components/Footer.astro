@@ -1,0 +1,55 @@
+---
+const baseUrl = import.meta.env.BASE_URL;
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-auto border-t border-border bg-surface">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+    <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="lg:col-span-2">
+        <p class="font-display text-lg font-semibold text-fg">Recetas de Casa</p>
+        <p class="mt-2 max-w-md text-sm leading-relaxed text-fg-muted">
+          Recetas caseras y tradicionales, con enfoque en cocina española del día a día.
+        </p>
+      </div>
+      <div>
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Explorar</h2>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li>
+            <a href={`${baseUrl}recetas/`} class="text-fg-muted transition-colors hover:text-accent">Todas las recetas</a>
+          </li>
+          <li>
+            <a href={`${baseUrl}buscar`} class="text-fg-muted transition-colors hover:text-accent">Buscar</a>
+          </li>
+          <li>
+            <a href={`${baseUrl}menu-semanal`} class="text-fg-muted transition-colors hover:text-accent">Menú semanal</a>
+          </li>
+          <li>
+            <a href={`${baseUrl}about/`} class="text-fg-muted transition-colors hover:text-accent">Sobre nosotros</a>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Ideas</h2>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li>
+            <a href={`${baseUrl}recetas-faciles/`} class="text-fg-muted transition-colors hover:text-accent">Recetas fáciles</a>
+          </li>
+          <li>
+            <a href={`${baseUrl}cenas-rapidas/`} class="text-fg-muted transition-colors hover:text-accent">Cenas rápidas</a>
+          </li>
+          <li>
+            <a href={`${baseUrl}recetas-con-pollo/`} class="text-fg-muted transition-colors hover:text-accent">Con pollo</a>
+          </li>
+          <li>
+            <a href={`${baseUrl}recetas-baratas/`} class="text-fg-muted transition-colors hover:text-accent">Recetas baratas</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-10 flex flex-col gap-3 border-t border-border pt-8 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-xs text-fg-subtle">© {year} Recetas de Casa. Todos los derechos reservados.</p>
+      <p class="text-xs text-fg-subtle">Hecho con ingredientes de verdad.</p>
+    </div>
+  </div>
+</footer>

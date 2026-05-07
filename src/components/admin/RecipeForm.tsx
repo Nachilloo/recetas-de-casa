@@ -33,6 +33,7 @@ export default function RecipeForm({ receta, isEdit = false }: RecipeFormProps) 
   const [ingredientes, setIngredientes] = useState<string[]>(receta?.ingredientes || ['']);
   const [pasos, setPasos] = useState<string[]>(receta?.pasos || ['']);
   const [tips, setTips] = useState<string[]>(receta?.tips || ['']);
+  const [guiaCasera, setGuiaCasera] = useState(receta?.guia_casera || '');
   const [tags, setTags] = useState<string[]>(receta?.tags || ['']);
 
   // Auto-generar slug desde el título
@@ -111,6 +112,7 @@ export default function RecipeForm({ receta, isEdit = false }: RecipeFormProps) 
       ingredientes: ingredientes.filter(i => i.trim()),
       pasos: pasos.filter(p => p.trim()),
       tips: tips.filter(t => t.trim()),
+      guia_casera: guiaCasera.trim() || null,
       tags: tags.filter(t => t.trim()),
       calorias: calorias ? Number(calorias) : null,
       destacada
@@ -432,6 +434,20 @@ export default function RecipeForm({ receta, isEdit = false }: RecipeFormProps) 
           >
             + Agregar tip
           </button>
+        </div>
+
+        {/* Guía casera */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Guía del chef (contexto, cuándo hacerla, beneficios)
+          </label>
+          <textarea
+            value={guiaCasera}
+            onChange={(e) => setGuiaCasera(e.target.value)}
+            placeholder="Texto de ~150–200 palabras: contexto del plato, ocasión ideal y beneficios prácticos (sin promesas médicas)."
+            rows={10}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+          />
         </div>
 
         {/* Tags */}

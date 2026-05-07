@@ -1,0 +1,62 @@
+---
+import SeoRecetasLanding from '../components/SeoRecetasLanding.astro';
+import { fetchRecetasLandingBaratas } from '../lib/fetchRecetasSeoLandings';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
+
+const recetas = await fetchRecetasLandingBaratas();
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const enlacesInternos = [
+  { href: `${baseUrl}recetas-faciles/`, texto: 'Recetas fáciles' },
+  { href: `${baseUrl}cenas-rapidas/`, texto: 'Cenas rápidas' },
+  { href: `${baseUrl}recetas-con-pollo/`, texto: 'Recetas con pollo' },
+  { href: `${baseUrl}recetas/`, texto: 'Explorar todo el recetario' },
+];
+
+const introParagraphs = [
+  'Las recetas baratas responden a una necesidad muy real: comer bien sin disparar el ticket de la compra. No hablamos de recortar calidad, sino de elegir platos económicos basados en legumbres, arroz, pasta, patata, huevo, verduras de temporada y aprovechamiento inteligente. En la cocina española tradicional hay muchos ejemplos de comidas sencillas y baratas que han alimentado familias durante generaciones.',
+  '¿Para quién son estas ideas? Para quien planifica el presupuesto semanal, para estudiantes, familias numerosas y cualquiera que quiera reducir el gasto sin depender de comida ultraprocesada. Las recetas económicas también encajan cuando cocinas en lote y congelas, o cuando quieres preparar algo reconfortante después de un día largo sin recurrir a productos caros.',
+  'Las ventajas van más allá del precio: suelen ser preparaciones con ingredientes básicos que ya tienes o que encuentras en cualquier mercado; muchas admiten sustituciones (la verdura que esté más barata esa semana) y suelen ser platos fáciles de repetir. Incluimos en esta landing recetas baratas o muy asequibles según ingredientes habituales (legumbres, arroz, pasta, huevos, etc.) y, si hace falta, completamos el mínimo de listado con platos ligeros y populares del archivo.',
+  'Explora también nuestras otras entradas temáticas (recetas fáciles, cenas rápidas, pollo): los enlaces internos ayudan a descubrir más contenido y refuerzan la estructura temática del sitio para quien busca recetas baratas, comidas económicas o ideas de menú low-cost en castellano.',
+];
+
+const faqs = [
+  {
+    pregunta: '¿Qué recetas baratas llevan proteína?',
+    respuesta:
+      'El huevo, la legumbre combinada con cereales (lentejas con arroz, garbanzos con pan), el pollo cuando está de oferta o cortes económicos bien aprovechados son buenas fuentes. Revisa nuestra sección de recetas con pollo si quieres ideas más específicas.',
+  },
+  {
+    pregunta: '¿Cómo planificar comidas económicas toda la semana?',
+    respuesta:
+      'Compra legumbres secas, arroz y pasta en formato económico, usa verdura de temporada y planifica dos cocidos o guisos que puedas usar dos días (segundo plato o relleno). Congela porciones y aprovecha sobras transformándolas en arroz, tortillas o cremas.',
+  },
+  {
+    pregunta: '¿Las recetas baratas son menos nutritivas?',
+    respuesta:
+      'No necesariamente. Un plato de lentejas, una tortilla de patata con ensalada o un arroz con verduras puede ser equilibrado. Evitamos afirmaciones médicas: lo importante es variedad, hidratación y movimiento. Si tienes requerimientos dietéticos, consulta con un especialista.',
+  },
+  {
+    pregunta: '¿Dónde más encuentro ideas de platos económicos en el sitio?',
+    respuesta:
+      'Desde aquí enlazamos a recetas fáciles y cenas rápidas; la página general de recetas permite filtrar por categorías. Muchas sopas, arroces y pastas del archivo encajan en cocina económica.',
+  },
+];
+---
+
+<SeoRecetasLanding
+  metaTitle="Recetas baratas y económicas para comer bien | Recetas de Casa"
+  metaDescription="Recetas baratas, platos económicos y comidas sencillas con ingredientes asequibles. Ideas caseras para ahorrar sin renunciar al sabor. Selección de recetas."
+  canonicalPath="recetas-baratas/"
+  h1="Recetas baratas para toda la semana (sin renunciar al sabor)"
+  badgeText={`${recetas.length}+ ideas · ingredientes sencillos y precio contenido`}
+  introParagraphs={introParagraphs}
+  recetas={recetas}
+  faqs={faqs}
+  enlacesInternos={enlacesInternos}
+/>

@@ -1,0 +1,62 @@
+---
+import SeoRecetasLanding from '../components/SeoRecetasLanding.astro';
+import { fetchRecetasLandingCenasRapidas } from '../lib/fetchRecetasSeoLandings';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
+
+const recetas = await fetchRecetasLandingCenasRapidas();
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const enlacesInternos = [
+  { href: `${baseUrl}recetas-faciles/`, texto: 'Recetas fáciles' },
+  { href: `${baseUrl}recetas-con-pollo/`, texto: 'Recetas con pollo' },
+  { href: `${baseUrl}recetas-baratas/`, texto: 'Recetas baratas' },
+  { href: `${baseUrl}recetas/`, texto: 'Ver el recetario completo' },
+];
+
+const introParagraphs = [
+  'Las cenas rápidas son el santo grial de quien vuelve tarde del trabajo o gestiona cenas infantiles entre actividades. Cuando hablamos de recetas rápidas para la noche, pensamos en platos listos en treinta minutos o menos, con pocos fogones encendidos y poco fregadero al final. No hace falta renunciar a una comida casera: con buena organización, una cena ligera o reconfortante puede estar en la mesa sin ordenar comida para llevar.',
+  '¿Para quiénes son estas ideas? Para quien busca cenas rápidas en Google y encuentra solo listados vacíos o contenido genérico; para adultos que quieren comidas rápidas pero equilibradas; y para hogares donde la franja de cena es corta. Las cenas express admiten tantas culturas como tu despensa: pasta, tortilla, pescado al papillote, ensalada completa o revuelto de lo que hay en la nevera.',
+  'Las ventajas del enfoque “rápido y casero” son tiempo, control de ingredientes y la posibilidad de comidas ligeras si tu cuerpo lo pide por la noche. Seleccionamos recetas cuyo tiempo declarado encaja en ventana corta (hasta unos treinta minutos) y, si hace falta completar el mínimo del listado, ampliamos hasta cuarenta y cinco minutos con platos igualmente accesibles.',
+  'Explora después las rutas de recetas fáciles, pollo o ideas económicas: enlazar temas relacionados mejora la navegación y refuerza el posicionamiento de búsquedas como «cenas rápidas», «recetas express» o «qué cenar hoy», variantes naturales que usan muchas familias.',
+];
+
+const faqs = [
+  {
+    pregunta: '¿Qué cenas rápidas puedo hacer en menos de 20 minutos?',
+    respuesta:
+      'Revueltos, sándwiches calientes, ensaladas con proteína ya cocida, pastas con salsa de freír en pocos minutos o yogur con fruta y cereales si buscas algo muy ligero. Revisa el tiempo en cada receta: priorizamos hasta 30 minutos.',
+  },
+  {
+    pregunta: '¿Cómo adelanto para cenar más rápido?',
+    respuesta:
+      'Lava y corta verdura al volver de comprar, congela porciones de sofrito o caldo, cocina una proteína neutral el domingo y combínala dos noches distintas. Un microondas u horno pueden terminar el plato mientras preparas la ensalada.',
+  },
+  {
+    pregunta: '¿Las cenas rápidas pueden ser ligeras?',
+    respuesta:
+      'Sí: ensaladas templadas, pescado al vapor, cremas de verdura o tablas de queso curado con fruta son opciones. Ajusta a tu hambre y rutina; no damos consejos médicos personalizados.',
+  },
+  {
+    pregunta: '¿Dónde encuentro más ideas si no me encaja el listado?',
+    respuesta:
+      'Visita recetas fáciles y la búsqueda global del sitio; muchas elaboraciones admiten menores tiempos si acortas reposos o usas ingredientes precocinados de calidad.',
+  },
+];
+---
+
+<SeoRecetasLanding
+  metaTitle="Cenas rápidas en menos de 30 minutos | Recetas de Casa"
+  metaDescription="Cenas rápidas y recetas express para la noche: platos ligeros o reconfortantes en poco tiempo. Ideas caseras cuando llegas tarde. Listado de recetas."
+  canonicalPath="cenas-rapidas/"
+  h1="Cenas rápidas listas en menos de 30 minutos"
+  badgeText={`${recetas.length}+ ideas · para noches sin tiempo`}
+  introParagraphs={introParagraphs}
+  recetas={recetas}
+  faqs={faqs}
+  enlacesInternos={enlacesInternos}
+/>

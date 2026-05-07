@@ -27,6 +27,7 @@ export interface Database {
           ingredientes: string[]
           pasos: string[]
           tips: string[] | null
+          guia_casera: string | null
           tags: string[] | null
           calorias: number | null
           destacada: boolean
@@ -49,6 +50,7 @@ export interface Database {
           ingredientes: string[]
           pasos: string[]
           tips?: string[] | null
+          guia_casera?: string | null
           tags?: string[] | null
           calorias?: number | null
           destacada?: boolean
@@ -71,6 +73,7 @@ export interface Database {
           ingredientes?: string[]
           pasos?: string[]
           tips?: string[] | null
+          guia_casera?: string | null
           tags?: string[] | null
           calorias?: number | null
           destacada?: boolean

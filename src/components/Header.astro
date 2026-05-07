@@ -1,69 +1,208 @@
 ---
-export interface Props {
-  title: string;
-  showBackButton?: boolean;
-}
-
-const { title, showBackButton = true } = Astro.props;
 const baseUrl = import.meta.env.BASE_URL;
 ---
 
-<header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-  <div class="max-w-7xl mx-auto px-6 py-4">
-    <div class="flex items-center justify-between">
-      <!-- Botón volver / Logo -->
-      <div class="flex items-center space-x-4">
-        {showBackButton ? (
-          <a 
-            href={baseUrl} 
-            class="flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors duration-200 group"
-          >
-            <svg class="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-            <span class="font-medium">Volver a Inicio</span>
-          </a>
-        ) : (
-          <a href={baseUrl} class="flex items-center space-x-2 text-orange-500 hover:text-orange-600 transition-colors duration-200">
-            <span class="text-2xl">🍽️</span>
-            <span class="font-bold text-xl">Recetas de Casa</span>
-          </a>
-        )}
-      </div>
+<header
+  class="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-md supports-[backdrop-filter]:bg-surface/90"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <input
+      type="checkbox"
+      id="nav-toggle"
+      class="nav-toggle sr-only"
+      aria-controls="mobile-nav-panel"
+    />
 
-      <!-- Título de la página -->
-      <h1 class="text-2xl md:text-3xl font-bold text-gray-900 text-center flex-1">
-        {title}
-      </h1>
+    <div class="flex h-16 items-center justify-between gap-3">
+      <a
+        href={baseUrl}
+        class="font-display min-w-0 max-w-[55%] truncate text-base font-semibold tracking-tight text-fg transition-colors hover:text-accent sm:max-w-none sm:text-lg sm:truncate-none"
+      >
+        Recetas de Casa
+      </a>
 
-      <!-- Botón de búsqueda o navegación -->
-      <div class="flex items-center space-x-4">
-        <a 
-          href={`${baseUrl}menu-semanal`}
-          class="hidden md:inline-flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors duration-200 group"
+      <nav
+        class="hidden flex-1 items-center justify-center gap-0.5 md:flex lg:gap-1"
+        aria-label="Principal"
+      >
+        <a
+          href={baseUrl}
+          class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
+          >Inicio</a
         >
-          <span class="text-lg group-hover:scale-110 transition-transform">🗓️</span>
-          <span class="font-medium">Menú</span>
-        </a>
-        <a 
-          href={`${baseUrl}buscar`}
-          class="hidden md:inline-flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors duration-200 group"
-        >
-          <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-          <span class="font-medium">Buscar</span>
-        </a>
-        <a 
+        <a
           href={`${baseUrl}recetas/`}
-          class="inline-flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors duration-200 group"
+          class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
+          >Recetas</a
         >
-          <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+        <a
+          href={`${baseUrl}buscar`}
+          class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
+          >Buscar</a
+        >
+        <details class="relative">
+          <summary
+            class="flex cursor-pointer list-none items-center gap-0.5 rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3 [&::-webkit-details-marker]:hidden"
+          >
+            Ideas
+            <svg class="h-4 w-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </summary>
+          <div
+            class="absolute left-0 top-full z-50 mt-1 w-52 rounded-xl border border-border bg-surface py-1 shadow-lg lg:left-1/2 lg:w-56 lg:-translate-x-1/2"
+          >
+            <a
+              href={`${baseUrl}recetas-faciles/`}
+              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+              >Recetas fáciles</a
+            >
+            <a
+              href={`${baseUrl}cenas-rapidas/`}
+              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+              >Cenas rápidas</a
+            >
+            <a
+              href={`${baseUrl}recetas-con-pollo/`}
+              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+              >Recetas con pollo</a
+            >
+            <a
+              href={`${baseUrl}recetas-baratas/`}
+              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+              >Recetas baratas</a
+            >
+          </div>
+        </details>
+        <a
+          href={`${baseUrl}menu-semanal`}
+          class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-2 text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent lg:ml-0.5 lg:px-3"
+        >
+          <svg class="h-4 w-4 shrink-0 text-fg-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
           </svg>
-          <span class="font-medium hidden lg:inline">Todas</span>
+          <span class="hidden lg:inline">Menú semanal</span>
+          <span class="lg:hidden">Menú</span>
         </a>
+      </nav>
+
+      <div class="relative z-20 flex shrink-0 items-center gap-0.5">
+        <a
+          href={`${baseUrl}buscar`}
+          class="rounded-lg p-2 text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent md:hidden touch-manipulation"
+          aria-label="Buscar recetas"
+        >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </a>
+        <label
+          for="nav-toggle"
+          class="cursor-pointer rounded-lg p-2 text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent md:hidden touch-manipulation"
+        >
+          <span class="sr-only">Abrir o cerrar menú</span>
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </label>
       </div>
     </div>
+
+    <nav
+      id="mobile-nav-panel"
+      class="mobile-nav-panel border-t border-border bg-surface md:hidden"
+      aria-label="Navegación móvil"
+    >
+      <div class="flex max-h-[min(70vh,28rem)] flex-col gap-0.5 overflow-y-auto py-3">
+        <a
+          href={baseUrl}
+          class="rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+          >Inicio</a
+        >
+        <a
+          href={`${baseUrl}recetas/`}
+          class="rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+          >Recetas</a
+        >
+        <a
+          href={`${baseUrl}buscar`}
+          class="rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+          >Buscar</a
+        >
+        <p class="px-3 pt-2 text-xs font-semibold uppercase tracking-wider text-fg-subtle">Ideas</p>
+        <a
+          href={`${baseUrl}recetas-faciles/`}
+          class="rounded-lg px-3 py-2 pl-5 text-sm text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent"
+          >Recetas fáciles</a
+        >
+        <a
+          href={`${baseUrl}cenas-rapidas/`}
+          class="rounded-lg px-3 py-2 pl-5 text-sm text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent"
+          >Cenas rápidas</a
+        >
+        <a
+          href={`${baseUrl}recetas-con-pollo/`}
+          class="rounded-lg px-3 py-2 pl-5 text-sm text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent"
+          >Recetas con pollo</a
+        >
+        <a
+          href={`${baseUrl}recetas-baratas/`}
+          class="rounded-lg px-3 py-2 pl-5 text-sm text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent"
+          >Recetas baratas</a
+        >
+        <a
+          href={`${baseUrl}menu-semanal`}
+          class="mt-1 inline-flex items-center gap-2 rounded-lg border border-border bg-canvas px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent"
+        >
+          <svg class="h-4 w-4 text-fg-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          Menú semanal
+        </a>
+      </div>
+    </nav>
   </div>
 </header>
+
+<script is:inline>
+  (function () {
+    var toggle = document.getElementById("nav-toggle");
+    var panel = document.getElementById("mobile-nav-panel");
+    if (!toggle || !panel) return;
+    panel.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        toggle.checked = false;
+      });
+    });
+  })();
+</script>
+
+<style>
+  .mobile-nav-panel {
+    display: none;
+  }
+  #nav-toggle:checked ~ #mobile-nav-panel {
+    display: block;
+  }
+  @media (min-width: 768px) {
+    #mobile-nav-panel {
+      display: none !important;
+    }
+  }
+
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+</style>

@@ -19,6 +19,7 @@ const recetaUpdateSchema = z.object({
   ingredientes: z.array(z.string()).optional(),
   pasos: z.array(z.string()).optional(),
   tips: z.array(z.string()).optional().nullable(),
+  guia_casera: z.string().optional().nullable(),
   tags: z.array(z.string()).optional().nullable(),
   calorias: z.number().optional().nullable(),
   destacada: z.boolean().optional()

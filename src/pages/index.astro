@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
 import RecetaCard from "../components/RecetaCard.astro";
 import HeroSearch from "../components/HeroSearch.astro";
 import { supabase } from "../lib/supabase";
@@ -46,6 +47,7 @@ const baseUrl = import.meta.env.BASE_URL;
   image="/images/hero-ingredientes-1024.webp"
   type="website"
 >
+  <Header />
   <main>
     <!-- Hero Section con imagen de fondo -->
     <section class="relative min-h-screen flex items-center justify-center text-center overflow-hidden">
@@ -89,6 +91,44 @@ const baseUrl = import.meta.env.BASE_URL;
           <a href={`${baseUrl}menu-semanal`} class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500/80 to-teal-500/80 backdrop-blur-sm hover:from-emerald-500 hover:to-teal-500 text-white px-6 py-3 rounded-full font-semibold text-base border border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
             🤖 Prueba nuestro Menú Semanal Inteligente
             <span class="bg-white/25 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Beta</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Landings SEO (enlaces temáticos) — encima de categorías -->
+    <section class="py-12 bg-orange-50/80 border-y border-orange-100">
+      <div class="max-w-7xl mx-auto px-6">
+        <h2 class="text-2xl font-bold text-gray-900 text-center mb-3">
+          Ideas por tipo de búsqueda
+        </h2>
+        <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
+          Colecciones con texto útil y recetas seleccionadas para cocinar cada día.
+        </p>
+        <div class="flex flex-wrap justify-center gap-3">
+          <a
+            href={`${baseUrl}recetas-faciles/`}
+            class="inline-flex items-center gap-2 bg-white hover:bg-orange-100 border border-orange-200 text-gray-900 px-5 py-2.5 rounded-full font-medium shadow-sm transition-colors"
+          >
+            🧑‍🍳 Recetas fáciles
+          </a>
+          <a
+            href={`${baseUrl}cenas-rapidas/`}
+            class="inline-flex items-center gap-2 bg-white hover:bg-orange-100 border border-orange-200 text-gray-900 px-5 py-2.5 rounded-full font-medium shadow-sm transition-colors"
+          >
+            ⚡ Cenas rápidas
+          </a>
+          <a
+            href={`${baseUrl}recetas-con-pollo/`}
+            class="inline-flex items-center gap-2 bg-white hover:bg-orange-100 border border-orange-200 text-gray-900 px-5 py-2.5 rounded-full font-medium shadow-sm transition-colors"
+          >
+            🍗 Recetas con pollo
+          </a>
+          <a
+            href={`${baseUrl}recetas-baratas/`}
+            class="inline-flex items-center gap-2 bg-white hover:bg-orange-100 border border-orange-200 text-gray-900 px-5 py-2.5 rounded-full font-medium shadow-sm transition-colors"
+          >
+            💶 Recetas baratas
           </a>
         </div>
       </div>
