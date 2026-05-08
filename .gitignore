@@ -30,9 +30,12 @@ recetas_reescritas.json
 recetas_airfryer_reescritas.json
 errores.json
 errores_airfryer.json
+recetas_economicas_reescritas.json
+errores_economicas.json
 venv/
 fix_imagenes.py
 borrar_recetas.py
 seed_recetas.py
 seed_recetas_airfryer.py
+seed_recetas_economicas.py
 requirements.txt
