@@ -2,23 +2,21 @@
 import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import RecetaCard from "../components/RecetaCard.astro";
-import HeroSearch from "../components/HeroSearch.astro";
+import LogoMark from "../components/LogoMark.astro";
 import { supabase } from "../lib/supabase";
 import { categorias } from "../content/config";
 import { recetaTieneCategoria } from "../lib/recetaCategorias";
 
-// Últimas 6 recetas para el listado
 const { data: ultimasRecetas = [], error } = await supabase
   .from('recetas')
   .select('*')
   .order('created_at', { ascending: false })
-  .limit(6);
+  .limit(7);
 
 if (error) {
   console.error('Error al obtener recetas:', error);
 }
 
-// Conteo total y por categoría (paginado para superar límite de 1000)
 let todasLasRecetas: any[] = [];
 {
   const PAGE = 1000;
@@ -37,11 +35,30 @@ let todasLasRecetas: any[] = [];
 const totalRecetas = todasLasRecetas.length;
 const totalCategorias = Object.keys(categorias).length;
 
-const recetasDestacadas = (ultimasRecetas || []).filter((r: any) => r.destacada).slice(0, 3);
+// Receta a destacar: primera marcada destacada, o la última publicada como fallback
+const recetaDestacada = (ultimasRecetas || []).find((r: any) => r.destacada) || (ultimasRecetas || [])[0];
+const otrasUltimas = (ultimasRecetas || []).filter((r: any) => r !== recetaDestacada).slice(0, 6);
+
 const baseUrl = import.meta.env.BASE_URL;
+
+// Resolver fuente de imagen (interna vs externa) para la receta destacada
+const heroImg = recetaDestacada?.imagen || '';
+const heroImgSrc = heroImg.startsWith('http') ? heroImg : `${baseUrl}${heroImg.replace(/^\//, '')}`;
+
+const ideas = [
+  { href: `${baseUrl}recetas-faciles/`, label: 'Recetas fáciles', desc: 'Pocos pasos, ingredientes a mano.' },
+  { href: `${baseUrl}cenas-rapidas/`, label: 'Cenas rápidas', desc: 'En la mesa en menos de 30 minutos.' },
+  { href: `${baseUrl}comidas-rapidas/`, label: 'Comidas rápidas', desc: 'Almuerzo exprés entre semana.' },
+  { href: `${baseUrl}recetas-con-pollo/`, label: 'Con pollo', desc: 'Mil formas de cocinar el básico.' },
+  { href: `${baseUrl}recetas-baratas/`, label: 'Recetas baratas', desc: 'Cocina honesta sin gastar de más.' },
+  { href: `${baseUrl}recetas-airfryer/`, label: 'Air fryer', desc: 'Freidora de aire con pasos claros.' },
+  { href: `${baseUrl}postres-faciles/`, label: 'Postres fáciles', desc: 'Dulces sin complicarse.' },
+  { href: `${baseUrl}recetas-saludables/`, label: 'Recetas saludables', desc: 'Ideas equilibradas y variadas.' },
+  { href: `${baseUrl}recetas-para-ninos/`, label: 'Para niños', desc: 'Platos familiares que suelen triunfar.' },
+];
 ---
 
-<Layout 
+<Layout
   title="Recetas de Casa"
   description={`Descubre ${totalRecetas} deliciosas recetas caseras de la cocina española. Platos tradicionales, postres, tapas y mucho más para cocinar en casa.`}
   image="/images/hero-ingredientes-1024.webp"
@@ -49,154 +66,291 @@ const baseUrl = import.meta.env.BASE_URL;
 >
   <Header />
   <main>
-    <!-- Hero Section con imagen de fondo -->
-    <section class="relative min-h-screen flex items-center justify-center text-center overflow-hidden">
-      <!-- Imagen de fondo responsive -->
-      <picture class="absolute inset-0 w-full h-full">
-        <!-- WebP para navegadores modernos -->
-        <source media="(min-width: 1440px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1920.webp`} type="image/webp" />
-        <source media="(min-width: 1024px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1440.webp`} type="image/webp" />
-        <source media="(min-width: 768px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1024.webp`} type="image/webp" />
-        <source srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-768.webp`} type="image/webp" />
-        <!-- Fallback JPEG -->
-        <source media="(min-width: 1440px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1920.jpg`} />
-        <source media="(min-width: 1024px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1440.jpg`} />
-        <source media="(min-width: 768px)" srcset={`${import.meta.env.BASE_URL}images/hero-ingredientes-1024.jpg`} />
-        <img src={`${import.meta.env.BASE_URL}images/hero-ingredientes-768.webp`} alt="Ingredientes españoles tradicionales" class="w-full h-full object-cover" loading="eager" />
-      </picture>
-      
-      <!-- Overlay para legibilidad del texto -->
-      <div class="absolute inset-0 bg-black/40 backdrop-blur-[0.5px]"></div>
-      
-      <!-- Contenido del hero -->
-      <div class="relative z-10 max-w-4xl mx-auto px-6 py-20">
-        <h1 class="text-5xl md:text-7xl font-black text-white mb-6 drop-shadow-lg">
-          🍽️ Recetas de Casa
-        </h1>
-        <p class="text-xl md:text-2xl text-white/95 mb-12 font-light max-w-2xl mx-auto leading-relaxed">
-          Compendio de las Recetas de Casa que no se pueden perder
-        </p>
-        
-        <!-- Búsqueda y tiempo -->
-        <div class="mb-10 max-w-xl mx-auto text-center">
-          <HeroSearch placeholder="Buscar por ingrediente, nombre..." />
-        </div>
+    {/* ──────────────────────────────────────────────────────────────────────
+        HERO editorial: split, sin overlay negro.
+        ────────────────────────────────────────────────────────────────────── */}
+    <section class="relative overflow-hidden bg-canvas">
+      <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-12 lg:gap-16">
+        <div class="lg:col-span-6">
+          <a
+            href={baseUrl}
+            class="mb-6 inline-flex min-w-0 max-w-full items-center gap-2.5 text-fg transition-colors hover:text-accent sm:mb-8 sm:gap-3"
+            aria-label="Recetas de Casa, inicio"
+          >
+            <LogoMark class="h-11 sm:h-14" variant="hero" />
+            <span class="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-fg sm:text-5xl lg:text-6xl">
+              Recetas de Casa
+            </span>
+          </a>
+          <p class="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+            Cocina española casera
+          </p>
+          <h1 class="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-fg sm:text-5xl lg:text-6xl">
+            Recetas de verdad,<br />
+            <span class="italic text-accent">explicadas como en casa.</span>
+          </h1>
+          <p class="mt-6 max-w-xl text-base leading-relaxed text-fg-muted sm:text-lg">
+            Más de {totalRecetas.toLocaleString('es-ES')} recetas sin relleno y sin historias kilométricas antes
+            de la lista de ingredientes. Cocina tradicional, del día a día.
+          </p>
 
-        <div class="space-y-4">
-          <div class="flex items-center justify-center space-x-4 text-white/90 text-sm">
-            <span>{totalRecetas} recetas</span>
-            <span>•</span>
-            <span>{totalCategorias} categorías</span>
-          </div>
-          <a href={`${baseUrl}menu-semanal`} class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500/80 to-teal-500/80 backdrop-blur-sm hover:from-emerald-500 hover:to-teal-500 text-white px-6 py-3 rounded-full font-semibold text-base border border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-            🤖 Prueba nuestro Menú Semanal Inteligente
-            <span class="bg-white/25 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Beta</span>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Landings SEO (enlaces temáticos) — encima de categorías -->
-    <section class="py-12 bg-orange-50/80 border-y border-orange-100">
-      <div class="max-w-7xl mx-auto px-6">
-        <h2 class="text-2xl font-bold text-gray-900 text-center mb-3">
-          Ideas por tipo de búsqueda
-        </h2>
-        <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
-          Colecciones con texto útil y recetas seleccionadas para cocinar cada día.
-        </p>
-        <div class="flex flex-wrap justify-center gap-3">
-          <a
-            href={`${baseUrl}recetas-faciles/`}
-            class="inline-flex items-center gap-2 bg-white hover:bg-orange-100 border border-orange-200 text-gray-900 px-5 py-2.5 rounded-full font-medium shadow-sm transition-colors"
-          >
-            🧑‍🍳 Recetas fáciles
-          </a>
-          <a
-            href={`${baseUrl}cenas-rapidas/`}
-            class="inline-flex items-center gap-2 bg-white hover:bg-orange-100 border border-orange-200 text-gray-900 px-5 py-2.5 rounded-full font-medium shadow-sm transition-colors"
-          >
-            ⚡ Cenas rápidas
-          </a>
-          <a
-            href={`${baseUrl}recetas-con-pollo/`}
-            class="inline-flex items-center gap-2 bg-white hover:bg-orange-100 border border-orange-200 text-gray-900 px-5 py-2.5 rounded-full font-medium shadow-sm transition-colors"
-          >
-            🍗 Recetas con pollo
-          </a>
-          <a
-            href={`${baseUrl}recetas-baratas/`}
-            class="inline-flex items-center gap-2 bg-white hover:bg-orange-100 border border-orange-200 text-gray-900 px-5 py-2.5 rounded-full font-medium shadow-sm transition-colors"
-          >
-            💶 Recetas baratas
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Categorías Populares -->
-    <section class="py-16 bg-white">
-      <div class="max-w-7xl mx-auto px-6">
-        <h2 class="text-4xl font-bold text-gray-900 text-center mb-12">Explora por Categorías</h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {Object.entries(categorias).map(([key, nombre]) => {
-            const recetasEnCategoria = todasLasRecetas.filter((r) =>
-              recetaTieneCategoria(r, key)
-            );
-            const iconos = {
-              'arroz-paellas': '🥘',
-              'tortillas-pasta': '🥚',
-              'sopas-cremas': '🍲',
-              'carnes-aves': '🍖',
-              'pescados-mariscos': '🐟',
-              'pan-masas': '🥖',
-              'postres': '🍰',
-              'ensaladas-tapas': '🥗',
-              'air-fryer': '🍗'
-            };
-            
-            return (
-              <a href={`${baseUrl}buscar?categoria=${key}`} class="group bg-white hover:bg-orange-50 border-2 border-gray-100 hover:border-orange-300 rounded-2xl p-6 text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-                <div class="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
-                  {iconos[key] || '🍽️'}
-                </div>
-                <h3 class="font-bold text-gray-900 mb-1 text-sm lg:text-base">{nombre}</h3>
-                <span class="text-xs text-gray-500">{recetasEnCategoria.length} recetas</span>
+          {/* Buscador integrado en el hero (sin estilos de overlay oscuro) */}
+          <form action={`${baseUrl}buscar`} method="get" class="mt-8 max-w-xl">
+            <label class="sr-only" for="home-search-q">Buscar recetas</label>
+            <div class="flex items-stretch overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft">
+              <span class="flex items-center pl-4 text-fg-subtle" aria-hidden="true">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </span>
+              <input
+                id="home-search-q"
+                type="search"
+                name="q"
+                placeholder="Buscar por ingrediente o nombre…"
+                class="w-full bg-transparent px-3 py-3.5 text-base text-fg placeholder-fg-subtle focus:outline-none"
+              />
+              <button
+                type="submit"
+                class="shrink-0 bg-accent px-5 py-3.5 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+              >
+                Buscar
+              </button>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2 text-sm">
+              <button type="submit" name="tiempo" value="lt30" class="rounded-full border border-border bg-surface px-3 py-1.5 text-fg-muted transition-colors hover:border-accent hover:text-accent">&lt; 30 min</button>
+              <button type="submit" name="tiempo" value="m30_60" class="rounded-full border border-border bg-surface px-3 py-1.5 text-fg-muted transition-colors hover:border-accent hover:text-accent">30–60 min</button>
+              <button type="submit" name="tiempo" value="gt60" class="rounded-full border border-border bg-surface px-3 py-1.5 text-fg-muted transition-colors hover:border-accent hover:text-accent">&gt; 60 min</button>
+              <a href={`${baseUrl}recetas/`} class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-fg-muted transition-colors hover:text-accent">Ver todas
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m0 0l-6-6m6 6l-6 6"/></svg>
               </a>
-            );
-          })}
-        </div>
-      </div>
-    </section>
+            </div>
+          </form>
 
-    <!-- Últimas Recetas -->
-    <section class="py-16 bg-gray-50">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-12">
-          <div></div> <!-- Espaciador izquierdo -->
-          <h2 class="text-4xl font-bold text-gray-900 text-center">Últimas Recetas</h2>
-          <div class="text-right">
-            <a href={`${baseUrl}recetas/`} class="text-orange-500 hover:text-orange-600 font-semibold text-lg transition-colors duration-200">
-              Ver todas →
+          <p class="mt-8 text-sm text-fg-subtle">
+            <span class="font-medium text-fg">{totalRecetas.toLocaleString('es-ES')}</span> recetas
+            <span class="mx-2 text-border-strong">·</span>
+            <span class="font-medium text-fg">{totalCategorias}</span> categorías
+          </p>
+
+          <div class="mt-6">
+            <a
+              href={`${baseUrl}menu-semanal`}
+              class="inline-flex items-center gap-2 rounded-[var(--radius-lg)] border border-accent bg-accent-soft px-4 py-3 text-sm font-semibold text-accent transition-colors hover:bg-accent hover:text-[var(--color-accent-contrast)]"
+            >
+              <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+              Menú semanal inteligente
+              <span class="rounded-full bg-surface px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-fg-muted ring-1 ring-border">
+                Beta
+              </span>
             </a>
           </div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {ultimasRecetas.map(receta => (
+
+        {/* Imagen del hero: receta destacada como protagonista. */}
+        {recetaDestacada && (
+          <div class="lg:col-span-6">
+            <a href={`${baseUrl}recetas/${recetaDestacada.slug}/`} class="group block">
+              <figure class="relative overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface shadow-sm">
+                <div class="aspect-[4/5] overflow-hidden sm:aspect-[16/12] lg:aspect-[4/5]">
+                  <img
+                    src={heroImgSrc}
+                    alt={recetaDestacada.imagen_alt || recetaDestacada.title}
+                    class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                    loading="eager"
+                  />
+                </div>
+                <figcaption class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-5 sm:p-6">
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">Receta destacada</p>
+                  <p class="font-display mt-1 text-xl font-semibold leading-tight text-white sm:text-2xl">
+                    {recetaDestacada.title}
+                  </p>
+                </figcaption>
+              </figure>
+            </a>
+          </div>
+        )}
+      </div>
+    </section>
+
+    {/* ──────────────────────────────────────────────────────────────────────
+        POR MOMENTO — enlaces de colecciones (encima de últimas recetas).
+        ────────────────────────────────────────────────────────────────────── */}
+    <section class="border-t border-border bg-canvas py-14 sm:py-16">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6">
+        <div class="mb-8 max-w-2xl">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">Por momento</p>
+          <h2 class="font-display text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
+            Ideas para cuando cocinas
+          </h2>
+          <p class="mt-2 text-base text-fg-muted">
+            Colecciones por tiempo, ingrediente o ocasión. Entra por la que te encaje hoy.
+          </p>
+        </div>
+        <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {ideas.map(({ href, label, desc }) => (
+            <li>
+              <a
+                href={href}
+                class="group flex h-full items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-border bg-surface p-5 transition-colors hover:border-accent"
+              >
+                <div>
+                  <p class="font-display text-lg font-semibold text-fg group-hover:text-accent">{label}</p>
+                  <p class="mt-1 text-sm text-fg-muted">{desc}</p>
+                </div>
+                <svg class="mt-1 h-4 w-4 shrink-0 text-fg-subtle transition-transform group-hover:translate-x-1 group-hover:text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m0 0l-6-6m6 6l-6 6"/>
+                </svg>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    {/* ──────────────────────────────────────────────────────────────────────
+        ÚLTIMAS RECETAS
+        ────────────────────────────────────────────────────────────────────── */}
+    <section class="border-t border-border bg-surface py-16 sm:py-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6">
+        <div class="mb-10 flex items-end justify-between gap-4">
+          <div>
+            <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">Recién añadidas</p>
+            <h2 class="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+              Últimas recetas
+            </h2>
+          </div>
+          <a
+            href={`${baseUrl}recetas/`}
+            class="hidden items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-accent-hover sm:inline-flex"
+          >
+            Ver todas
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m0 0l-6-6m6 6l-6 6" />
+            </svg>
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {otrasUltimas.map(receta => (
             <RecetaCard receta={receta} />
           ))}
+        </div>
+
+        <div class="mt-10 text-center sm:hidden">
+          <a
+            href={`${baseUrl}recetas/`}
+            class="inline-flex items-center gap-1.5 rounded-[var(--radius)] border border-border bg-canvas px-5 py-3 text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent"
+          >
+            Ver todas las recetas
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m0 0l-6-6m6 6l-6 6" />
+            </svg>
+          </a>
         </div>
       </div>
     </section>
 
-    <!-- CTA Final -->
-    <section class="py-20 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 text-center">
-      <div class="max-w-4xl mx-auto px-6">
-        <h2 class="text-4xl font-bold text-white mb-4">¿Listo para cocinar?</h2>
-        <p class="text-xl text-white/90 mb-8">Descubre todas nuestras recetas y empieza a cocinar hoy mismo</p>
-        <a href={`${baseUrl}recetas/`} class="inline-block bg-white text-purple-600 hover:text-purple-700 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-          Explorar Todas las Recetas
-        </a>
+    {/* ──────────────────────────────────────────────────────────────────────
+        POR CATEGORÍA — rejilla 3×3 en escritorio (9 categorías).
+        ────────────────────────────────────────────────────────────────────── */}
+    <section class="border-t border-border bg-canvas py-16 sm:py-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6">
+        <div class="mb-12 max-w-2xl">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">Navega el recetario</p>
+          <h2 class="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl">Por categoría</h2>
+          <p class="mt-3 text-base text-fg-muted">
+            Las nueve familias del recetario: entra por la que más uses en tu cocina.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="sr-only">Listado de categorías</h3>
+          <ul class="grid grid-cols-1 gap-px overflow-hidden rounded-[var(--radius-lg)] border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+            {Object.entries(categorias).map(([key, nombre]) => {
+              const recetasEnCategoria = todasLasRecetas.filter((r) =>
+                recetaTieneCategoria(r, key)
+              );
+              return (
+                <li>
+                  <a
+                    href={`${baseUrl}buscar?categoria=${key}`}
+                    class="group flex min-h-[4.5rem] items-center justify-between gap-4 bg-surface px-5 py-4 transition-colors hover:bg-accent-soft sm:min-h-0"
+                  >
+                    <span class="font-medium text-fg group-hover:text-accent">{nombre}</span>
+                    <span class="text-sm tabular-nums text-fg-subtle">{recetasEnCategoria.length}</span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    {/* ──────────────────────────────────────────────────────────────────────
+        BLOQUE CUENTA / PRECIOS — sustituye al CTA con gradiente.
+        ────────────────────────────────────────────────────────────────────── */}
+    <section class="border-t border-border bg-surface py-20 sm:py-24">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6">
+        <div class="grid gap-10 rounded-[var(--radius-lg)] border border-border bg-canvas p-8 sm:p-12 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">Próximamente</p>
+            <h2 class="font-display text-3xl font-semibold leading-tight tracking-tight text-fg sm:text-4xl">
+              Tu cocina, organizada en una cuenta.
+            </h2>
+            <p class="mt-4 text-base leading-relaxed text-fg-muted">
+              Guarda tus favoritos, planifica la semana con el menú inteligente y exporta la lista
+              de la compra. La parte abierta del recetario seguirá siendo gratis.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a
+                href={`${baseUrl}registro`}
+                class="inline-flex items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+              >
+                Crear cuenta gratis
+              </a>
+              <a
+                href={`${baseUrl}precios`}
+                class="inline-flex items-center justify-center rounded-[var(--radius)] border border-border bg-surface px-5 py-3 text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent"
+              >
+                Ver precios
+              </a>
+            </div>
+          </div>
+
+          <ul class="space-y-4 lg:border-l lg:border-border lg:pl-12">
+            <li class="flex items-start gap-3">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              <div>
+                <p class="font-medium text-fg">Recetas guardadas</p>
+                <p class="text-sm text-fg-muted">Marca favoritos y vuelve a ellos sin buscar.</p>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              <div>
+                <p class="font-medium text-fg">Menú semanal con IA</p>
+                <p class="text-sm text-fg-muted">Plan completo según lo que tienes y quieres comer.</p>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              <div>
+                <p class="font-medium text-fg">Lista de la compra</p>
+                <p class="text-sm text-fg-muted">Agregada por receta, sin duplicados absurdos.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
     </section>
   </main>

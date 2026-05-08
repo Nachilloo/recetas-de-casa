@@ -6,6 +6,16 @@ import {
   esRecetaExclusivamentePostre,
   pickRecetasParaLanding,
   tiempoAMinutos,
+  esRecetaAirFryer,
+  esRecetaAirFryerPorTexto,
+  esPostreFacilEstricto,
+  esPostreFacilAmpliado,
+  esRecetaSaludableEstricta,
+  esRecetaSaludableAmpliada,
+  esComidaRapidaEstricta,
+  esComidaRapidaAmpliada,
+  esRecetaParaNinosEstricta,
+  esRecetaParaNinosAmpliada,
 } from './seoLandingRecetas';
 
 /** Menos columnas = menos datos por petición (cards + filtros que no usan ingredientes). */
@@ -231,6 +241,175 @@ export async function fetchRecetasLandingBaratas(): Promise<Receta[]> {
     const extra = await fetchTopRecetas(200, SEL_LISTADO_CON_INGREDIENTES, true);
     pool = dedupeRecetas([...pool, ...extra]);
     picked = pickRecetasParaLanding(pool, esRecetaBarata, barataRelajada, { min: 10, max: 24 });
+  }
+
+  return picked;
+}
+
+/** Freidora de aire: categoría + coincidencia por texto en título/descripción. */
+export async function fetchRecetasLandingAirFryer(): Promise<Receta[]> {
+  const { data, error } = await supabase
+    .from('recetas')
+    .select(SEL_LISTADO_SLIM)
+    .or('categoria.eq.air-fryer,categorias.cs.{air-fryer}')
+    .order('destacada', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(400);
+
+  if (error) console.error('[fetchRecetasLandingAirFryer]', error);
+
+  let pool = dedupeRecetas((data ?? []) as Receta[]);
+  let picked = pickRecetasParaLanding(pool, esRecetaAirFryer, esRecetaAirFryerPorTexto, {
+    min: 10,
+    max: 24,
+  });
+
+  if (picked.length < 10) {
+    const extra = await fetchTopRecetas(500, SEL_LISTADO_SLIM, false);
+    pool = dedupeRecetas([...pool, ...extra]);
+    picked = pickRecetasParaLanding(pool, esRecetaAirFryer, esRecetaAirFryerPorTexto, {
+      min: 10,
+      max: 24,
+    });
+  }
+
+  return picked;
+}
+
+export async function fetchRecetasLandingPostresFaciles(): Promise<Receta[]> {
+  const { data, error } = await supabase
+    .from('recetas')
+    .select(SEL_LISTADO_SLIM)
+    .or('categoria.eq.postres,categorias.cs.{postres}')
+    .order('destacada', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(400);
+
+  if (error) console.error('[fetchRecetasLandingPostresFaciles]', error);
+
+  const pool = dedupeRecetas((data ?? []) as Receta[]);
+  return pickRecetasParaLanding(pool, esPostreFacilEstricto, esPostreFacilAmpliado, {
+    min: 10,
+    max: 24,
+  });
+}
+
+export async function fetchRecetasLandingSaludables(): Promise<Receta[]> {
+  const { data, error } = await supabase
+    .from('recetas')
+    .select(SEL_LISTADO_CON_INGREDIENTES)
+    .order('destacada', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  if (error) console.error('[fetchRecetasLandingSaludables]', error);
+
+  let pool = dedupeRecetas((data ?? []) as Receta[]);
+  let picked = pickRecetasParaLanding(
+    pool,
+    esRecetaSaludableEstricta,
+    esRecetaSaludableAmpliada,
+    { min: 10, max: 24 }
+  );
+
+  if (picked.length < 10) {
+    const { data: more, error: e2 } = await supabase
+      .from('recetas')
+      .select(SEL_LISTADO_CON_INGREDIENTES)
+      .order('destacada', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(500, 999);
+
+    if (!e2 && more?.length) {
+      pool = dedupeRecetas([...pool, ...(more as Receta[])]);
+      picked = pickRecetasParaLanding(
+        pool,
+        esRecetaSaludableEstricta,
+        esRecetaSaludableAmpliada,
+        { min: 10, max: 24 }
+      );
+    }
+  }
+
+  return picked;
+}
+
+/** Comidas rápidas en cualquier momento del día (incluye postres si el tiempo encaja). */
+export async function fetchRecetasLandingComidasRapidas(): Promise<Receta[]> {
+  const { data, error } = await supabase
+    .from('recetas')
+    .select(SEL_LISTADO_SLIM)
+    .order('destacada', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  if (error) console.error('[fetchRecetasLandingComidasRapidas]', error);
+
+  let pool = dedupeRecetas((data ?? []) as Receta[]);
+  let picked = pickRecetasParaLanding(
+    pool,
+    esComidaRapidaEstricta,
+    esComidaRapidaAmpliada,
+    { min: 10, max: 24 }
+  );
+
+  if (picked.length < 10) {
+    const { data: more, error: e2 } = await supabase
+      .from('recetas')
+      .select(SEL_LISTADO_SLIM)
+      .order('destacada', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(500, 999);
+
+    if (!e2 && more?.length) {
+      pool = dedupeRecetas([...pool, ...(more as Receta[])]);
+      picked = pickRecetasParaLanding(
+        pool,
+        esComidaRapidaEstricta,
+        esComidaRapidaAmpliada,
+        { min: 10, max: 24 }
+      );
+    }
+  }
+
+  return picked;
+}
+
+export async function fetchRecetasLandingNinos(): Promise<Receta[]> {
+  const { data, error } = await supabase
+    .from('recetas')
+    .select(SEL_LISTADO_CON_INGREDIENTES)
+    .order('destacada', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  if (error) console.error('[fetchRecetasLandingNinos]', error);
+
+  let pool = dedupeRecetas((data ?? []) as Receta[]);
+  let picked = pickRecetasParaLanding(
+    pool,
+    esRecetaParaNinosEstricta,
+    esRecetaParaNinosAmpliada,
+    { min: 10, max: 24 }
+  );
+
+  if (picked.length < 10) {
+    const { data: more, error: e2 } = await supabase
+      .from('recetas')
+      .select(SEL_LISTADO_CON_INGREDIENTES)
+      .order('destacada', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(500, 999);
+
+    if (!e2 && more?.length) {
+      pool = dedupeRecetas([...pool, ...(more as Receta[])]);
+      picked = pickRecetasParaLanding(
+        pool,
+        esRecetaParaNinosEstricta,
+        esRecetaParaNinosAmpliada,
+        { min: 10, max: 24 }
+      );
+    }
   }
 
   return picked;

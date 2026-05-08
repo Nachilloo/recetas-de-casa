@@ -1,0 +1,61 @@
+---
+import SeoRecetasLanding from '../components/SeoRecetasLanding.astro';
+import { fetchRecetasLandingSaludables } from '../lib/fetchRecetasSeoLandings';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
+
+const recetas = await fetchRecetasLandingSaludables();
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const enlacesInternos = [
+  { href: `${baseUrl}cenas-rapidas/`, texto: 'Cenas rápidas' },
+  { href: `${baseUrl}comidas-rapidas/`, texto: 'Comidas rápidas' },
+  { href: `${baseUrl}recetas-baratas/`, texto: 'Recetas baratas' },
+  { href: `${baseUrl}recetas/`, texto: 'Ver todas las recetas' },
+];
+
+const introParagraphs = [
+  'Cuando hablamos de recetas saludables en Recetas de Casa nos referimos a platos equilibrados, con verdura, legumbres, pescado u opciones vegetales, y a elaboraciones que muchas familias asocian a “comer mejor” en el sentido general del día a día. No somos servicio médico ni dietético: si tienes patologías o planes alimentarios prescritos, sigue las indicaciones de tu profesional.',
+  'Seleccionamos recetas por señales en etiquetas, ingredientes, calorías declaradas cuando existen y términos habituales (ligero, vegano, proteico, ensalada…). Es una aproximación editorial para orientar la búsqueda, no un certificado nutricional.',
+  'Combina esta colección con cenas rápidas o menú semanal cuando quieras planificar; el recetario completo sigue abierto para que tú decidas el ritmo y las porciones.',
+];
+
+const faqs = [
+  {
+    pregunta: '¿Las recetas saludables son bajas en calorías?',
+    respuesta:
+      'No siempre. Priorizamos equilibrio de ingredientes y elaboraciones que encajan en una alimentación variada. Si te interesa el dato concreto, revisa la ficha: a veces indicamos calorías aproximadas.',
+  },
+  {
+    pregunta: '¿Sirven para dietas médicas?',
+    respuesta:
+      'No diseñamos dietas terapéuticas. Para diabetes, hipertensión, alergias o restricciones estrictas consulta a tu médico o dietista y adapta ingredientes con criterio profesional.',
+  },
+  {
+    pregunta: '¿Hay opciones vegetarianas o veganas?',
+    respuesta:
+      'Sí pueden aparecer cuando las etiquetas o el texto lo indican. Usa el buscador con “vegano” o “vegetal” para afinar.',
+  },
+  {
+    pregunta: '¿Qué diferencia hay respecto a “recetas fáciles”?',
+    respuesta:
+      '“Fáciles” mira sobre todo la dificultad y el tiempo asumible; “saludables” mira el perfil de ingredientes que suele asociarse a comidas nutritivas en sentido amplio. Se solapan en muchos platos.',
+  },
+];
+---
+
+<SeoRecetasLanding
+  metaTitle="Recetas saludables y equilibradas | Recetas de Casa"
+  metaDescription="Ideas de recetas saludables caseras: verduras, legumbres, pescado y platos ligeros. Selección orientativa del recetario Recetas de Casa."
+  canonicalPath="recetas-saludables/"
+  h1="Recetas saludables para comer mejor en casa"
+  badgeText={`${recetas.length}+ ideas · equilibrio y variedad`}
+  introParagraphs={introParagraphs}
+  recetas={recetas}
+  faqs={faqs}
+  enlacesInternos={enlacesInternos}
+/>

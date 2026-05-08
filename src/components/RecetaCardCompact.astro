@@ -1,12 +1,10 @@
 ---
 export interface Props {
-  // Acepta ambas formas: Content Collections (con data) y Supabase (sin data)
   receta: any;
 }
 
 const { receta } = Astro.props;
 
-// Detectar formato y normalizar
 const isSupabase = receta && !('data' in receta);
 const slug = receta?.slug;
 const data = isSupabase ? receta : receta?.data;
@@ -18,8 +16,7 @@ const {
   imagenAlt,
   tiempo,
   porciones,
-  categoria,
-  dificultad
+  dificultad,
 } = data || {};
 
 const alt = imagen_alt || imagenAlt || title || '';
@@ -28,77 +25,52 @@ const imageSrc = (imagen || '').startsWith('http')
   ? imagen
   : `${_base}${(imagen || '').replace(/^\//, '')}`;
 
-// Función para obtener el emoji de la categoría
-const getCategoriaEmoji = (cat: string) => {
-  const iconos: { [key: string]: string } = {
-    'arroz-paellas': '🥘',
-    'tortillas-pasta': '🥚',
-    'sopas-cremas': '🍲',
-    'carnes-aves': '🍖',
-    'pescados-mariscos': '🐟',
-    'pan-masas': '🥖',
-    'postres': '🍰',
-    'ensaladas-tapas': '🥗',
-    'air-fryer': '🍗'
-  };
-  return iconos[cat] || '🍽️';
-};
-
-// Función para obtener el color de la dificultad
-const getDificultadColor = (dif: string) => {
-  if (dif === 'facil') return 'bg-green-100 text-green-800';
-  if (dif === 'media') return 'bg-yellow-100 text-yellow-800';
-  return 'bg-red-100 text-red-800';
-};
+const dificultadLabel =
+  dificultad === 'facil' ? 'Fácil' : dificultad === 'media' ? 'Media' : 'Difícil';
 ---
 
-<article class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-orange-200 group">
+<article class="group rounded-[var(--radius-lg)] border border-border bg-surface transition-colors hover:border-accent">
   <a href={`/recetas/${slug}/`} class="block">
-    <div class="flex items-center p-4 space-x-4">
-      <!-- Imagen miniatura -->
-      <div class="flex-shrink-0 relative">
-        <img 
-          src={imageSrc} 
-          alt={alt} 
-          class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+    <div class="flex items-center gap-4 p-4">
+      <div class="relative shrink-0">
+        <img
+          src={imageSrc}
+          alt={alt}
+          class="h-16 w-16 rounded-[var(--radius)] object-cover transition-transform duration-300 group-hover:scale-[1.04] md:h-20 md:w-20"
           loading="lazy"
         />
-        <div class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
-          {getCategoriaEmoji(categoria)}
-        </div>
       </div>
 
-      <!-- Contenido -->
-      <div class="flex-1 min-w-0">
-        <h3 class="text-lg font-semibold text-gray-900 group-hover:text-orange-600 transition-colors duration-200 truncate">
+      <div class="min-w-0 flex-1">
+        <h3 class="truncate font-display text-lg font-semibold text-fg transition-colors group-hover:text-accent">
           {title}
         </h3>
-        
-        <div class="flex items-center space-x-3 mt-2 text-sm text-gray-500">
-          <span class="flex items-center space-x-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+
+        <div class="mt-1.5 flex items-center gap-4 text-sm text-fg-muted">
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round"></circle>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"></path>
             </svg>
             <span>{tiempo}</span>
           </span>
-          
-          <span class="flex items-center space-x-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-3.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
             </svg>
             <span>{porciones}</span>
           </span>
         </div>
       </div>
 
-      <!-- Dificultad y arrow -->
-      <div class="flex-shrink-0 flex items-center space-x-3">
-        <span class={`text-xs px-2 py-1 rounded-full font-medium ${getDificultadColor(dificultad)}`}>
-          {dificultad === 'facil' ? 'Fácil' : dificultad === 'media' ? 'Media' : 'Difícil'}
+      <div class="flex shrink-0 items-center gap-3">
+        <span class="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent">
+          {dificultadLabel}
         </span>
-        
-        <svg class="w-5 h-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+
+        <svg class="h-5 w-5 text-fg-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-accent" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>
         </svg>
       </div>
     </div>

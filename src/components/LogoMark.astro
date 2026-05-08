@@ -1,0 +1,36 @@
+---
+/**
+ * Logotipo PNG según tema: `logo-light.png` / `logo-dark.png` en `public/`.
+ * Visibilidad controlada en `global.css` (`.site-logo-light` / `.site-logo-dark`).
+ */
+const assetBase = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+interface Props {
+  class?: string;
+  /** `hero` permite logotipos más anchos en la home. */
+  variant?: 'header' | 'hero';
+}
+
+const { class: className = 'h-9', variant = 'header' } = Astro.props;
+const maxW =
+  variant === 'hero'
+    ? 'max-w-[min(100%,26rem)]'
+    : 'max-w-[min(100%,15rem)]';
+---
+
+<span class:list={['site-logo inline-flex shrink-0 items-center', className]}>
+  <img
+    src={`${assetBase}logo-light.png`}
+    alt=""
+    class:list={['site-logo-light h-full w-auto max-h-full object-contain object-left', maxW]}
+    loading="eager"
+    decoding="async"
+  />
+  <img
+    src={`${assetBase}logo-dark.png`}
+    alt=""
+    class:list={['site-logo-dark h-full w-auto max-h-full object-contain object-left', maxW]}
+    loading="eager"
+    decoding="async"
+  />
+</span>

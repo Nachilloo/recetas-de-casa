@@ -1,0 +1,148 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const features = {
+  free: [
+    "Acceso completo al recetario",
+    "Búsqueda y filtros por categoría y tiempo",
+    "Receta del día y novedades",
+  ],
+  pro: [
+    "Todo lo del plan gratuito",
+    "Recetas guardadas y colecciones propias",
+    "Menú semanal con IA ilimitado",
+    "Lista de la compra exportable",
+    "Sin anuncios cuando se incorporen",
+    "Soporte prioritario",
+  ],
+};
+---
+
+<Layout
+  title="Precios"
+  description="Plan gratuito para todo el recetario y Plan Pro para planificación con IA, favoritos y lista de la compra."
+>
+  <Header />
+  <main>
+    <section class="border-b border-border bg-canvas py-16 sm:py-24">
+      <div class="mx-auto max-w-3xl px-4 text-center sm:px-6">
+        <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">Planes</p>
+        <h1 class="font-display text-4xl font-semibold leading-tight tracking-tight text-fg sm:text-5xl">
+          Cocina abierta. Planificación, opcional.
+        </h1>
+        <p class="mt-5 text-base leading-relaxed text-fg-muted sm:text-lg">
+          El recetario es y será gratuito. Si quieres organizar tu semana y tu lista de la compra,
+          el Plan Pro lo hace por ti.
+        </p>
+      </div>
+    </section>
+
+    <section class="bg-surface py-16 sm:py-20">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6">
+        <div class="grid gap-6 md:grid-cols-2 md:gap-8">
+          {/* Plan gratis */}
+          <article class="flex flex-col rounded-[var(--radius-lg)] border border-border bg-canvas p-8">
+            <header>
+              <h2 class="font-display text-2xl font-semibold text-fg">Gratis</h2>
+              <p class="mt-1 text-sm text-fg-muted">Para cocinar el día a día sin compromisos.</p>
+              <p class="mt-6">
+                <span class="font-display text-4xl font-semibold text-fg">0&nbsp;€</span>
+                <span class="ml-1 text-sm text-fg-subtle">para siempre</span>
+              </p>
+            </header>
+
+            <ul class="mt-8 space-y-3 text-sm">
+              {features.free.map((f) => (
+                <li class="flex items-start gap-3 text-fg">
+                  <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+
+            <a
+              href={`${baseUrl}recetas/`}
+              class="mt-10 inline-flex items-center justify-center rounded-[var(--radius)] border border-border bg-surface px-5 py-3 text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent"
+            >
+              Empezar a cocinar
+            </a>
+          </article>
+
+          {/* Plan Pro */}
+          <article class="relative flex flex-col rounded-[var(--radius-lg)] border-2 border-accent bg-canvas p-8 shadow-sm">
+            <span class="absolute -top-3 right-6 inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--color-accent-contrast)]">
+              Próximamente
+            </span>
+
+            <header>
+              <h2 class="font-display text-2xl font-semibold text-fg">Pro</h2>
+              <p class="mt-1 text-sm text-fg-muted">Para planificar la semana en serio.</p>
+              <p class="mt-6">
+                <span class="font-display text-4xl font-semibold text-fg">4,99&nbsp;€</span>
+                <span class="ml-1 text-sm text-fg-subtle">/ mes</span>
+              </p>
+              <p class="mt-1 text-xs text-fg-subtle">o 39&nbsp;€ al año (35&nbsp;% de descuento)</p>
+            </header>
+
+            <ul class="mt-8 space-y-3 text-sm">
+              {features.pro.map((f) => (
+                <li class="flex items-start gap-3 text-fg">
+                  <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+
+            <a
+              href={`${baseUrl}registro`}
+              class="mt-10 inline-flex items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+            >
+              Reservar mi cuenta
+            </a>
+          </article>
+        </div>
+
+        <p class="mt-12 text-center text-sm text-fg-subtle">
+          Pago con tarjeta a través de Stripe cuando esté disponible. Cancelas cuando quieras.
+        </p>
+      </div>
+    </section>
+
+    <section class="border-t border-border bg-canvas py-16 sm:py-20">
+      <div class="mx-auto max-w-3xl px-4 sm:px-6">
+        <h2 class="font-display text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
+          Preguntas frecuentes
+        </h2>
+        <dl class="mt-10 divide-y divide-border border-y border-border">
+          <div class="py-6">
+            <dt class="font-medium text-fg">¿Las recetas se vuelven de pago?</dt>
+            <dd class="mt-2 text-sm leading-relaxed text-fg-muted">
+              No. El recetario completo seguirá siendo gratuito y abierto. El Plan Pro solo añade
+              herramientas de planificación.
+            </dd>
+          </div>
+          <div class="py-6">
+            <dt class="font-medium text-fg">¿Puedo probarlo antes?</dt>
+            <dd class="mt-2 text-sm leading-relaxed text-fg-muted">
+              Sí. Cuando salga, todas las cuentas tendrán acceso al menú semanal en versión limitada
+              para que pruebes cómo va.
+            </dd>
+          </div>
+          <div class="py-6">
+            <dt class="font-medium text-fg">¿Cómo se cobra?</dt>
+            <dd class="mt-2 text-sm leading-relaxed text-fg-muted">
+              Mensual o anual, con tarjeta a través de Stripe. Sin permanencia y con factura.
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  </main>
+</Layout>

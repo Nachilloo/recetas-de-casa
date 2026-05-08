@@ -1,0 +1,61 @@
+---
+import SeoRecetasLanding from '../components/SeoRecetasLanding.astro';
+import { fetchRecetasLandingAirFryer } from '../lib/fetchRecetasSeoLandings';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
+
+const recetas = await fetchRecetasLandingAirFryer();
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const enlacesInternos = [
+  { href: `${baseUrl}cenas-rapidas/`, texto: 'Cenas rápidas' },
+  { href: `${baseUrl}comidas-rapidas/`, texto: 'Comidas rápidas' },
+  { href: `${baseUrl}recetas-faciles/`, texto: 'Recetas fáciles' },
+  { href: `${baseUrl}recetas/`, texto: 'Ver todas las recetas' },
+];
+
+const introParagraphs = [
+  'La freidora de aire (air fryer) se ha ganado un sitio fijo en muchas cocinas españolas: permite dorar y cocinar con muy poco aceite, reduciendo salpicaduras y olores sin renunciar a croquetas, alitas o verduras asadas. En Recetas de Casa reunimos platos pensados o etiquetados para este método, con tiempos y pasos adaptados al hogar.',
+  'Estas recetas son útiles si buscas variar el horno y la sartén, preparar cenas rápidas con menos grasa aparente o aprovechar ingredientes congelados y precocinados de forma controlada. No sustituimos el criterio médico ni dietas terapéuticas: el equilibrio del menú semanal sigue siendo decisión tuya.',
+  'Explora también comidas y cenas rápidas, ideas fáciles y el buscador global para filtrar por tiempo o ingredientes. Así enlazamos colecciones relacionadas y facilitamos que encuentres el plato que encaja con tu rutina.',
+];
+
+const faqs = [
+  {
+    pregunta: '¿Necesito una freidora de marca concreta?',
+    respuesta:
+      'No. Los tiempos pueden variar según modelo y capacidad; usa nuestras fichas como guía y comprueba el punto de cocción la primera vez. Si tu aparato es más pequeño, cocina en tandas para que circule bien el aire.',
+  },
+  {
+    pregunta: '¿Puedo adaptar una receta de horno a air fryer?',
+    respuesta:
+      'A menudo sí: suele bastar con bajar un poco la temperatura equivalente, acortar el tiempo y vigilar el dorado. Las recetas exclusivas de categoría Air Fryer en el sitio ya están pensadas con ese enfoque.',
+  },
+  {
+    pregunta: '¿Son más ligeras todas las recetas en freidora de aire?',
+    respuesta:
+      'Suelen usar menos aceite de fritura clásica, pero las calorías dependen del plato completo (rebozados, quesos, mantequilla, etc.). Revisa la ficha de cada receta.',
+  },
+  {
+    pregunta: '¿Dónde encuentro más ideas si no me encaja el listado?',
+    respuesta:
+      'Prueba cenas rápidas, comidas rápidas o la búsqueda por ingrediente; muchas elaboraciones admiten versión en air fryer con pequeños ajustes.',
+  },
+];
+---
+
+<SeoRecetasLanding
+  metaTitle="Recetas para air fryer (freidora de aire) | Recetas de Casa"
+  metaDescription="Recetas para freidora de aire: platos caseros con menos aceite, pasos claros y tiempos orientativos. Selección del recetario Recetas de Casa."
+  canonicalPath="recetas-airfryer/"
+  h1="Recetas para air fryer (freidora de aire)"
+  badgeText={`${recetas.length}+ ideas · freidoras de aire y horno de sobremesa`}
+  introParagraphs={introParagraphs}
+  recetas={recetas}
+  faqs={faqs}
+  enlacesInternos={enlacesInternos}
+/>

@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
-import MenuSemanal from '../components/MenuSemanal.tsx';
+import MenuSemanalApp from '../components/MenuSemanal.tsx';
 ---
 
 <Layout
@@ -10,22 +10,23 @@ import MenuSemanal from '../components/MenuSemanal.tsx';
 >
   <Header />
 
-  <main class="bg-gray-50 min-h-screen">
-    <!-- Hero -->
-    <section class="bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 py-12 text-center">
-      <div class="max-w-3xl mx-auto px-6">
-        <h1 class="text-4xl md:text-5xl font-black text-white mb-4">
-          🗓️ Menú Semanal Inteligente
+  <main class="min-h-screen bg-canvas">
+    <section class="border-b border-border bg-surface py-14 sm:py-20">
+      <div class="mx-auto max-w-3xl px-4 text-center sm:px-6">
+        <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">Beta</p>
+        <h1 class="font-display text-4xl font-semibold leading-tight tracking-tight text-fg sm:text-5xl">
+          Menú semanal inteligente
         </h1>
-        <p class="text-lg text-orange-100 leading-relaxed">
-          Genera un menú semanal equilibrado y personalizado.
-          Nuestro nutricionista virtual elige las mejores combinaciones
-          para ti y tu familia.
+        <p class="mt-5 text-base leading-relaxed text-fg-muted sm:text-lg">
+          Genera un menú equilibrado y personalizado para la semana. Combinamos recetas del recetario
+          según lo que tengas y lo que quieras comer.
         </p>
       </div>
     </section>
 
-    <!-- Componente interactivo React -->
-    <MenuSemanal client:load />
+    {/* transition:persist evita que la isla React quede vacía al volver con View Transitions */}
+    <div transition:persist="menu-semanal-inteligente">
+      <MenuSemanalApp client:load />
+    </div>
   </main>
 </Layout>

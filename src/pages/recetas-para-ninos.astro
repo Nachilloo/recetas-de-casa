@@ -1,0 +1,61 @@
+---
+import SeoRecetasLanding from '../components/SeoRecetasLanding.astro';
+import { fetchRecetasLandingNinos } from '../lib/fetchRecetasSeoLandings';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
+
+const recetas = await fetchRecetasLandingNinos();
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const enlacesInternos = [
+  { href: `${baseUrl}recetas-faciles/`, texto: 'Recetas fáciles' },
+  { href: `${baseUrl}postres-faciles/`, texto: 'Postres fáciles' },
+  { href: `${baseUrl}comidas-rapidas/`, texto: 'Comidas rápidas' },
+  { href: `${baseUrl}recetas/`, texto: 'Ver todas las recetas' },
+];
+
+const introParagraphs = [
+  'Las recetas para niños en esta página son una selección orientativa: priorizamos platos con etiquetas como “familia” o “niños” cuando existen, recetas fáciles con ingredientes que suelen aceptar bien (pasta, patata, pollo, pescado blanco, tortillas) y textos que hablan de comida infantil o familiar. Cada niño es distinto: adapta texturas, picante y troceo a la edad.',
+  'No damos consejos pediátricos ni planes de alimentación infantil. Para alergias, intolerancias o patologías, consulta siempre con tu pediatra o dietista. Nuestro objetivo es ofrecer ideas caseras realistas para padres y cuidadores.',
+  'Combina con postres fáciles para un menú completo, o con comidas rápidas cuando la agenda familiar es apretada. El buscador te permite acotar por ingrediente si hay algo que tu peque suele rechazar.',
+];
+
+const faqs = [
+  {
+    pregunta: '¿A partir de qué edad sirven estas recetas?',
+    respuesta:
+      'Depende del desarrollo del niño: troceo pequeño, evitar miel en menores de un año según recomendaciones generales, y introducir alimentos según guía pediátrica. Nosotros solo ofrecemos ideas culinarias genéricas.',
+  },
+  {
+    pregunta: '¿Cómo introducir verdura si solo acepta pocos platos?',
+    respuesta:
+      'Prueba versiones Camufladas en purés, tortillas o guisos suaves, y ofrece una sola verdura nueva junto a alimentos seguros sin presión. La paciencia y la repetición suelen ayudar más que la insistencia en el plato único.',
+  },
+  {
+    pregunta: '¿Hay recetas sin gluten o sin lactosa?',
+    respuesta:
+      'Puede haberlas, pero no filtramos por alergenos de forma exhaustiva. Lee siempre la lista de ingredientes y etiqueta de cada ficha; en caso de alergia, verifica marcas y sustitutos con profesional.',
+  },
+  {
+    pregunta: '¿Dónde encuentro meriendas o dulces para niños?',
+    respuesta:
+      'Mira postres fáciles o usa el buscador con “galleta”, “bizcocho” o la fruta que quieras incluir.',
+  },
+];
+---
+
+<SeoRecetasLanding
+  metaTitle="Recetas fáciles para niños y familia | Recetas de Casa"
+  metaDescription="Ideas de recetas para niños: pasta, patatas, pescado y platos fáciles pensados para familias. Selección orientativa del recetario Recetas de Casa."
+  canonicalPath="recetas-para-ninos/"
+  h1="Recetas para niños y comida familiar sin drama"
+  badgeText={`${recetas.length}+ ideas · fáciles y reconocibles`}
+  introParagraphs={introParagraphs}
+  recetas={recetas}
+  faqs={faqs}
+  enlacesInternos={enlacesInternos}
+/>

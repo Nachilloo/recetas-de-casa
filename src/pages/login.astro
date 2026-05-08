@@ -1,0 +1,82 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+
+const baseUrl = import.meta.env.BASE_URL;
+---
+
+<Layout
+  title="Iniciar sesión"
+  description="Accede a tu cuenta de Recetas de Casa para guardar favoritos y planificar tu menú semanal."
+  noindex={true}
+>
+  <Header />
+  <main class="min-h-[calc(100vh-4rem)] bg-canvas py-16 sm:py-24">
+    <div class="mx-auto max-w-md px-4 sm:px-6">
+      <div class="mb-10 text-center">
+        <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">Cuenta</p>
+        <h1 class="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+          Iniciar sesión
+        </h1>
+        <p class="mt-3 text-sm text-fg-muted">
+          Aún en construcción. Pronto podrás guardar recetas y planificar tu semana.
+        </p>
+      </div>
+
+      <form class="space-y-5 rounded-[var(--radius-lg)] border border-border bg-surface p-6 sm:p-8" novalidate>
+        <div>
+          <label for="email" class="mb-1.5 block text-sm font-medium text-fg">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            autocomplete="email"
+            required
+            placeholder="tu@email.com"
+            class="w-full rounded-[var(--radius)] border border-border bg-canvas px-3 py-2.5 text-base text-fg placeholder-fg-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+          />
+        </div>
+
+        <div>
+          <div class="mb-1.5 flex items-baseline justify-between">
+            <label for="password" class="text-sm font-medium text-fg">
+              Contraseña
+            </label>
+            <a href="#" class="text-xs text-fg-muted transition-colors hover:text-accent">
+              ¿La olvidaste?
+            </a>
+          </div>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            required
+            class="w-full rounded-[var(--radius)] border border-border bg-canvas px-3 py-2.5 text-base text-fg focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled
+          class="inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Entrar
+        </button>
+
+        <p class="text-center text-xs text-fg-subtle">
+          Próximamente. Si quieres ser de los primeros, escríbenos.
+        </p>
+      </form>
+
+      <p class="mt-8 text-center text-sm text-fg-muted">
+        ¿Aún no tienes cuenta?
+        <a href={`${baseUrl}registro`} class="font-medium text-accent transition-colors hover:text-accent-hover">
+          Crear cuenta
+        </a>
+      </p>
+    </div>
+  </main>
+</Layout>

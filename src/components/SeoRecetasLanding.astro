@@ -60,24 +60,22 @@ const faqLd = {
 
   <Header />
 
-  <main class="bg-gray-50 min-h-screen">
-    <article class="max-w-4xl mx-auto px-6 pt-10 pb-6">
-      <p
-        class="text-sm font-semibold uppercase tracking-wide text-orange-600 mb-3"
-      >
+  <main class="min-h-screen bg-canvas">
+    <article class="mx-auto max-w-4xl px-6 pt-10 pb-6">
+      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent">
         Recetas de Casa
       </p>
-      <h1 class="text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 leading-tight mb-4">
+      <h1 class="mb-4 text-3xl font-black leading-tight text-fg md:text-4xl lg:text-5xl">
         {h1}
       </h1>
       <p
-        class="inline-flex flex-wrap items-center gap-2 text-orange-800 bg-orange-100 border border-orange-200 rounded-full px-4 py-2 text-sm font-semibold mb-8"
+        class="mb-8 inline-flex flex-wrap items-center gap-2 rounded-full border border-border bg-accent-soft px-4 py-2 text-sm font-semibold text-accent"
       >
         {badgeText}
       </p>
 
       <div
-        class="prose prose-lg prose-gray max-w-none prose-p:text-gray-700 prose-p:leading-relaxed prose-headings:text-gray-900"
+        class="prose prose-lg max-w-none prose-headings:font-semibold prose-headings:text-fg prose-p:leading-relaxed prose-p:text-fg-muted prose-strong:text-fg"
       >
         {introParagraphs.map((p) => (
           <p>{p}</p>
@@ -85,7 +83,7 @@ const faqLd = {
       </div>
     </article>
 
-    <section class="max-w-7xl mx-auto px-6 pb-12" aria-labelledby="recetas-listado">
+    <section class="mx-auto max-w-7xl px-6 pb-12" aria-labelledby="recetas-listado">
       <h2 id="recetas-listado" class="sr-only">
         Recetas seleccionadas
       </h2>
@@ -96,14 +94,14 @@ const faqLd = {
       </div>
     </section>
 
-    <section class="max-w-4xl mx-auto px-6 pb-6">
-      <h2 class="text-xl font-bold text-gray-900 mb-4">Sigue explorando</h2>
+    <section class="mx-auto max-w-4xl px-6 pb-6">
+      <h2 class="mb-4 text-xl font-bold text-fg">Sigue explorando</h2>
       <ul class="flex flex-wrap gap-3">
         {enlacesInternos.map((e) => (
           <li>
             <a
               href={e.href}
-              class="inline-block bg-white border border-gray-200 hover:border-orange-300 hover:bg-orange-50 text-gray-800 hover:text-orange-800 px-4 py-2 rounded-full text-sm font-medium transition-colors"
+              class="inline-block rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-fg transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent"
             >
               {e.texto}
             </a>
@@ -112,18 +110,18 @@ const faqLd = {
       </ul>
     </section>
 
-    <section class="max-w-4xl mx-auto px-6 pb-16" aria-labelledby="faq-titulo">
-      <h2 id="faq-titulo" class="text-2xl font-bold text-gray-900 mb-6">
+    <section class="mx-auto max-w-4xl px-6 pb-16" aria-labelledby="faq-titulo">
+      <h2 id="faq-titulo" class="mb-6 text-2xl font-bold text-fg">
         Preguntas frecuentes
       </h2>
       <div class="space-y-3">
         {faqs.map((f) => (
-          <details class="group bg-white rounded-xl border border-gray-200 shadow-sm open:shadow-md">
-            <summary class="cursor-pointer list-none font-semibold text-gray-900 px-5 py-4 flex justify-between items-center gap-4">
+          <details class="group rounded-xl border border-border bg-surface shadow-sm open:shadow-md">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold text-fg">
               <span>{f.pregunta}</span>
-              <span class="text-orange-500 shrink-0 group-open:rotate-180 transition-transform">▼</span>
+              <span class="shrink-0 text-accent transition-transform group-open:rotate-180">▼</span>
             </summary>
-            <div class="px-5 pb-4 pt-0 text-gray-700 leading-relaxed border-t border-gray-100">
+            <div class="border-t border-border px-5 pb-4 pt-0 leading-relaxed text-fg-muted">
               <p class="pt-3">{f.respuesta}</p>
             </div>
           </details>

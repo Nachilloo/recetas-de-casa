@@ -129,127 +129,90 @@ const categoriaValida =
 >
   <Header />
 
-  <main class="max-w-7xl mx-auto px-6 py-8">
-    <h1 class="font-display text-3xl font-bold text-fg md:text-4xl mb-8">Buscar recetas</h1>
-    <!-- Buscador principal -->
-    <section class="mb-8">
-      <div class="max-w-2xl mx-auto">
-        <SearchBox
-          placeholder="Buscar por ingrediente, nombre, descripción..."
-          size="lg"
-          className="mb-4"
-          requireQuery={false}
-          initialQuery={termino}
-          tiempoFiltro={tiempoFiltro}
-          categoriaFiltro={categoriaValida}
-        />
-        <p class="text-center text-sm text-gray-600 mb-2">Tiempo de cocina</p>
-        <TiempoQuickLinks
-          termino={termino}
-          categoria={categoriaValida}
-          tiempoActivo={tiempoFiltro}
-          className="mb-8"
-        />
+  <main class="bg-canvas">
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14">
+      <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">Recetario</p>
+      <h1 class="font-display text-3xl font-semibold tracking-tight text-fg md:text-4xl mb-8">Buscar recetas</h1>
 
-        <!-- Búsquedas rápidas -->
-        <div class="text-center">
-          <p class="text-sm text-gray-600 mb-3">Búsquedas populares:</p>
-          <div class="flex flex-wrap justify-center gap-2">
-            <a
-              href={buscarHref({ termino: 'chocolate', tiempo: tiempoFiltro })}
-              class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
-            >
-              chocolate
-            </a>
-            <a
-              href={buscarHref({ termino: 'pasta', tiempo: tiempoFiltro })}
-              class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
-            >
-              pasta
-            </a>
-            <a
-              href={buscarHref({ termino: 'crema', tiempo: tiempoFiltro })}
-              class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
-            >
-              crema
-            </a>
-            <a
-              href={buscarHref({ termino: 'huevos', tiempo: tiempoFiltro })}
-              class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
-            >
-              huevos
-            </a>
-            <a
-              href={buscarHref({ termino: 'arroz', tiempo: tiempoFiltro })}
-              class="text-xs bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 px-3 py-1 rounded-full transition-colors duration-200"
-            >
-              arroz
-            </a>
+      <section class="mb-10">
+        <div class="max-w-2xl mx-auto">
+          <SearchBox
+            placeholder="Buscar por ingrediente, nombre, descripción…"
+            size="lg"
+            className="mb-4"
+            requireQuery={false}
+            initialQuery={termino}
+            tiempoFiltro={tiempoFiltro}
+            categoriaFiltro={categoriaValida}
+          />
+          <p class="text-center text-xs uppercase tracking-wider text-fg-subtle mb-2">Tiempo de cocina</p>
+          <TiempoQuickLinks
+            termino={termino}
+            categoria={categoriaValida}
+            tiempoActivo={tiempoFiltro}
+            className="mb-8"
+          />
+
+          <div class="text-center">
+            <p class="text-sm text-fg-muted mb-3">Búsquedas populares</p>
+            <div class="flex flex-wrap justify-center gap-2">
+              {['chocolate', 'pasta', 'crema', 'huevos', 'arroz'].map((termGuess) => (
+                <a
+                  href={buscarHref({ termino: termGuess, tiempo: tiempoFiltro })}
+                  class="rounded-full border border-border bg-surface px-3 py-1 text-xs text-fg-muted transition-colors hover:border-accent hover:text-accent"
+                >
+                  {termGuess}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Filtros por categoría -->
-    <section class="mb-8">
-      <h3 class="text-xl font-bold text-gray-900 mb-4">
-         Filtrar por Categoría
-      </h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-        {
-          Object.entries(categorias).map(([key, nombre]) => {
-            const recetasEnCategoria = allRecetas.filter((r) =>
-              recetaTieneCategoria(r, key)
-            );
-            const iconos: { [key: string]: string } = {
-              "arroz-paellas": "🥘",
-              "tortillas-pasta": "🥚",
-              "sopas-cremas": "🍲",
-              "carnes-aves": "🍖",
-              "pescados-mariscos": "🐟",
-              "pan-masas": "🥖",
-              postres: "🍰",
-              "ensaladas-tapas": "🥗",
-              "air-fryer": "🍗",
-            };
+      <section class="mb-10">
+        <h3 class="font-display text-xl font-semibold text-fg mb-4">
+          Filtrar por categoría
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+          {
+            Object.entries(categorias).map(([key, nombre]) => {
+              const recetasEnCategoria = allRecetas.filter((r) =>
+                recetaTieneCategoria(r, key)
+              );
+              const isActive = categoria === key;
+              const href = isActive
+                ? buscarHref({ termino, tiempo: tiempoFiltro })
+                : buscarHref({ termino, categoria: key, tiempo: tiempoFiltro });
+              return (
+                <a
+                  href={href}
+                  class={`block rounded-[var(--radius-lg)] border p-4 text-center transition-colors ${
+                    isActive
+                      ? 'border-accent bg-accent-soft text-accent'
+                      : 'border-border bg-surface text-fg hover:border-accent hover:text-accent'
+                  }`}
+                >
+                  <div class="text-sm font-medium mb-1 line-clamp-2">
+                    {nombre}
+                  </div>
+                  <div class="text-xs text-fg-subtle tabular-nums">
+                    {recetasEnCategoria.length}
+                  </div>
+                </a>
+              );
+            })
+          }
+        </div>
+      </section>
 
-            const isActive = categoria === key;
-            const href = isActive
-              ? buscarHref({ termino, tiempo: tiempoFiltro })
-              : buscarHref({ termino, categoria: key, tiempo: tiempoFiltro });
-            return (
-              <a
-                href={href}
-                class={`group border rounded-xl p-3 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
-                  isActive
-                    ? "bg-orange-100 border-orange-300 text-orange-800"
-                    : "bg-white hover:bg-orange-50 border-gray-200 hover:border-orange-300"
-                }`}
-              >
-                <div class="text-2xl mb-1 group-hover:scale-110 transition-transform duration-200">
-                  {iconos[key] || "🍽️"}
-                </div>
-                <div class="text-xs font-medium mb-1 line-clamp-2">
-                  {nombre}
-                </div>
-                <div class="text-xs text-gray-500">
-                  {recetasEnCategoria.length}
-                </div>
-              </a>
-            );
-          })
-        }
-      </div>
-    </section>
-
-    <!-- Resultados -->
-    <SearchResults
-      recetas={recetas}
-      termino={termino}
-      categoria={categoriaValida}
-      tiempoFiltro={tiempoFiltro}
-      totalRecetas={totalRecetas}
-    />
+      <SearchResults
+        recetas={recetas}
+        termino={termino}
+        categoria={categoriaValida}
+        tiempoFiltro={tiempoFiltro}
+        totalRecetas={totalRecetas}
+      />
+    </div>
   </main>
 </Layout>
 

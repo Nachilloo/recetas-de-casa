@@ -137,9 +137,14 @@ Estados a diseñar **antes** de implementar cobro:
 - [x] Font loading: `display=swap` (Google Fonts en `global.css`).
 - [x] Centralizar tokens (`@theme` en `global.css`).
 - [x] `Header` + `Footer` con mapa de enlaces (Fase B).
-- [ ] Sustituir emojis restantes en cards / home por iconos o texto (parcial: listado recetas, landings, home).
-- [ ] Unificar grises Tailwind antiguos (`gray-900`) a tokens `fg` / `fg-muted` en páginas clave.
-- [ ] Documentar variante “Pro” en Storybook o `/dev/ui` (opcional).
+- [x] Tokens duales claro / oscuro (Fase C — ver §12).
+- [x] Header con toggle de tema (auto / claro / oscuro) y zona auth.
+- [x] Landing reescrito sin emojis chrome, hero editorial sin overlay negro.
+- [x] Páginas `/login`, `/registro`, `/precios` (UI estática).
+- [x] `RecetaCard`, `RecetaCardCompact`, listado y detalle de receta migrados a tokens.
+- [ ] Auth real (Supabase) + estado “sesión iniciada” en header.
+- [ ] Stripe + paywall en menú semanal.
+- [ ] Limpiar Tailwind crudo restante en `/admin/*` y `MenuSemanal.tsx` (fuera del recetario público).
 
 ---
 
@@ -148,7 +153,65 @@ Estados a diseñar **antes** de implementar cobro:
 | Fecha | Cambio |
 |-------|--------|
 | (inicial) | Versión 1.0 — dirección premium + preparación suscripciones / menú |
-| Fase A+B aplicada | Tokens `@theme` + DM Sans / Fraunces; Header con nav completa + menú móvil; `Footer`; `Layout` con `hideFooter` en `/admin`; `theme-color` acorde |
+| Fase A+B | Tokens `@theme` + DM Sans / Fraunces; Header con nav completa + menú móvil; `Footer`; `Layout` con `hideFooter` en `/admin`; `theme-color` acorde |
+| Fase C | Dark mode con auto + toggle 3 estados, anti-flash inline, landing editorial sin emoji, auth UI placeholder, página `/precios`, RecetaCard rediseñada |
+
+---
+
+## 12. Dark mode tokens
+
+Implementación en `src/styles/global.css`. Estrategia:
+
+1. `@theme` define la paleta clara como base (también es la fallback si JS está desactivado).
+2. `[data-theme="dark"]` redefine variables CSS para el modo oscuro y fija `color-scheme: dark`.
+3. `@media (prefers-color-scheme: dark)` aplica los mismos overrides cuando el usuario **no** ha forzado un valor (`:root:not([data-theme="light"]):not([data-theme="dark"])`), respetando la preferencia del SO.
+4. `Layout.astro` lleva un `<script is:inline>` en `<head>` que lee `localStorage.theme` y aplica el atributo antes del primer paint, evitando flash blanco.
+5. `<meta name="theme-color">` con dos versiones (light / dark) para Safari / Android.
+6. `Header.astro` tiene un único botón de tema que cicla `auto → light → dark → auto` y guarda la preferencia en `localStorage`. Iconos visibles según el estado vía clases utilitarias (`.theme-icon-auto/light/dark`).
+
+| Token | Light | Dark |
+|-------|-------|------|
+| `--color-canvas` | `#fafaf8` | `#0f0f0e` |
+| `--color-surface` | `#ffffff` | `#1a1a18` |
+| `--color-surface-raised` | `#ffffff` | `#1f1f1d` |
+| `--color-fg` | `#171717` | `#f5f4f1` |
+| `--color-fg-muted` | `#525252` | `#a3a3a0` |
+| `--color-fg-subtle` | `#737373` | `#78787a` |
+| `--color-border` | `#e5e5e5` | `#2a2a27` |
+| `--color-border-strong` | `#d4d4d4` | `#3a3a37` |
+| `--color-accent` | `#b45309` | `#d97706` |
+| `--color-accent-hover` | `#92400e` | `#f59e0b` |
+| `--color-accent-soft` | `#fff7ed` | `#2a1d10` |
+| `--color-accent-contrast` | `#ffffff` | `#1a1208` |
+
+**Regla**: en componentes nuevos, **prohibido** usar `bg-white`, `text-gray-*`, `border-gray-*`, `bg-orange-*`. Usar siempre tokens (`bg-canvas`, `bg-surface`, `text-fg`, `text-fg-muted`, `border-border`, `bg-accent`, `text-accent`, `bg-accent-soft`).
+
+Radios unificados: `--radius-sm` (6 px), `--radius` (10 px), `--radius-lg` (14 px) y `--radius-pill` (999 px). En cards y formularios usar `--radius-lg`; en botones e inputs `--radius`; pills siguen siendo `rounded-full`.
+
+---
+
+## 13. Auth UI states (placeholders)
+
+Estado actual: **solo UI**, sin backend. Páginas creadas:
+
+- `/login` — formulario email + password, botón submit deshabilitado, mensaje "Próximamente".
+- `/registro` — formulario nombre + email + password + check de términos, mismo estado.
+- `/precios` — dos tarjetas (Gratis / Pro), Pro marcado "Próximamente", FAQ.
+
+En `Header.astro`:
+
+- **Invitado** (estado actual): zona derecha muestra `Iniciar sesión` (link ghost) + `Crear cuenta` (botón outline acento). En móvil aparecen al final del panel hamburguesa, en grid 2 columnas.
+- **Sesión iniciada** (futuro): sustituir las dos acciones por un avatar con dropdown (`Mi perfil`, `Mis recetas`, `Plan`, `Cerrar sesión`).
+- **Suscriptor** (futuro): mismo avatar con anillo `--accent` o pill `Pro` discreto en el dropdown. **No** badge en cada página.
+
+Migración prevista:
+
+1. Habilitar Supabase Auth (email + Google OAuth).
+2. Extender `src/middleware.ts` para inyectar `Astro.locals.user`.
+3. En `Header.astro`, renderizar `{user ? <UserMenu/> : <LoginButtons/>}` según `Astro.locals.user`.
+4. Página `/perfil` (favoritos, menús guardados, plan).
+5. Stripe Checkout + webhook → tabla `subscriptions` o `user_metadata.plan`.
+6. Paywall únicamente en `/menu-semanal` (resto sigue público para SEO).
 
 ---
 

@@ -1,0 +1,61 @@
+---
+import SeoRecetasLanding from '../components/SeoRecetasLanding.astro';
+import { fetchRecetasLandingComidasRapidas } from '../lib/fetchRecetasSeoLandings';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
+
+const recetas = await fetchRecetasLandingComidasRapidas();
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const enlacesInternos = [
+  { href: `${baseUrl}cenas-rapidas/`, texto: 'Cenas rápidas' },
+  { href: `${baseUrl}recetas-faciles/`, texto: 'Recetas fáciles' },
+  { href: `${baseUrl}recetas-airfryer/`, texto: 'Recetas air fryer' },
+  { href: `${baseUrl}recetas/`, texto: 'Ver todas las recetas' },
+];
+
+const introParagraphs = [
+  'Las comidas rápidas son el comodín del mediodía o del fin de semana cuando el hambre aprieta y el reloj no perdona: platos que, según el tiempo declarado en la ficha, encajan en ventanas cortas (priorizamos hasta unos treinta minutos y ampliamos hasta unos cuarenta y cinco si hace falta completar la selección). A diferencia de la página de cenas rápidas, aquí también pueden entrar postres y dulces si son exprés.',
+  'Sirven para oficina en casa, vuelta del cole o día de excursiones. La cocina española y mediterránea ofrece muchas vías: pastas, arroces ligeros, ensaladas completas, sandwiches calientes o recetas de sartén y air fryer.',
+  'Si te orientas por la noche, visita cenas rápidas; si buscas solo dificultad baja, recetas fáciles. El buscador global permite filtrar por tiempo numérico para afinar más allá de esta colección.',
+];
+
+const faqs = [
+  {
+    pregunta: '¿En cuánto tiempo están listas estas recetas?',
+    respuesta:
+      'Priorizamos tiempos declarados de hasta treinta minutos; si el listado necesita completarse, algunas fichas pueden llegar hasta unos cuarenta y cinco minutos. Comprueba siempre el tiempo en la tarjeta de cada receta.',
+  },
+  {
+    pregunta: '¿Comidas rápidas incluye postre?',
+    respuesta:
+      'Sí puede incluirlos si el tiempo encaja. Para cenas saladas sin dulce prioriza la página de cenas rápidas.',
+  },
+  {
+    pregunta: '¿Cómo adelanto ingredientes para ganar minutos?',
+    respuesta:
+      'Sofrito o caldo congelado, verdura lavada del fin de semana, proteínas en porciones y conservas de calidad reducen el tiempo real frente al indicado en la receta.',
+  },
+  {
+    pregunta: '¿Dónde encuentro ideas vegetarianas o más ligeras?',
+    respuesta:
+      'Prueba recetas saludables o usa el buscador con tus ingredientes favoritos.',
+  },
+];
+---
+
+<SeoRecetasLanding
+  metaTitle="Comidas rápidas para el mediodía y el fin de semana | Recetas de Casa"
+  metaDescription="Comidas rápidas caseras: platos en poco tiempo para el almuerzo o cuando vas justo de tiempo. Listado del recetario Recetas de Casa."
+  canonicalPath="comidas-rapidas/"
+  h1="Comidas rápidas cuando no hay tiempo"
+  badgeText={`${recetas.length}+ ideas · treinta minutos o menos (prioritario)`}
+  introParagraphs={introParagraphs}
+  recetas={recetas}
+  faqs={faqs}
+  enlacesInternos={enlacesInternos}
+/>

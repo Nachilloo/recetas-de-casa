@@ -4,27 +4,26 @@ import { categorias as categoriasNombres } from '../content/config';
 import { getCategoriasList, primaryCategoria } from '../lib/recetaCategorias';
 
 export interface Props {
-  receta: Receta | any; // any para mantener compatibilidad con formato antiguo si es necesario
+  receta: Receta | any;
 }
 
 const { receta } = Astro.props;
 
-// Soporte para ambos formatos: Supabase (directo) y Content Collections (con .data)
 const isSupabase = 'slug' in receta && !('data' in receta);
 const slug = isSupabase ? receta.slug : receta.slug;
 const data = isSupabase ? receta : receta.data;
 
-const { 
-  title, 
-  descripcion, 
-  imagen, 
-  imagen_alt, 
+const {
+  title,
+  descripcion,
+  imagen,
+  imagen_alt,
   imagenAlt,
-  tiempo, 
-  porciones, 
-  dificultad, 
-  tags, 
-  calorias 
+  tiempo,
+  porciones,
+  dificultad,
+  tags,
+  calorias,
 } = data;
 
 const cats = getCategoriasList(data);
@@ -33,74 +32,84 @@ const nombreCategoria =
   categoriasNombres[catPrimary as keyof typeof categoriasNombres] || catPrimary;
 const tambienAirFryer = cats.includes('air-fryer') && catPrimary !== 'air-fryer';
 
-// Normalizar campo imagen_alt (Supabase) vs imagenAlt (Content Collections)
 const alt = imagen_alt || imagenAlt;
 
 const baseUrl = import.meta.env.BASE_URL;
 
-// Soporta rutas locales (/images/...) y URLs externas (https://...)
 const getImageSrc = (img: string) =>
   img.startsWith('http') ? img : `${baseUrl}${img.replace(/^\//, '')}`;
+
+const dificultadLabel =
+  dificultad === 'facil' ? 'Fácil' : dificultad === 'media' ? 'Media' : 'Difícil';
 ---
 
-<article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
-  <a href={`${baseUrl}recetas/${slug}/`} class="block">
+<article class="group h-full overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface transition-colors hover:border-accent">
+  <a href={`${baseUrl}recetas/${slug}/`} class="block h-full">
     <div class="relative">
-      <img 
-        src={getImageSrc(imagen)} 
-        alt={alt || title} 
-        class="w-full h-48 object-cover"
+      <img
+        src={getImageSrc(imagen)}
+        alt={alt || title}
+        class="h-52 w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
         loading="lazy"
       />
-      <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium">
-        ⏱️ {tiempo}
+      <div class="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-surface/95 px-2.5 py-1 text-xs font-medium text-fg shadow-sm backdrop-blur-sm">
+        <svg class="h-3.5 w-3.5 text-fg-muted" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round"></circle>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"></path>
+        </svg>
+        {tiempo}
       </div>
     </div>
-    
-    <div class="p-4">
-      <h3 class="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{title}</h3>
-      
+
+    <div class="p-5">
+      <p class="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">
+        {nombreCategoria}
+        {tambienAirFryer && (
+          <span class="ml-1.5 normal-case tracking-normal text-fg-muted">· Air Fryer</span>
+        )}
+      </p>
+
+      <h3 class="font-display text-xl font-semibold leading-snug tracking-tight text-fg line-clamp-2 group-hover:text-accent">
+        {title}
+      </h3>
+
       {descripcion && (
-        <p class="text-gray-600 text-sm mb-3 line-clamp-2">{descripcion}</p>
+        <p class="mt-2 text-sm leading-relaxed text-fg-muted line-clamp-2">{descripcion}</p>
       )}
-      
-      <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
-        <span class="flex items-center gap-1">
-          👥 {porciones} {porciones === 1 ? 'porción' : 'porciones'}
+
+      <div class="mt-4 flex items-center gap-4 text-xs text-fg-muted">
+        <span class="inline-flex items-center gap-1.5">
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-3.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          {porciones} {porciones === 1 ? 'porción' : 'porciones'}
         </span>
+
         {calorias && (
-          <span class="flex items-center gap-1">
-            🔥 {calorias} kcal
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"></path>
+            </svg>
+            {calorias} kcal
           </span>
         )}
-      </div>
-      
-      <div class="flex items-center justify-between gap-2 flex-wrap">
-        <span class="flex flex-wrap items-center gap-1">
-          <span class="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
-            {nombreCategoria}
-          </span>
-          {tambienAirFryer && (
-            <span class="inline-block bg-amber-50 text-amber-900 text-xs px-2 py-1 rounded-full border border-amber-200">
-              Air Fryer
-            </span>
-          )}
-        </span>
-        
-        <span class={`text-xs px-2 py-1 rounded-full shrink-0 ${
-          dificultad === 'facil' ? 'bg-green-100 text-green-800' :
-          dificultad === 'media' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
+
+        <span class={`ml-auto inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+          dificultad === 'facil'
+            ? 'bg-accent-soft text-accent'
+            : dificultad === 'media'
+            ? 'bg-accent-soft text-accent'
+            : 'bg-accent-soft text-accent'
         }`}>
-          {dificultad === 'facil' ? 'Fácil' : dificultad === 'media' ? 'Media' : 'Difícil'}
+          {dificultadLabel}
         </span>
       </div>
-      
+
       {tags && tags.length > 0 && (
-        <div class="mt-3 flex flex-wrap gap-1">
+        <div class="mt-4 flex flex-wrap gap-1.5">
           {tags.slice(0, 3).map(tag => (
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-              #{tag}
+            <span class="rounded-full bg-canvas px-2 py-0.5 text-[11px] text-fg-muted">
+              {tag}
             </span>
           ))}
         </div>

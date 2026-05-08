@@ -36,6 +36,11 @@ interface MenuGuardado {
 
 const STORAGE_KEY = 'menus_guardados';
 
+/** Prefijo del sitio (p. ej. subcarpeta en GitHub Pages). */
+const siteBase = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+const apiUrl = (path: string) => `${siteBase}${path.replace(/^\//, '')}`;
+
 const CATEGORIAS: Record<string, string> = {
   'arroz-paellas': '🥘',
   'tortillas-pasta': '🥚',
@@ -48,10 +53,11 @@ const CATEGORIAS: Record<string, string> = {
   'air-fryer': '🍗',
 };
 
+/** Badges sobre foto: contraste en claro y oscuro */
 const DIFICULTAD_COLORES: Record<string, string> = {
-  'facil': 'bg-green-100 text-green-800',
-  'media': 'bg-yellow-100 text-yellow-800',
-  'dificil': 'bg-red-100 text-red-800',
+  facil: 'bg-emerald-700/90 text-white',
+  media: 'bg-amber-700/90 text-white',
+  dificil: 'bg-red-700/90 text-white',
 };
 
 const DIFICULTAD_NOMBRE: Record<string, string> = {
@@ -114,7 +120,7 @@ export default function MenuSemanal() {
     setMenuData(null);
 
     try {
-      const res = await fetch('/api/menu/generar', {
+      const res = await fetch(apiUrl('api/menu/generar'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -144,7 +150,7 @@ export default function MenuSemanal() {
     if (!menuData) return;
 
     try {
-      const res = await fetch('/api/menu/calendar', {
+      const res = await fetch(apiUrl('api/menu/calendar'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -168,36 +174,35 @@ export default function MenuSemanal() {
   };
 
   const getImageSrc = (img: string) =>
-    img?.startsWith('http') ? img : `/${img?.replace(/^\//, '')}`;
+    img?.startsWith('http') ? img : `${siteBase}${img?.replace(/^\//, '')}`;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
       {/* Configuración */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-gray-100 mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-          <span className="text-3xl">⚙️</span>
+      <div className="rounded-2xl shadow-lg p-6 md:p-8 border border-border bg-surface mb-8">
+        <h2 className="text-2xl font-bold text-fg mb-6">
           Configura tu menú
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Tipo de comida */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-fg mb-2">
               Tipo de comida
             </label>
             <div className="flex flex-col gap-2">
               {[
-                { value: 'comida' as const, label: '🍽️ Solo comida', desc: 'Almuerzo' },
-                { value: 'cena' as const, label: '🌙 Solo cena', desc: 'Cena' },
-                { value: 'ambos' as const, label: '📅 Ambos', desc: 'Comida + Cena' },
+                { value: 'comida' as const, label: 'Solo comida', desc: 'Almuerzo' },
+                { value: 'cena' as const, label: 'Solo cena', desc: 'Cena' },
+                { value: 'ambos' as const, label: 'Ambos', desc: 'Comida + Cena' },
               ].map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => setTipo(opt.value)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all text-left ${
                     tipo === opt.value
-                      ? 'bg-orange-100 border-2 border-orange-400 text-orange-800'
-                      : 'bg-gray-50 border-2 border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'bg-accent-soft border-2 border-accent text-accent'
+                      : 'bg-canvas border-2 border-border text-fg-muted hover:border-border-strong'
                   }`}
                 >
                   {opt.label}
@@ -208,47 +213,47 @@ export default function MenuSemanal() {
 
           {/* Personas */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-fg mb-2">
               Comensales
             </label>
-            <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border-2 border-gray-200">
+            <div className="flex items-center gap-3 rounded-lg p-3 border-2 border-border bg-canvas">
               <button
                 onClick={() => setPersonas(Math.max(1, personas - 1))}
-                className="w-10 h-10 rounded-full bg-white border-2 border-gray-300 text-gray-600 font-bold hover:border-orange-400 hover:text-orange-600 transition-all"
+                className="w-10 h-10 rounded-full border-2 border-border-strong bg-surface text-fg-muted font-bold hover:border-accent hover:text-accent transition-all"
               >
                 -
               </button>
-              <span className="text-3xl font-bold text-gray-900 flex-1 text-center">
+              <span className="text-3xl font-bold text-fg flex-1 text-center">
                 {personas}
               </span>
               <button
                 onClick={() => setPersonas(Math.min(12, personas + 1))}
-                className="w-10 h-10 rounded-full bg-white border-2 border-gray-300 text-gray-600 font-bold hover:border-orange-400 hover:text-orange-600 transition-all"
+                className="w-10 h-10 rounded-full border-2 border-border-strong bg-surface text-fg-muted font-bold hover:border-accent hover:text-accent transition-all"
               >
                 +
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1 text-center">personas</p>
+            <p className="text-xs text-fg-subtle mt-1 text-center">personas</p>
           </div>
 
           {/* Dificultad */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-fg mb-2">
               Dificultad máxima
             </label>
             <div className="flex flex-col gap-2">
               {[
-                { value: 'facil', label: '🟢 Fácil', desc: 'Recetas sencillas' },
-                { value: 'media', label: '🟡 Media', desc: 'Algo más elaboradas' },
-                { value: 'dificil', label: '🔴 Todas', desc: 'Sin restricción' },
+                { value: 'facil', label: 'Fácil', desc: 'Recetas sencillas' },
+                { value: 'media', label: 'Media', desc: 'Algo más elaboradas' },
+                { value: 'dificil', label: 'Todas', desc: 'Sin restricción' },
               ].map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => setDificultadMax(opt.value)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all text-left ${
                     dificultadMax === opt.value
-                      ? 'bg-orange-100 border-2 border-orange-400 text-orange-800'
-                      : 'bg-gray-50 border-2 border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'bg-accent-soft border-2 border-accent text-accent'
+                      : 'bg-canvas border-2 border-border text-fg-muted hover:border-border-strong'
                   }`}
                 >
                   {opt.label}
@@ -259,7 +264,7 @@ export default function MenuSemanal() {
 
           {/* Opciones extra */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-fg mb-2">
               Opciones
             </label>
             <div className="flex flex-col gap-2">
@@ -267,17 +272,14 @@ export default function MenuSemanal() {
                 onClick={() => setAprovechamiento(!aprovechamiento)}
                 className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all text-left ${
                   aprovechamiento
-                    ? 'bg-green-100 border-2 border-green-400 text-green-800'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-600 hover:border-gray-300'
+                    ? 'bg-success/15 border-2 border-success text-success'
+                    : 'bg-canvas border-2 border-border text-fg-muted hover:border-border-strong'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">♻️</span>
-                  <div>
-                    <div className="font-semibold">Aprovechamiento</div>
-                    <div className="text-xs opacity-75">
-                      Reutiliza ingredientes entre días
-                    </div>
+                <div>
+                  <div className="font-semibold">Aprovechamiento</div>
+                  <div className="text-xs opacity-75">
+                    Reutiliza ingredientes entre días
                   </div>
                 </div>
               </button>
@@ -285,17 +287,14 @@ export default function MenuSemanal() {
                 onClick={() => setTemporada(!temporada)}
                 className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all text-left ${
                   temporada
-                    ? 'bg-amber-100 border-2 border-amber-400 text-amber-800'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-600 hover:border-gray-300'
+                    ? 'bg-accent-soft border-2 border-accent text-accent'
+                    : 'bg-canvas border-2 border-border text-fg-muted hover:border-border-strong'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🍅</span>
-                  <div>
-                    <div className="font-semibold">Productos de temporada</div>
-                    <div className="text-xs opacity-75">
-                      Prioriza ingredientes de temporada en España
-                    </div>
+                <div>
+                  <div className="font-semibold">Productos de temporada</div>
+                  <div className="text-xs opacity-75">
+                    Prioriza ingredientes de temporada en España
                   </div>
                 </div>
               </button>
@@ -310,8 +309,8 @@ export default function MenuSemanal() {
             disabled={loading}
             className={`px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg ${
               loading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 hover:-translate-y-1 hover:shadow-xl'
+                ? 'bg-fg-subtle/25 text-fg-subtle cursor-not-allowed'
+                : 'bg-accent text-[var(--color-accent-contrast)] hover:bg-accent-hover hover:-translate-y-1 hover:shadow-xl'
             }`}
           >
             {loading ? (
@@ -323,7 +322,7 @@ export default function MenuSemanal() {
                 Generando menú...
               </span>
             ) : (
-              '🧑‍🍳 Generar Menú Semanal'
+              'Generar menú semanal'
             )}
           </button>
         </div>
@@ -331,7 +330,7 @@ export default function MenuSemanal() {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-8 text-red-700 text-center">
+        <div className="rounded-xl border-2 border-danger/40 bg-danger/10 p-4 mb-8 text-center text-danger">
           {error}
         </div>
       )}
@@ -340,27 +339,27 @@ export default function MenuSemanal() {
       {menuData && (
         <div className="space-y-8">
           {/* Resumen nutricional */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl shadow-lg p-6 border border-green-200">
+          <div className="rounded-2xl border border-border bg-surface p-6 shadow-lg ring-1 ring-success/20">
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-green-800 mb-2 flex items-center gap-2">
-                  <span>🥗</span> Resumen Nutricional
+                <h3 className="mb-2 text-lg font-bold text-success">
+                  Resumen nutricional
                 </h3>
-                <p className="text-green-700">{menuData.resumen_nutricional}</p>
+                <p className="text-fg-muted">{menuData.resumen_nutricional}</p>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-green-800 mb-2 flex items-center gap-2">
-                  <span>💡</span> Consejo de la semana
+                <h3 className="mb-2 text-lg font-bold text-success">
+                  Consejo de la semana
                 </h3>
-                <p className="text-green-700">{menuData.consejo_semanal}</p>
+                <p className="text-fg-muted">{menuData.consejo_semanal}</p>
               </div>
             </div>
             {menuData.aprovechamiento && (
-              <div className="mt-4 pt-4 border-t border-green-200">
-                <h3 className="text-lg font-bold text-green-800 mb-2 flex items-center gap-2">
-                  <span>♻️</span> Aprovechamiento
+              <div className="mt-4 border-t border-border pt-4">
+                <h3 className="mb-2 text-lg font-bold text-success">
+                  Aprovechamiento
                 </h3>
-                <p className="text-green-700">{menuData.aprovechamiento}</p>
+                <p className="text-fg-muted">{menuData.aprovechamiento}</p>
               </div>
             )}
           </div>
@@ -370,21 +369,21 @@ export default function MenuSemanal() {
             <button
               onClick={generarMenu}
               disabled={loading}
-              className="px-6 py-3 bg-white border-2 border-orange-300 text-orange-600 rounded-full font-semibold hover:bg-orange-50 transition-all"
+              className="rounded-full border-2 border-accent bg-surface px-6 py-3 font-semibold text-accent transition-all hover:bg-accent-soft"
             >
-              🔄 Regenerar menú
+              Regenerar menú
             </button>
             <button
               onClick={guardarMenu}
-              className="px-6 py-3 bg-white border-2 border-green-300 text-green-600 rounded-full font-semibold hover:bg-green-50 transition-all"
+              className="rounded-full border-2 border-success bg-surface px-6 py-3 font-semibold text-success transition-all hover:bg-success/10"
             >
-              {guardadoOk ? '✅ Guardado' : '💾 Guardar menú'}
+              {guardadoOk ? 'Guardado' : 'Guardar menú'}
             </button>
             <button
               onClick={exportarCalendar}
-              className="px-6 py-3 bg-white border-2 border-blue-300 text-blue-600 rounded-full font-semibold hover:bg-blue-50 transition-all"
+              className="rounded-full border-2 border-border bg-surface px-6 py-3 font-semibold text-fg-muted transition-all hover:border-accent hover:bg-accent-soft hover:text-accent"
             >
-              📅 Exportar a Google Calendar
+              Exportar a Google Calendar
             </button>
           </div>
 
@@ -393,11 +392,11 @@ export default function MenuSemanal() {
             {menuData.menu.map((dia) => (
               <div
                 key={dia.dia}
-                className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow"
+                className="overflow-hidden rounded-2xl border border-border bg-surface shadow-lg transition-shadow hover:shadow-xl"
               >
                 {/* Header del día */}
-                <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3">
-                  <h3 className="text-white font-bold text-lg">{dia.dia}</h3>
+                <div className="bg-accent px-5 py-3">
+                  <h3 className="text-lg font-bold text-[var(--color-accent-contrast)]">{dia.dia}</h3>
                 </div>
 
                 <div className="p-4 space-y-4">
@@ -406,14 +405,14 @@ export default function MenuSemanal() {
                     <RecetaCard
                       receta={dia.comida}
                       momento="Comida"
-                      emoji="🍽️"
+                      emoji=""
                       getImageSrc={getImageSrc}
                     />
                   )}
 
                   {/* Separador si hay ambos */}
                   {dia.comida && dia.cena && (
-                    <div className="border-t border-gray-100" />
+                    <div className="border-t border-border" />
                   )}
 
                   {/* Cena */}
@@ -421,7 +420,7 @@ export default function MenuSemanal() {
                     <RecetaCard
                       receta={dia.cena}
                       momento="Cena"
-                      emoji="🌙"
+                      emoji=""
                       getImageSrc={getImageSrc}
                     />
                   )}
@@ -437,25 +436,25 @@ export default function MenuSemanal() {
 
       {/* Menús guardados */}
       {menusGuardados.length > 0 && (
-        <div className="mt-8 bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <span>📋</span> Menús guardados
-            <span className="text-sm font-normal text-gray-400">({menusGuardados.length})</span>
+        <div className="mt-8 rounded-2xl border border-border bg-surface p-6 shadow-lg">
+          <h2 className="mb-4 flex items-baseline gap-2 text-xl font-bold text-fg">
+            Menús guardados
+            <span className="text-sm font-normal text-fg-subtle">({menusGuardados.length})</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {menusGuardados.map(saved => (
               <div
                 key={saved.id}
-                className="border border-gray-200 rounded-xl p-4 hover:border-orange-300 hover:shadow-md transition-all group"
+                className="group rounded-xl border border-border p-4 transition-all hover:border-accent hover:shadow-md"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">{saved.nombre}</p>
-                    <p className="text-xs text-gray-400">{saved.fecha}</p>
+                    <p className="text-sm font-semibold text-fg">{saved.nombre}</p>
+                    <p className="text-xs text-fg-subtle">{saved.fecha}</p>
                   </div>
                   <button
                     onClick={() => borrarMenu(saved.id)}
-                    className="text-gray-300 hover:text-red-500 transition-colors p-1"
+                    className="p-1 text-fg-subtle transition-colors hover:text-danger"
                     title="Eliminar"
                   >
                     <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -463,13 +462,13 @@ export default function MenuSemanal() {
                     </svg>
                   </button>
                 </div>
-                <div className="text-xs text-gray-500 mb-3">
+                <div className="mb-3 text-xs text-fg-muted">
                   {saved.menuData.menu.length} días ·{' '}
                   {saved.menuData.menu.filter(d => d.comida).length + saved.menuData.menu.filter(d => d.cena).length} recetas
                 </div>
                 <button
                   onClick={() => cargarMenu(saved)}
-                  className="w-full px-3 py-2 bg-orange-50 text-orange-600 rounded-lg text-sm font-medium hover:bg-orange-100 transition-all"
+                  className="w-full rounded-lg bg-accent-soft px-3 py-2 text-sm font-medium text-accent transition-all hover:bg-accent hover:text-[var(--color-accent-contrast)]"
                 >
                   Cargar este menú
                 </button>
@@ -719,12 +718,12 @@ function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: num
   };
 
   const copiarLista = () => {
-    const lines: string[] = [`🛒 Lista de la compra (${personas} personas)\n`];
+    const lines: string[] = [`Lista de la compra (${personas} personas)\n`];
     for (const cat of categoriasConItems) {
       const info = CAT_DISPLAY[cat];
       lines.push(`\n${info.emoji} ${info.label}:`);
       for (const item of agrupados[cat]) {
-        const mark = checked.has(item.nombre) ? '✅' : '⬜';
+        const mark = checked.has(item.nombre) ? '[x]' : '[ ]';
         const detalle = item.menciones.length > 1 ? ` (×${item.menciones.length} recetas)` : '';
         lines.push(`  ${mark} ${item.nombre}${detalle}`);
         if (item.menciones.length > 1) {
@@ -738,45 +737,44 @@ function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: num
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-        <h3 className="text-white font-bold text-xl flex items-center gap-2">
-          🛒 Lista de la Compra
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
+      <div className="flex flex-col gap-2 bg-accent px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-xl font-bold text-[var(--color-accent-contrast)]">
+          Lista de la compra
         </h3>
         <div className="flex items-center gap-3">
-          <span className="text-white/80 text-sm">
+          <span className="text-sm text-[var(--color-accent-contrast)]/80">
             {totalChecked}/{totalItems}
           </span>
           <button
             onClick={copiarLista}
-            className="px-4 py-1.5 bg-white/20 hover:bg-white/30 text-white text-sm rounded-full font-medium transition-all"
+            className="rounded-full bg-[var(--color-accent-contrast)]/15 px-4 py-1.5 text-sm font-medium text-[var(--color-accent-contrast)] transition-all hover:bg-[var(--color-accent-contrast)]/25"
           >
-            {copiadoOk ? '✅ Copiada' : '📋 Copiar lista'}
+            {copiadoOk ? 'Copiada' : 'Copiar lista'}
           </button>
         </div>
       </div>
 
       {totalChecked > 0 && (
-        <div className="bg-blue-50 px-6 py-2">
-          <div className="w-full bg-blue-200 rounded-full h-2">
+        <div className="bg-accent-soft px-6 py-2">
+          <div className="h-2 w-full rounded-full bg-border">
             <div
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              className="h-2 rounded-full bg-accent transition-all duration-300"
               style={{ width: `${(totalChecked / totalItems) * 100}%` }}
             />
           </div>
         </div>
       )}
 
-      <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2 lg:grid-cols-3">
         {categoriasConItems.map(cat => {
           const info = CAT_DISPLAY[cat];
           const items = agrupados[cat];
           return (
             <div key={cat}>
-              <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
-                <span className="text-lg">{info.emoji}</span>
+              <h4 className="mb-3 flex items-baseline gap-2 text-sm font-bold uppercase tracking-wide text-fg">
                 {info.label}
-                <span className="text-gray-400 font-normal">({items.length})</span>
+                <span className="font-normal text-fg-subtle">({items.length})</span>
               </h4>
               <ul className="space-y-1">
                 {items.map(item => (
@@ -784,16 +782,16 @@ function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: num
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => toggle(item.nombre)}
-                        className={`flex-1 text-left flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all ${
+                        className={`flex flex-1 items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm transition-all ${
                           checked.has(item.nombre)
-                            ? 'bg-green-50 text-gray-400 line-through'
-                            : 'hover:bg-gray-50 text-gray-700'
+                            ? 'bg-success/10 text-fg-subtle line-through'
+                            : 'text-fg hover:bg-accent-soft/60'
                         }`}
                       >
-                        <span className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border-2 transition-all ${
                           checked.has(item.nombre)
-                            ? 'bg-green-500 border-green-500 text-white'
-                            : 'border-gray-300'
+                            ? 'border-success bg-success text-white'
+                            : 'border-border-strong'
                         }`}>
                           {checked.has(item.nombre) && (
                             <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
@@ -803,7 +801,7 @@ function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: num
                         </span>
                         <span>{item.nombre}</span>
                         {item.menciones.length > 1 && (
-                          <span className="text-xs text-orange-500 font-medium ml-auto whitespace-nowrap">
+                          <span className="ml-auto whitespace-nowrap text-xs font-medium text-accent">
                             en {item.menciones.length} recetas
                           </span>
                         )}
@@ -811,7 +809,7 @@ function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: num
                       {item.menciones.length > 1 && (
                         <button
                           onClick={() => toggleDetalle(item.nombre)}
-                          className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                          className="p-1 text-fg-subtle transition-colors hover:text-fg"
                           title="Ver cantidades"
                         >
                           <svg className={`w-4 h-4 transition-transform ${expandido.has(item.nombre) ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
@@ -823,7 +821,7 @@ function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: num
                     {expandido.has(item.nombre) && item.menciones.length > 1 && (
                       <ul className="ml-10 mt-1 mb-2 space-y-0.5">
                         {item.menciones.map((m, i) => (
-                          <li key={i} className="text-xs text-gray-400 italic">• {m}</li>
+                          <li key={i} className="text-xs italic text-fg-subtle">• {m}</li>
                         ))}
                       </ul>
                     )}
@@ -835,8 +833,8 @@ function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: num
         })}
       </div>
 
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 text-center text-sm text-gray-500">
-        Ingredientes de <strong>{menuData.menu.length} días</strong> para <strong>{personas} personas</strong> · Pulsa ▾ para ver cantidades por receta
+      <div className="border-t border-border bg-canvas px-6 py-4 text-center text-sm text-fg-muted">
+        Ingredientes de <strong className="text-fg">{menuData.menu.length} días</strong> para <strong className="text-fg">{personas} personas</strong> · Pulsa ▾ para ver cantidades por receta
       </div>
     </div>
   );
@@ -856,10 +854,10 @@ function RecetaCard({
   if (!receta.title) {
     return (
       <div>
-        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-subtle">
           {emoji} {momento}
         </div>
-        <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-400 italic">
+        <div className="rounded-xl bg-canvas p-3 text-sm italic text-fg-subtle">
           Receta no disponible
         </div>
       </div>
@@ -868,41 +866,38 @@ function RecetaCard({
 
   return (
     <div>
-      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-subtle">
         {emoji} {momento}
       </div>
       <a
-        href={`/recetas/${receta.slug}/`}
+        href={`${siteBase}recetas/${receta.slug}/`}
         target="_blank"
         rel="noopener noreferrer"
         className="group block"
       >
         {receta.imagen && (
-          <div className="relative rounded-xl overflow-hidden mb-2">
+          <div className="relative mb-2 overflow-hidden rounded-xl">
             <img
               src={getImageSrc(receta.imagen)}
               alt={receta.title}
-              className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
+              className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />
-            <div className="absolute top-2 left-2 text-lg">
-              {CATEGORIAS[receta.categoria] || '🍽️'}
-            </div>
             {receta.dificultad && (
-              <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium ${DIFICULTAD_COLORES[receta.dificultad] || ''}`}>
+              <div className={`absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-medium ${DIFICULTAD_COLORES[receta.dificultad] || ''}`}>
                 {DIFICULTAD_NOMBRE[receta.dificultad] || receta.dificultad}
               </div>
             )}
           </div>
         )}
-        <h4 className="font-bold text-gray-900 group-hover:text-orange-600 transition-colors text-sm leading-tight">
+        <h4 className="text-sm font-bold leading-tight text-fg transition-colors group-hover:text-accent">
           {receta.title}
         </h4>
-        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-          {receta.tiempo && <span>⏱️ {receta.tiempo}</span>}
+        <div className="mt-1 flex items-center gap-3 text-xs text-fg-muted">
+          {receta.tiempo && <span>{receta.tiempo}</span>}
         </div>
         {receta.razon && (
-          <p className="text-xs text-gray-400 mt-1 italic leading-snug">
+          <p className="mt-1 text-xs italic leading-snug text-fg-subtle">
             {receta.razon}
           </p>
         )}

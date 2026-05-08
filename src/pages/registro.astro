@@ -1,0 +1,107 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+
+const baseUrl = import.meta.env.BASE_URL;
+---
+
+<Layout
+  title="Crear cuenta"
+  description="Crea tu cuenta gratuita en Recetas de Casa para guardar favoritos y desbloquear el menú semanal con IA."
+  noindex={true}
+>
+  <Header />
+  <main class="min-h-[calc(100vh-4rem)] bg-canvas py-16 sm:py-24">
+    <div class="mx-auto max-w-md px-4 sm:px-6">
+      <div class="mb-10 text-center">
+        <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">Cuenta</p>
+        <h1 class="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+          Crear cuenta
+        </h1>
+        <p class="mt-3 text-sm text-fg-muted">
+          Gratis y sin tarjeta. Las recetas seguirán siendo abiertas; tu cuenta sirve para guardarlas y
+          planificar la semana.
+        </p>
+      </div>
+
+      <form class="space-y-5 rounded-[var(--radius-lg)] border border-border bg-surface p-6 sm:p-8" novalidate>
+        <div>
+          <label for="name" class="mb-1.5 block text-sm font-medium text-fg">
+            Nombre
+          </label>
+          <input
+            id="name"
+            type="text"
+            name="name"
+            autocomplete="given-name"
+            required
+            class="w-full rounded-[var(--radius)] border border-border bg-canvas px-3 py-2.5 text-base text-fg placeholder-fg-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+          />
+        </div>
+
+        <div>
+          <label for="email" class="mb-1.5 block text-sm font-medium text-fg">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            autocomplete="email"
+            required
+            placeholder="tu@email.com"
+            class="w-full rounded-[var(--radius)] border border-border bg-canvas px-3 py-2.5 text-base text-fg placeholder-fg-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+          />
+        </div>
+
+        <div>
+          <label for="password" class="mb-1.5 block text-sm font-medium text-fg">
+            Contraseña
+          </label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            autocomplete="new-password"
+            required
+            minlength="8"
+            class="w-full rounded-[var(--radius)] border border-border bg-canvas px-3 py-2.5 text-base text-fg focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+          />
+          <p class="mt-1.5 text-xs text-fg-subtle">Mínimo 8 caracteres.</p>
+        </div>
+
+        <label class="flex items-start gap-2 text-xs text-fg-muted">
+          <input
+            type="checkbox"
+            name="terms"
+            required
+            class="mt-0.5 h-4 w-4 rounded border-border text-accent focus:ring-accent-soft"
+          />
+          <span>
+            Acepto los <a href="#" class="text-accent hover:underline">términos</a> y la
+            <a href="#" class="text-accent hover:underline">política de privacidad</a>.
+          </span>
+        </label>
+
+        <button
+          type="submit"
+          disabled
+          class="inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Crear mi cuenta
+        </button>
+
+        <p class="text-center text-xs text-fg-subtle">
+          Próximamente. Por ahora la creación de cuentas está deshabilitada.
+        </p>
+      </form>
+
+      <p class="mt-8 text-center text-sm text-fg-muted">
+        ¿Ya tienes cuenta?
+        <a href={`${baseUrl}login`} class="font-medium text-accent transition-colors hover:text-accent-hover">
+          Iniciar sesión
+        </a>
+      </p>
+    </div>
+  </main>
+</Layout>

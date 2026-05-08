@@ -31,15 +31,34 @@ const currentUrl = canonicalUrl || Astro.url.href;
 const fullImageUrl = image.startsWith('http') ? image : `${siteUrl}${image.startsWith('/') ? '' : '/'}${image}`;
 const siteName = 'Recetas de Casa';
 const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
+/** Base con barra final para rutas en `public/` (favicons, manifest). */
+const assetBase = import.meta.env.BASE_URL.replace(/\/?$/, '') + '/';
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
-		
+		<meta name="color-scheme" content="light dark" />
+		<!-- Favicons: .ico para compatibilidad; PNG 96px para UI moderna; Apple; Web App Manifest -->
+		<link rel="icon" href={`${assetBase}favicon.ico`} sizes="any" />
+		<link rel="icon" type="image/png" sizes="96x96" href={`${assetBase}favicon-96x96.png`} />
+		<link rel="apple-touch-icon" href={`${assetBase}apple-touch-icon.png`} />
+		<link rel="manifest" href={`${assetBase}site.webmanifest`} />
+
+		{/* Anti-flash: aplica el tema guardado antes del primer paint. */}
+		<script is:inline>
+			(function () {
+				try {
+					var t = localStorage.getItem("theme");
+					document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+				} catch (e) {
+					document.documentElement.setAttribute("data-theme", "dark");
+				}
+			})();
+		</script>
+
 		<!-- Primary Meta Tags -->
 		<title>{fullTitle}</title>
 		<meta name="title" content={fullTitle} />
@@ -67,8 +86,9 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
 		
 		<!-- Additional SEO -->
 		<meta name="author" content={siteName} />
-		<meta name="theme-color" content="#b45309" />
-		
+		<meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#0f0f0e" media="(prefers-color-scheme: dark)" />
+
 		<ViewTransitions />
 		
 		<!-- Slot for page-specific head content (like JSON-LD) -->

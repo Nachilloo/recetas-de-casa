@@ -20,6 +20,14 @@ const STATIC_PATHS = [
   '/cenas-rapidas/',
   '/recetas-con-pollo/',
   '/recetas-baratas/',
+  '/recetas-airfryer/',
+  '/postres-faciles/',
+  '/recetas-saludables/',
+  '/comidas-rapidas/',
+  '/recetas-para-ninos/',
+  '/login/',
+  '/registro/',
+  '/precios/',
 ] as const;
 
 export const GET: APIRoute = async () => {

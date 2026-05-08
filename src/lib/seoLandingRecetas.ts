@@ -1,5 +1,5 @@
 import type { Receta } from './types';
-import { getCategoriasList } from './recetaCategorias';
+import { getCategoriasList, recetaTieneCategoria } from './recetaCategorias';
 
 /** Convierte `tiempo` humano (~«30 min», «1 hora 30 min») a minutos; null si no se parsea. */
 export function tiempoAMinutos(tiempo: string | null | undefined): number | null {
@@ -44,6 +44,120 @@ export function esRecetaConPollo(r: Receta): boolean {
     /\balitas\b/.test(blob) ||
     /\bjamoncitos\b/.test(blob)
   );
+}
+
+export function esRecetaAirFryer(r: Receta): boolean {
+  return recetaTieneCategoria(r, 'air-fryer');
+}
+
+/** Coincidencia por texto cuando la categoría no está mapeada pero la receta habla del método. */
+export function esRecetaAirFryerPorTexto(r: Receta): boolean {
+  const blob = textoBusqueda(r);
+  return (
+    blob.includes('air fryer') ||
+    blob.includes('airfryer') ||
+    blob.includes('freidora sin aceite') ||
+    blob.includes('freidora de aire')
+  );
+}
+
+export function esPostreFacilEstricto(r: Receta): boolean {
+  return recetaTieneCategoria(r, 'postres') && r.dificultad === 'facil';
+}
+
+export function esPostreFacilAmpliado(r: Receta): boolean {
+  if (!recetaTieneCategoria(r, 'postres')) return false;
+  if (r.dificultad === 'media') return true;
+  const m = tiempoAMinutos(r.tiempo);
+  return m != null && m <= 50 && r.dificultad === 'facil';
+}
+
+export function esRecetaSaludableEstricta(r: Receta): boolean {
+  const tags = (r.tags ?? []).join(' ').toLowerCase();
+  const blob = textoBusqueda(r);
+  const hits = [
+    'salud',
+    'vegan',
+    'veget',
+    'ligero',
+    'light',
+    'integral',
+    'avena',
+    'bajo en calor',
+    'proteic',
+    'ensalada',
+    'flexitarian',
+  ];
+  if (hits.some((h) => tags.includes(h) || blob.includes(h))) return true;
+  if (r.calorias != null && r.calorias > 0 && r.calorias <= 420) return true;
+  return false;
+}
+
+export function esRecetaSaludableAmpliada(r: Receta): boolean {
+  if (esRecetaExclusivamentePostre(r) && !esRecetaSaludableEstricta(r)) return false;
+  const blob = textoBusqueda(r);
+  const keys = [
+    'verdura',
+    'hortaliza',
+    'lenteja',
+    'garbanzo',
+    'alubia',
+    'pescado',
+    'merluza',
+    'bacalao',
+    'atún',
+    'atun',
+    'tomate',
+    'espinaca',
+    'brócoli',
+    'brocoli',
+    'quinoa',
+  ];
+  return r.dificultad !== 'dificil' && keys.some((k) => blob.includes(k));
+}
+
+/** Cualquier comida o postre con tiempo corto (almuerzo, cena, merienda). */
+export function esComidaRapidaEstricta(r: Receta): boolean {
+  const m = tiempoAMinutos(r.tiempo);
+  return m != null && m <= 30;
+}
+
+export function esComidaRapidaAmpliada(r: Receta): boolean {
+  const m = tiempoAMinutos(r.tiempo);
+  return m != null && m <= 45;
+}
+
+export function esRecetaParaNinosEstricta(r: Receta): boolean {
+  const tags = (r.tags ?? []).join(' ').toLowerCase();
+  const blob = textoBusqueda(r);
+  if (/niños|ninos|niño|infantil|familia|peques|kids/.test(tags)) return true;
+  if (/niños|ninos|niño|infantil|peques/.test(blob)) return true;
+  return false;
+}
+
+export function esRecetaParaNinosAmpliada(r: Receta): boolean {
+  if (r.dificultad === 'dificil') return false;
+  const blob = textoBusqueda(r);
+  const kidFoods = [
+    'pasta',
+    'espaguet',
+    'macarron',
+    'croqueta',
+    'nuggets',
+    'empanada',
+    'merluza',
+    'pollo',
+    'patata',
+    'puré',
+    'pure ',
+    'pure.',
+    'tortilla',
+    'pizza',
+    'hamburguesa',
+    'fingers',
+    'spaghetti',
+  ];
+  return kidFoods.some((k) => blob.includes(k));
 }
 
 export function esRecetaBarata(r: Receta): boolean {

@@ -66,12 +66,12 @@ while (true) {
     const categoria = urlParams.get('categoria');
     const busqueda = urlParams.get('q');
 
-    if (categoria && categorias.hasOwnProperty(categoria)) {
+      if (categoria && categorias.hasOwnProperty(categoria)) {
       categoriaActiva = categoria;
       categoryFilters.forEach(btn => {
         if (btn.dataset.categoria === categoria) {
-          btn.classList.remove('bg-white', 'border-gray-200');
-          btn.classList.add('bg-orange-100', 'border-orange-300', 'text-orange-800');
+          btn.classList.remove('bg-surface', 'border-border', 'text-fg-muted');
+          btn.classList.add('bg-accent-soft', 'border-accent', 'text-accent');
         }
       });
     }
@@ -131,12 +131,12 @@ while (true) {
       resultCount.textContent = `${recetasVisibles} receta${recetasVisibles !== 1 ? 's' : ''} encontrada${recetasVisibles !== 1 ? 's' : ''}`;
     }
 
-    let titulo = '🍽️ Todas las Recetas';
+    let titulo = 'Todas las recetas';
     if (categoriaActiva) {
-      titulo = `🍽️ ${categorias[categoriaActiva]}`;
+      titulo = categorias[categoriaActiva];
     }
     if (busquedaActiva) {
-      titulo = `🔍 Resultados para "${busquedaActiva}"`;
+      titulo = `Resultados para "${busquedaActiva}"`;
     }
     if (sectionTitle) sectionTitle.textContent = titulo;
 
@@ -152,10 +152,10 @@ while (true) {
     if (categoriaActiva) {
       hayFiltros = true;
       const tag = document.createElement('div');
-      tag.className = 'flex items-center bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm';
+      tag.className = 'flex items-center bg-accent-soft text-accent px-3 py-1 rounded-full text-sm';
       tag.innerHTML = `
         <span>${categorias[categoriaActiva]}</span>
-        <button class="ml-2 hover:text-orange-600" onclick="limpiarCategoria()">
+        <button class="ml-2 hover:text-[var(--color-accent-hover)]" onclick="limpiarCategoria()">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
@@ -167,10 +167,10 @@ while (true) {
     if (busquedaActiva) {
       hayFiltros = true;
       const tag = document.createElement('div');
-      tag.className = 'flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm';
+      tag.className = 'flex items-center bg-canvas border border-border text-fg px-3 py-1 rounded-full text-sm';
       tag.innerHTML = `
         <span>"${busquedaActiva}"</span>
-        <button class="ml-2 hover:text-blue-600" onclick="limpiarBusqueda()">
+        <button class="ml-2 hover:text-accent" onclick="limpiarBusqueda()">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
@@ -190,17 +190,17 @@ while (true) {
 
       if (categoriaActiva === categoria) {
         categoriaActiva = null;
-        button.classList.remove('bg-orange-100', 'border-orange-300', 'text-orange-800');
-        button.classList.add('bg-white', 'border-gray-200');
+        button.classList.remove('bg-accent-soft', 'border-accent', 'text-accent');
+        button.classList.add('bg-surface', 'border-border', 'text-fg-muted');
       } else {
         categoryFilters.forEach(btn => {
-          btn.classList.remove('bg-orange-100', 'border-orange-300', 'text-orange-800');
-          btn.classList.add('bg-white', 'border-gray-200');
+          btn.classList.remove('bg-accent-soft', 'border-accent', 'text-accent');
+          btn.classList.add('bg-surface', 'border-border', 'text-fg-muted');
         });
 
         categoriaActiva = categoria;
-        button.classList.remove('bg-white', 'border-gray-200');
-        button.classList.add('bg-orange-100', 'border-orange-300', 'text-orange-800');
+        button.classList.remove('bg-surface', 'border-border', 'text-fg-muted');
+        button.classList.add('bg-accent-soft', 'border-accent', 'text-accent');
       }
 
       aplicarFiltros();
@@ -217,8 +217,8 @@ while (true) {
   window.limpiarCategoria = () => {
     categoriaActiva = null;
     categoryFilters.forEach(btn => {
-      btn.classList.remove('bg-orange-100', 'border-orange-300', 'text-orange-800');
-      btn.classList.add('bg-white', 'border-gray-200');
+      btn.classList.remove('bg-accent-soft', 'border-accent', 'text-accent');
+      btn.classList.add('bg-surface', 'border-border', 'text-fg-muted');
     });
     aplicarFiltros();
   };
@@ -254,38 +254,39 @@ while (true) {
   image="/images/hero-ingredientes-1024.webp"
 >
   <Header />
-  <main class="bg-white">
-    <section class="max-w-7xl mx-auto px-6 py-12">
+  <main class="bg-canvas">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-16">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
         <div>
-          <h1 id="sectionTitle" class="font-display text-3xl font-bold text-fg md:text-4xl">Todas las recetas</h1>
-          <p id="resultCount" class="text-gray-500 mt-1"></p>
+          <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">Recetario</p>
+          <h1 id="sectionTitle" class="font-display text-3xl font-semibold tracking-tight text-fg md:text-4xl">Todas las recetas</h1>
+          <p id="resultCount" class="text-fg-muted mt-1 text-sm"></p>
         </div>
-        <div class="flex items-center gap-3">
-          <button id="clearAllFilters" class="text-sm text-gray-600 hover:text-orange-600">Limpiar filtros</button>
-          <button id="showAllRecetas" class="text-sm text-orange-600 hover:text-orange-700">Mostrar todas</button>
+        <div class="flex items-center gap-4 text-sm">
+          <button id="clearAllFilters" class="text-fg-muted transition-colors hover:text-accent">Limpiar filtros</button>
+          <button id="showAllRecetas" class="font-medium text-accent transition-colors hover:text-[var(--color-accent-hover)]">Mostrar todas</button>
         </div>
       </div>
 
       <div class="mb-6">
-        <input id="searchInput" type="search" placeholder="Buscar por nombre, ingrediente o tag..."
-          class="w-full md:w-96 px-4 py-3 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-300" />
+        <input id="searchInput" type="search" placeholder="Buscar por nombre, ingrediente o tag…"
+          class="w-full md:w-96 rounded-[var(--radius)] border border-border bg-surface px-4 py-3 text-base text-fg placeholder-fg-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft" />
       </div>
 
       <div class="flex flex-wrap gap-2 mb-4" id="activeFilters">
         <div id="filterTags" class="flex flex-wrap gap-2"></div>
       </div>
 
-      <div class="flex flex-wrap gap-3 mb-10">
+      <div class="flex flex-wrap gap-2 mb-10">
         {Object.entries(categorias).map(([key, nombre]) => (
-          <button class="category-filter bg-white border border-gray-200 hover:border-orange-300 text-gray-700 hover:text-orange-700 px-3 py-1.5 rounded-full text-sm transition"
+          <button class="category-filter bg-surface border border-border text-fg-muted hover:border-accent hover:text-accent px-3 py-1.5 rounded-full text-sm transition-colors"
                   data-categoria={key}>
             {nombre}
           </button>
         ))}
       </div>
 
-      <div id="recetasContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div id="recetasContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {recetas.map(receta => {
           const tags = (receta.tags || []).join(' ').toLowerCase();
           const descripcion = (receta.descripcion || '').toLowerCase();
@@ -302,7 +303,7 @@ while (true) {
         })}
       </div>
 
-      <div id="emptyState" class="hidden text-center text-gray-600 py-16">
+      <div id="emptyState" class="hidden text-center text-fg-muted py-16">
         No se han encontrado recetas con los filtros aplicados.
       </div>
     </section>

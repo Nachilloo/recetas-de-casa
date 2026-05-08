@@ -1,0 +1,61 @@
+---
+import SeoRecetasLanding from '../components/SeoRecetasLanding.astro';
+import { fetchRecetasLandingPostresFaciles } from '../lib/fetchRecetasSeoLandings';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
+
+const recetas = await fetchRecetasLandingPostresFaciles();
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const enlacesInternos = [
+  { href: `${baseUrl}recetas-faciles/`, texto: 'Recetas fáciles saladas' },
+  { href: `${baseUrl}recetas-airfryer/`, texto: 'Recetas air fryer' },
+  { href: `${baseUrl}comidas-rapidas/`, texto: 'Comidas rápidas' },
+  { href: `${baseUrl}recetas/`, texto: 'Ver todas las recetas' },
+];
+
+const introParagraphs = [
+  'Los postres fáciles son el recurso perfecto cuando quieres cerrar la comida con algo dulce sin pasarte horas entre batidora y horno. Aquí priorizamos recetas de categoría postre con dificultad baja o tiempos asumibles, pensadas para el día a día y para quien cocina con niños o invitados de última hora.',
+  'Un buen postre casero no tiene por qué ser complicado: cremas, bizcochos sencillos, fruta cocida o versiones ligeras pueden bastar. Las fichas indican ingredientes y pasos con lenguaje claro; si tu horno o molde es distinto, ajusta unos minutos y vigila el dorado.',
+  'Si buscas algo más rápido aún, combina esta página con comidas rápidas o cenas rápidas para menuar toda la jornada; el enlace al recetario completo te permite seguir explorando por categoría.',
+];
+
+const faqs = [
+  {
+    pregunta: '¿Qué postres fáciles puedo hacer sin horno?',
+    respuesta:
+      'Mousse, arroz con leche en olla, fruta caramelizada en sartén, chia o yogur con toppings caseros. Filtra por tiempo en la ficha o usa la búsqueda con palabras como “sin horno” si aparecen en título o descripción.',
+  },
+  {
+    pregunta: '¿Cómo evito que un postre fácil quede demasiado dulce?',
+    respuesta:
+      'Reduce azúcar un 10–15 % en la primera prueba, añade un punto de sal si lleva chocolate o caramelo, y equilibra con cítricos o fruta ácida. Ajusta siempre a tu paladar.',
+  },
+  {
+    pregunta: '¿Puedo congelar estos postres?',
+    respuesta:
+      'Depende de la receta: masas y helados suelen aguantar bien; cremas con huevo pueden cambiar de textura. Consulta los consejos en cada ficha si los hay.',
+  },
+  {
+    pregunta: '¿Hay opciones más ligeras?',
+    respuesta:
+      'Visita también recetas saludables; algunos postres combinan fruta, frutos secos y menos azúcar añadido. No sustituimos consejo médico o dietético personalizado.',
+  },
+];
+---
+
+<SeoRecetasLanding
+  metaTitle="Postres fáciles y rápidos caseros | Recetas de Casa"
+  metaDescription="Postres fáciles para hacer en casa: dulces sencillos con pocos pasos. Selección del recetario Recetas de Casa."
+  canonicalPath="postres-faciles/"
+  h1="Postres fáciles para el día a día"
+  badgeText={`${recetas.length}+ ideas · dulces sin complicarse`}
+  introParagraphs={introParagraphs}
+  recetas={recetas}
+  faqs={faqs}
+  enlacesInternos={enlacesInternos}
+/>
