@@ -11,7 +11,7 @@ const { data: ultimasRecetas = [], error } = await supabase
   .from('recetas')
   .select('*')
   .order('created_at', { ascending: false })
-  .limit(7);
+  .limit(12);
 
 if (error) {
   console.error('Error al obtener recetas:', error);
@@ -35,9 +35,36 @@ let todasLasRecetas: any[] = [];
 const totalRecetas = todasLasRecetas.length;
 const totalCategorias = Object.keys(categorias).length;
 
-// Receta a destacar: primera marcada destacada, o la última publicada como fallback
-const recetaDestacada = (ultimasRecetas || []).find((r: any) => r.destacada) || (ultimasRecetas || [])[0];
-const otrasUltimas = (ultimasRecetas || []).filter((r: any) => r !== recetaDestacada).slice(0, 6);
+function elegirHeroAleatorio<T extends { imagen?: string | null }>(lista: T[]): T | null {
+  if (!lista.length) return null;
+  const conImagen = lista.filter((r) => (r.imagen || '').trim());
+  const pool = conImagen.length ? conImagen : lista;
+  return pool[Math.floor(Math.random() * pool.length)]!;
+}
+
+// Hero: receta aleatoria entre las marcadas como destacada; si no hay, entre las más recientes
+let recetaDestacada: any = null;
+{
+  const { data: todasDestacadas } = await supabase
+    .from('recetas')
+    .select('*')
+    .eq('destacada', true)
+    .order('created_at', { ascending: false })
+    .limit(300);
+
+  const poolHero = (todasDestacadas || []).length
+    ? todasDestacadas!
+    : ultimasRecetas || [];
+
+  recetaDestacada = elegirHeroAleatorio(poolHero);
+  if (!recetaDestacada && ultimasRecetas?.length) {
+    recetaDestacada = elegirHeroAleatorio(ultimasRecetas as any[]);
+  }
+}
+
+const otrasUltimas = (ultimasRecetas || [])
+  .filter((r: any) => r.slug !== recetaDestacada?.slug)
+  .slice(0, 6);
 
 const baseUrl = import.meta.env.BASE_URL;
 
