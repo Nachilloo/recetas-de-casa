@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase';
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import RecipeSchema from '../../components/RecipeSchema.astro';
+import BreadcrumbSchema from '../../components/BreadcrumbSchema.astro';
+import FaqSchema from '../../components/FaqSchema.astro';
 import { categorias, dificultades } from '../../content/config';
 import { getCategoriasList, primaryCategoria } from '../../lib/recetaCategorias';
 import type { Receta } from '../../lib/types';
@@ -47,6 +49,44 @@ const getImageSrc = (img: string) =>
   img.startsWith('http') ? img : `${import.meta.env.BASE_URL}${img.replace(/^\//, '')}`;
 
 const baseUrl = import.meta.env.BASE_URL;
+
+const site = Astro.site!;
+const homeUrl = new URL(baseUrl, site).href;
+const categoryUrl = new URL(
+  `${baseUrl}buscar?categoria=${encodeURIComponent(categoria)}`,
+  site,
+).href;
+const recipeUrl = Astro.url.href;
+
+const breadcrumbLd = [
+  { name: 'Inicio', item: homeUrl },
+  { name: categoriaNombre, item: categoryUrl },
+  { name: title, item: recipeUrl },
+];
+
+type FaqEntry = { question: string; answer: string };
+
+const faqItems: FaqEntry[] = [
+  {
+    question: `¿Cuánto tiempo lleva preparar ${title}?`,
+    answer: `El tiempo estimado es de ${tiempo}.`,
+  },
+  {
+    question: `¿Para cuántas personas está pensada esta receta?`,
+    answer: `La receta rinde para ${porciones} ${porciones === 1 ? 'persona' : 'personas'}.`,
+  },
+  {
+    question: `¿Qué nivel de dificultad tiene ${title}?`,
+    answer: `La dificultad indicada es: ${dificultadNombre}.`,
+  },
+];
+
+if (tips && tips.length > 0) {
+  faqItems.push({
+    question: `¿Qué consejos ayudan a que ${title} salga mejor?`,
+    answer: tips.join(' '),
+  });
+}
 ---
 
 <Layout
@@ -73,12 +113,30 @@ const baseUrl = import.meta.env.BASE_URL;
     created_at={receta.created_at}
     updated_at={receta.updated_at}
   />
+  <BreadcrumbSchema slot="head" items={breadcrumbLd} />
+  <FaqSchema slot="head" faqs={faqItems} />
   <Header />
 
   <main class="min-h-screen bg-canvas">
     {/* Hero detalle: foto + información */}
     <section class="border-b border-border bg-surface">
-      <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14">
+      <div class="mx-auto max-w-7xl px-4 pb-10 pt-8 sm:px-6 sm:pb-14 sm:pt-10 md:pb-14 md:pt-12">
+        <nav aria-label="Migas de pan" class="mb-8 text-sm text-fg-muted md:mb-10">
+          <ol class="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <li>
+              <a href={homeUrl} class="text-accent hover:underline">Inicio</a>
+            </li>
+            <li aria-hidden="true" class="text-fg-subtle">/</li>
+            <li>
+              <a href={categoryUrl} class="text-accent hover:underline">{categoriaNombre}</a>
+            </li>
+            <li aria-hidden="true" class="text-fg-subtle">/</li>
+            <li>
+              <span class="text-fg font-medium" aria-current="page">{title}</span>
+            </li>
+          </ol>
+        </nav>
+
         <div class="grid grid-cols-1 items-start gap-10 lg:grid-cols-2 lg:gap-14">
           <div class="order-2 lg:order-1">
             <figure class="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-canvas">
@@ -228,6 +286,22 @@ const baseUrl = import.meta.env.BASE_URL;
             </div>
           )}
         </div>
+      </div>
+    </section>
+
+    <section class="border-b border-border bg-canvas py-12 sm:py-14" aria-labelledby="faq-heading">
+      <div class="mx-auto max-w-3xl px-4 sm:px-6">
+        <h2 id="faq-heading" class="font-display text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
+          Preguntas frecuentes
+        </h2>
+        <dl class="mt-8 space-y-8">
+          {faqItems.map((faq) => (
+            <div>
+              <dt class="font-semibold text-fg">{faq.question}</dt>
+              <dd class="mt-2 text-base leading-relaxed text-fg-muted">{faq.answer}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
 

@@ -1,0 +1,29 @@
+---
+/**
+ * JSON-LD BreadcrumbList for recipe detail and similar pages.
+ */
+export interface BreadcrumbItem {
+  name: string;
+  /** Full URL; omit on the last item if you only want a name (include item for current URL when possible). */
+  item?: string;
+}
+
+export interface Props {
+  items: BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((entry, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: entry.name,
+    ...(entry.item ? { item: entry.item } : {}),
+  })),
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />

@@ -1,0 +1,33 @@
+---
+/**
+ * JSON-LD FAQPage. Questions and answers must match visible content on the page.
+ */
+export interface FaqEntry {
+  question: string;
+  answer: string;
+}
+
+export interface Props {
+  faqs: FaqEntry[];
+}
+
+const { faqs } = Astro.props;
+
+const schema =
+  faqs.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((faq) => ({
+          '@type': 'Question',
+          name: faq.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.answer,
+          },
+        })),
+      }
+    : null;
+---
+
+{schema && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}

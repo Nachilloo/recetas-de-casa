@@ -11,7 +11,7 @@ const { data: ultimasRecetas = [], error } = await supabase
   .from('recetas')
   .select('*')
   .order('created_at', { ascending: false })
-  .limit(12);
+  .limit(24);
 
 if (error) {
   console.error('Error al obtener recetas:', error);
@@ -42,7 +42,25 @@ function elegirHeroAleatorio<T extends { imagen?: string | null }>(lista: T[]): 
   return pool[Math.floor(Math.random() * pool.length)]!;
 }
 
-// Hero: receta aleatoria entre las marcadas como destacada; si no hay, entre las más recientes
+/** Variar el hero: si hay 2+ destacadas, solo esas; si hay 0 o 1, mezclar con últimas (sin duplicar por slug). */
+function poolRecetaHero(destacadas: any[], ultimas: any[]): any[] {
+  if (destacadas.length >= 2) return destacadas;
+  if (destacadas.length === 0) return ultimas || [];
+  const seen = new Set(destacadas.map((r: any) => r.slug));
+  const out = [...destacadas];
+  for (const r of ultimas || []) {
+    if (r?.slug && !seen.has(r.slug)) {
+      out.push(r);
+      seen.add(r.slug);
+    }
+  }
+  return out;
+}
+
+// Hero: aleatorio en servidor; evitar CDN “pegada” al primer resultado del build
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+
+// Hero: receta aleatoria entre destacadas; con una sola destacada se rota también entre las últimas
 let recetaDestacada: any = null;
 {
   const { data: todasDestacadas } = await supabase
@@ -52,9 +70,8 @@ let recetaDestacada: any = null;
     .order('created_at', { ascending: false })
     .limit(300);
 
-  const poolHero = (todasDestacadas || []).length
-    ? todasDestacadas!
-    : ultimasRecetas || [];
+  const dest = todasDestacadas || [];
+  const poolHero = poolRecetaHero(dest, ultimasRecetas || []);
 
   recetaDestacada = elegirHeroAleatorio(poolHero);
   if (!recetaDestacada && ultimasRecetas?.length) {
@@ -71,6 +88,7 @@ const baseUrl = import.meta.env.BASE_URL;
 // Resolver fuente de imagen (interna vs externa) para la receta destacada
 const heroImg = recetaDestacada?.imagen || '';
 const heroImgSrc = heroImg.startsWith('http') ? heroImg : `${baseUrl}${heroImg.replace(/^\//, '')}`;
+const heroEsDestacada = Boolean(recetaDestacada?.destacada);
 
 const ideas = [
   { href: `${baseUrl}recetas-faciles/`, label: 'Recetas fáciles', desc: 'Pocos pasos, ingredientes a mano.' },
@@ -190,7 +208,9 @@ const ideas = [
                   />
                 </div>
                 <figcaption class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-5 sm:p-6">
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">Receta destacada</p>
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
+                    {heroEsDestacada ? 'Receta destacada' : 'Te puede gustar'}
+                  </p>
                   <p class="font-display mt-1 text-xl font-semibold leading-tight text-white sm:text-2xl">
                     {recetaDestacada.title}
                   </p>
