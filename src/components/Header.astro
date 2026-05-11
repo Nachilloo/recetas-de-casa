@@ -49,6 +49,11 @@ const profile = Astro.locals.profile;
           class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
           >Buscar</a
         >
+        <a
+          href={`${baseUrl}precios`}
+          class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
+          >Planes</a
+        >
         <details class="relative">
           <summary
             class="flex cursor-pointer list-none items-center gap-0.5 rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3 [&::-webkit-details-marker]:hidden"
@@ -203,6 +208,11 @@ const profile = Astro.locals.profile;
           href={`${baseUrl}buscar`}
           class="rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
           >Buscar</a
+        >
+        <a
+          href={`${baseUrl}precios`}
+          class="rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+          >Planes</a
         >
         <p class="px-3 pt-2 text-xs font-semibold uppercase tracking-wider text-fg-subtle">Ideas</p>
         <a
