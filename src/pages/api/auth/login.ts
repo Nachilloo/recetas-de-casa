@@ -1,88 +1,37 @@
 import type { APIRoute } from 'astro';
-import { supabase } from '../../../lib/supabase';
+import { supabase, setAuthCookies } from '../../../lib/supabase';
 
-export const POST: APIRoute = async ({ request }) => {
+export const prerender = false;
+
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const body = await request.json();
-    const { email, password } = body;
+    const { email, password } = await request.json();
 
-    console.log('[API] Intentando login para:', email);
+    if (!email || !password) {
+      return json({ success: false, error: 'Email y contraseña son obligatorios' }, 400);
+    }
 
-    // Realizar el login
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    console.log('[API] Respuesta de Supabase:', { 
-      hasSession: !!data.session, 
-      error: error?.message 
-    });
-
-    if (error) {
-      console.error('[API] Error de autenticación:', error);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: error.message 
-        }), 
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' }
-        }
+    if (error || !data.session) {
+      return json(
+        { success: false, error: error?.message ?? 'No se pudo iniciar sesión' },
+        401
       );
     }
 
-    if (!data.session) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'No se pudo crear la sesión' 
-        }), 
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    setAuthCookies(cookies, data.session.access_token, data.session.refresh_token);
 
-    // Sesión creada exitosamente
-    console.log('[API] Sesión creada exitosamente para:', data.user.email);
-
-    // Crear las cookies manualmente
-    const accessTokenCookie = `sb-access-token=${data.session.access_token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=3600`;
-    const refreshTokenCookie = `sb-refresh-token=${data.session.refresh_token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`;
-
-    console.log('[API] Estableciendo cookies de sesión');
-
-    // Devolver la sesión para que el cliente la guarde
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        session: data.session,
-        user: data.user
-      }), 
-      {
-        status: 200,
-        headers: new Headers([
-          ['Content-Type', 'application/json'],
-          ['Set-Cookie', accessTokenCookie],
-          ['Set-Cookie', refreshTokenCookie]
-        ])
-      }
-    );
+    return json({ success: true, user: data.user });
   } catch (err) {
-    console.error('[API] Error inesperado:', err);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'Error al procesar la solicitud' 
-      }), 
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    console.error('[login]', err);
+    return json({ success: false, error: 'Error al procesar la solicitud' }, 500);
   }
 };
 
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}

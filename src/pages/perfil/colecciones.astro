@@ -1,0 +1,27 @@
+---
+import PerfilLayout from "../../layouts/PerfilLayout.astro";
+import ColeccionesManager from "../../components/ColeccionesManager.tsx";
+import { createServerClient } from "../../lib/supabase";
+
+const user = Astro.locals.user!;
+const baseUrl = import.meta.env.BASE_URL;
+
+const client = await createServerClient(Astro.cookies);
+const { data: colecciones } = await client
+  .from("colecciones")
+  .select("*")
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false });
+---
+
+<PerfilLayout
+  title="Mis colecciones"
+  description="Agrupa tus recetas favoritas en colecciones temáticas. Puedes hacerlas públicas en tu perfil si quieres."
+  active="colecciones"
+>
+  <ColeccionesManager
+    client:load
+    initial={colecciones ?? []}
+    baseUrl={baseUrl}
+  />
+</PerfilLayout>

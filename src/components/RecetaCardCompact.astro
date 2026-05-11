@@ -1,9 +1,13 @@
 ---
+import FavoritoButton from './FavoritoButton.tsx';
+
 export interface Props {
   receta: any;
 }
 
 const { receta } = Astro.props;
+const loggedIn = !!Astro.locals.user;
+const baseUrl = import.meta.env.BASE_URL;
 
 const isSupabase = receta && !('data' in receta);
 const slug = receta?.slug;
@@ -68,6 +72,8 @@ const dificultadLabel =
         <span class="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent">
           {dificultadLabel}
         </span>
+
+        <FavoritoButton client:load slug={slug} loggedIn={loggedIn} baseUrl={baseUrl} size="sm" />
 
         <svg class="h-5 w-5 text-fg-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-accent" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>

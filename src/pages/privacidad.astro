@@ -1,0 +1,64 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+
+const updated = "11 de mayo de 2026";
+---
+
+<Layout
+  title="Política de privacidad"
+  description="Cómo trata Recetas de Casa tus datos personales."
+>
+  <Header />
+  <main class="bg-canvas py-16 sm:py-24">
+    <article class="mx-auto max-w-3xl px-4 sm:px-6 prose prose-stone dark:prose-invert">
+      <p class="text-xs uppercase tracking-[0.2em] text-accent">Legal</p>
+      <h1>Política de privacidad</h1>
+      <p class="text-sm text-fg-subtle">Última actualización: {updated}</p>
+
+      <h2>1. Datos que recogemos</h2>
+      <ul>
+        <li>Email y contraseña (cifrada) para autenticación.</li>
+        <li>Nombre, username, biografía y avatar opcionales (perfil público si lo activas).</li>
+        <li>Favoritos, colecciones y uso del menú con IA.</li>
+        <li>Datos de pago: solo IDs de Stripe; los datos de tarjeta NO los guardamos nosotros.</li>
+      </ul>
+
+      <h2>2. Para qué los usamos</h2>
+      <ul>
+        <li>Operar el servicio (cuenta, favoritos, generaciones).</li>
+        <li>Aplicar la cuota gratuita del menú IA.</li>
+        <li>Procesar pagos vía Stripe.</li>
+        <li>Comunicaciones operativas (confirmación de email, cambios de plan).</li>
+      </ul>
+
+      <h2>3. Encargados de tratamiento</h2>
+      <ul>
+        <li><a href="https://supabase.com" rel="noopener noreferrer">Supabase</a> — autenticación y base de datos (UE).</li>
+        <li><a href="https://stripe.com" rel="noopener noreferrer">Stripe</a> — pagos.</li>
+        <li><a href="https://openai.com" rel="noopener noreferrer">OpenAI</a> — generación del menú (no enviamos tu email; sí ingredientes/preferencias).</li>
+        <li><a href="https://vercel.com" rel="noopener noreferrer">Vercel</a> — hosting.</li>
+      </ul>
+
+      <h2>4. Tus derechos (RGPD)</h2>
+      <p>
+        Puedes acceder, rectificar y eliminar tus datos. Para borrar tu cuenta usa la sección
+        Cuenta o escribe a
+        <a href="mailto:hola@recetasdecasa.es">hola@recetasdecasa.es</a>.
+      </p>
+
+      <h2>5. Cookies</h2>
+      <p>
+        Usamos cookies estrictamente necesarias para mantener tu sesión (sb-access-token /
+        sb-refresh-token) y una preferencia de tema (light/dark). No usamos cookies de
+        publicidad ni tracking de terceros.
+      </p>
+
+      <h2>6. Contacto</h2>
+      <p>
+        Responsable del tratamiento: Recetas de Casa.<br />
+        Email: <a href="mailto:hola@recetasdecasa.es">hola@recetasdecasa.es</a>
+      </p>
+    </article>
+  </main>
+</Layout>

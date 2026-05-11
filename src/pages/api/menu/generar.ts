@@ -1,7 +1,10 @@
 import type { APIRoute } from 'astro';
-import { supabase } from '../../../lib/supabase';
 import OpenAI from 'openai';
+import { supabase, createServerClient } from '../../../lib/supabase';
+import { computePlanStatus, recordMenuUsage } from '../../../lib/plan';
 import { getCategoriasList, recetaTieneCategoria } from '../../../lib/recetaCategorias';
+
+export const prerender = false;
 
 interface RecetaRow {
   slug: string;
@@ -15,51 +18,107 @@ interface RecetaRow {
   imagen: string;
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
+    // ── AUTH ───────────────────────────────────────────────────────
+    const client = await createServerClient(cookies);
+    const { data: userData } = await client.auth.getUser();
+    const user = userData.user;
+
+    if (!user) {
+      return json(
+        {
+          error: 'auth_required',
+          message: 'Tienes que crear una cuenta gratis para generar tu menú semanal.',
+          redirect: '/registro?next=/menu-semanal',
+        },
+        401
+      );
+    }
+
+    const { data: profile } = await client
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const status = await computePlanStatus(cookies, profile, user.id);
+
+    // ── PARSE BODY ─────────────────────────────────────────────────
     const body = await request.json();
     const {
-      tipo = 'ambos',       // 'comida' | 'cena' | 'ambos'
+      tipo = 'ambos',
       personas = 4,
       dificultadMax = 'dificil',
       tiempoMax = '',
       excluirCategorias = [] as string[],
       aprovechamiento = false,
       temporada = false,
+      // Nuevas preferencias (preferencias-de-receta integradas en el formulario)
+      alergias = [] as string[],
+      dieta = '' as string,
     } = body;
 
-    const openaiKey = import.meta.env.OPENAI_API_KEY;
-    if (!openaiKey) {
-      return new Response(JSON.stringify({ error: 'OPENAI_API_KEY no configurada' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // ── PAYWALL ────────────────────────────────────────────────────
+    // Las opciones avanzadas son solo Pro/Trial
+    const pideOpcionAvanzada = aprovechamiento || temporada;
+    if (pideOpcionAvanzada && status.plan === 'free') {
+      return json(
+        {
+          error: 'paywall_feature',
+          feature: 'aprovechamiento_temporada',
+          message:
+            'Las opciones de aprovechamiento y productos de temporada están disponibles en el plan Pro o durante tu trial.',
+          upgrade: '/precios',
+        },
+        402
+      );
     }
 
-    // Cargar TODAS las recetas de Supabase paginando (superar límite de 1000)
+    if (!status.canGenerateMenu) {
+      return json(
+        {
+          error: 'paywall_quota',
+          message:
+            'Has usado tu generación gratuita. Puedes volver a generar el menú IA dentro de unas semanas o suscribirte al plan Pro para generaciones ilimitadas.',
+          cooldownUntil: status.menuCooldownUntil,
+          upgrade: '/precios',
+        },
+        402
+      );
+    }
+
+    // ── CARGAR RECETAS ─────────────────────────────────────────────
+    const openaiKey = import.meta.env.OPENAI_API_KEY;
+    if (!openaiKey) {
+      return json({ error: 'OPENAI_API_KEY no configurada' }, 500);
+    }
+
     const PAGE = 1000;
     let recetas: RecetaRow[] = [];
     let offset = 0;
 
     const dificultadFiltro = {
-      'facil': ['facil'],
-      'media': ['facil', 'media'],
-      'dificil': ['facil', 'media', 'dificil'],
-    };
-    const dificultades = dificultadFiltro[dificultadMax as keyof typeof dificultadFiltro] || ['facil', 'media', 'dificil'];
+      facil: ['facil'],
+      media: ['facil', 'media'],
+      dificil: ['facil', 'media', 'dificil'],
+    } as const;
+    const dificultades =
+      dificultadFiltro[dificultadMax as keyof typeof dificultadFiltro] || [
+        'facil',
+        'media',
+        'dificil',
+      ];
 
     while (true) {
-      let query = supabase
+      const query = supabase
         .from('recetas')
         .select('slug, title, categoria, categorias, dificultad, tiempo, porciones, ingredientes, imagen')
         .in('dificultad', dificultades);
 
       const { data, error: fetchError } = await query.range(offset, offset + PAGE - 1);
       if (fetchError) {
-        return new Response(JSON.stringify({ error: 'No se pudieron cargar las recetas' }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        return json({ error: 'No se pudieron cargar las recetas' }, 500);
       }
       if (!data || data.length === 0) break;
       recetas = recetas.concat(data as RecetaRow[]);
@@ -69,21 +128,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (excluirCategorias.length > 0) {
       recetas = recetas.filter(
-        (r) => !excluirCategorias.some((ex) => recetaTieneCategoria(r, ex))
+        (r) => !excluirCategorias.some((ex: string) => recetaTieneCategoria(r, ex))
       );
     }
 
     if (recetas.length === 0) {
-      return new Response(JSON.stringify({ error: 'No se encontraron recetas' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return json({ error: 'No se encontraron recetas con esos filtros' }, 400);
     }
 
-    // Preparar lista compacta de recetas para el prompt
-    const listaRecetas = recetas.map(r =>
-      `- "${r.title}" [${getCategoriasList(r).join('+')}] [${r.dificultad}] [${r.tiempo}] [slug:${r.slug}] [ingredientes: ${r.ingredientes.slice(0, 5).join(', ')}]`
-    ).join('\n');
+    // ── PROMPT ─────────────────────────────────────────────────────
+    const listaRecetas = recetas
+      .map(
+        (r) =>
+          `- "${r.title}" [${getCategoriasList(r).join('+')}] [${r.dificultad}] [${r.tiempo}] [slug:${r.slug}] [ingredientes: ${r.ingredientes.slice(0, 5).join(', ')}]`
+      )
+      .join('\n');
 
     const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
@@ -97,14 +156,16 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const aprovechamientoTexto = aprovechamiento
-      ? `MENÚ DE APROVECHAMIENTO: Prioriza recetas que compartan ingredientes entre días. 
+      ? `MENÚ DE APROVECHAMIENTO: Prioriza recetas que compartan ingredientes entre días.
          Por ejemplo: si un día se usa pollo asado, al día siguiente sugiere croquetas de pollo.
          Si un día se usa caldo de pescado, al siguiente sugiere una sopa con ese caldo.
          Agrupa ingredientes comunes para minimizar desperdicio y compras.`
       : '';
 
-    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const meses = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+    ];
     const mesActual = meses[new Date().getMonth()];
 
     const temporadaTexto = temporada
@@ -112,6 +173,16 @@ export const POST: APIRoute = async ({ request }) => {
          Favorece verduras, frutas, pescados y carnes que sean típicos de ${mesActual} en la península ibérica.
          En el resumen nutricional, menciona qué productos de temporada se han incluido.`
       : '';
+
+    const alergiasTexto =
+      Array.isArray(alergias) && alergias.length > 0
+        ? `ALERGIAS / EXCLUSIONES: NUNCA elijas recetas cuyos ingredientes contengan: ${alergias.join(', ')}. Si tienes dudas, descarta la receta.`
+        : '';
+
+    const dietaTexto =
+      typeof dieta === 'string' && dieta && dieta !== 'omnivora'
+        ? `DIETA: ${dieta}. Excluye estrictamente los ingredientes incompatibles.`
+        : '';
 
     const prompt = `Eres un nutricionista español experto en dieta mediterránea.
 Genera un menú semanal equilibrado y variado para ${personas} personas.
@@ -134,6 +205,8 @@ ${tiempoMax ? `- Tiempo máximo por receta: ${tiempoMax}` : ''}
 
 ${aprovechamientoTexto}
 ${temporadaTexto}
+${alergiasTexto}
+${dietaTexto}
 
 Elige ÚNICAMENTE de esta lista de recetas disponibles:
 ${listaRecetas}
@@ -163,41 +236,35 @@ IMPORTANTE: Usa EXACTAMENTE los slugs de la lista. Los días son: ${dias.join(',
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'Eres un nutricionista experto. Responde solo con JSON válido.' },
-        { role: 'user', content: prompt }
+        { role: 'user', content: prompt },
       ],
       temperature: 0.7,
-      response_format: { type: 'json_object' }
+      response_format: { type: 'json_object' },
     });
 
     const menuData = JSON.parse(response.choices[0].message.content || '{}');
 
-    // Enriquecer y validar el menú con los datos completos de cada receta
-    const recetasMap = new Map<string, RecetaRow>(recetas.map(r => [r.slug, r]));
-
+    // ── ENRIQUECER ─────────────────────────────────────────────────
+    const recetasMap = new Map<string, RecetaRow>(recetas.map((r) => [r.slug, r]));
     const slugsUsados = new Set<string>();
 
     function enriquecerSlot(slot: { slug: string; razon: string }): Record<string, unknown> {
       let receta = recetasMap.get(slot.slug);
-
-      // Si el slug no existe, buscar por coincidencia parcial
       if (!receta) {
         const slugBuscado = slot.slug.toLowerCase();
-        for (const [slug, r] of recetasMap) {
-          if (slug.includes(slugBuscado) || slugBuscado.includes(slug)) {
+        for (const [s, r] of recetasMap) {
+          if (s.includes(slugBuscado) || slugBuscado.includes(s)) {
             receta = r;
             break;
           }
         }
       }
-
-      // Si aún no se encontró, asignar una receta aleatoria no usada
       if (!receta) {
-        const disponibles = recetas.filter(r => !slugsUsados.has(r.slug));
+        const disponibles = recetas.filter((r) => !slugsUsados.has(r.slug));
         if (disponibles.length > 0) {
           receta = disponibles[Math.floor(Math.random() * disponibles.length)];
         }
       }
-
       if (receta) {
         slugsUsados.add(receta.slug);
         return { ...slot, ...receta, slug: receta.slug } as Record<string, unknown>;
@@ -205,27 +272,31 @@ IMPORTANTE: Usa EXACTAMENTE los slugs de la lista. Los días son: ${dias.join(',
       return slot as Record<string, unknown>;
     }
 
-    for (const dia of menuData.menu) {
-      if (dia.comida) {
-        dia.comida = enriquecerSlot(dia.comida);
-      }
-      if (dia.cena) {
-        dia.cena = enriquecerSlot(dia.cena);
-      }
+    for (const dia of menuData.menu ?? []) {
+      if (dia.comida) dia.comida = enriquecerSlot(dia.comida);
+      if (dia.cena) dia.cena = enriquecerSlot(dia.cena);
     }
 
-    return new Response(JSON.stringify(menuData), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    // ── REGISTRAR USO (solo si era una generación con cuota) ───────
+    try {
+      await recordMenuUsage(user.id, status.plan);
+    } catch (err) {
+      console.error('[menu/generar] No se pudo registrar uso:', err);
+    }
 
+    return json({ ...menuData, plan: status.plan });
   } catch (error) {
     console.error('Error generando menú:', error);
-    return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : 'Error desconocido'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return json(
+      { error: error instanceof Error ? error.message : 'Error desconocido' },
+      500
+    );
   }
 };
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}

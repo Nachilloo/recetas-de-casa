@@ -1,0 +1,84 @@
+---
+import PerfilLayout from "../../layouts/PerfilLayout.astro";
+import PlanActions from "../../components/PlanActions.tsx";
+import { computePlanStatus } from "../../lib/plan";
+
+const user = Astro.locals.user!;
+const profile = Astro.locals.profile;
+const baseUrl = import.meta.env.BASE_URL;
+
+const status = await computePlanStatus(Astro.cookies, profile, user.id);
+
+const planLabel =
+  status.plan === "pro"
+    ? "Pro"
+    : status.trialActive
+      ? `Trial (quedan ${status.trialDaysLeft} días)`
+      : "Gratis";
+
+const showStatusBanner = Astro.url.searchParams.get("status");
+---
+
+<PerfilLayout
+  title="Mi plan"
+  description="Gestiona tu suscripción y revisa qué incluye tu plan actual."
+  active="plan"
+>
+  {showStatusBanner === "success" && (
+    <div class="mb-6 rounded-[var(--radius)] border border-success/40 bg-success/10 px-4 py-3 text-sm text-success">
+      Bienvenido a Pro. Disfruta de todas las funciones.
+    </div>
+  )}
+
+  <section class="rounded-[var(--radius-lg)] border border-border bg-surface p-6 sm:p-8">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-accent">Plan actual</p>
+        <h2 class="font-display mt-1 text-3xl font-semibold text-fg">{planLabel}</h2>
+        {profile?.pro_renews_at && status.plan === "pro" && (
+          <p class="mt-2 text-sm text-fg-muted">
+            Renovación: {new Date(profile.pro_renews_at).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}
+          </p>
+        )}
+      </div>
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div>
+        <h3 class="text-sm font-semibold text-fg">Menú semanal con IA</h3>
+        <p class="mt-2 text-sm text-fg-muted">
+          {status.canGenerateMenu
+            ? status.plan === "pro"
+              ? "Generaciones ilimitadas."
+              : status.trialActive
+                ? "Generaciones ilimitadas durante tu trial."
+                : "Tienes 1 generación disponible. Se renueva cada 2 meses en el plan gratis."
+            : `Has usado tu generación gratuita. Disponible de nuevo el ${
+                status.menuCooldownUntil
+                  ? new Date(status.menuCooldownUntil).toLocaleDateString("es-ES", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
+                  : ""
+              }.`}
+        </p>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-fg">Favoritos y colecciones</h3>
+        <p class="mt-2 text-sm text-fg-muted">Ilimitados en todos los planes.</p>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <PlanActions
+        client:load
+        baseUrl={baseUrl}
+        plan={status.plan}
+        trialActive={status.trialActive}
+        trialUsed={status.trialUsed}
+      />
+    </div>
+  </section>
+</PerfilLayout>

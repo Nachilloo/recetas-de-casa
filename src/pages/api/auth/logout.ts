@@ -1,18 +1,18 @@
 import type { APIRoute } from 'astro';
-import { createServerSupabaseClient } from '../../../lib/supabase';
+import { createServerClient, clearAuthCookies } from '../../../lib/supabase';
 
-export const POST: APIRoute = async ({ request, redirect }) => {
-  const supabase = createServerSupabaseClient(request);
-  
-  const { error } = await supabase.auth.signOut();
-  
-  if (error) {
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+export const prerender = false;
+
+async function handle(cookies: Parameters<typeof clearAuthCookies>[0], redirectFn: (path: string) => Response) {
+  try {
+    const client = await createServerClient(cookies);
+    await client.auth.signOut();
+  } catch (err) {
+    console.error('[logout]', err);
   }
-  
-  return redirect('/admin/login');
-};
+  clearAuthCookies(cookies);
+  return redirectFn('/');
+}
 
+export const POST: APIRoute = async ({ cookies, redirect }) => handle(cookies, redirect);
+export const GET: APIRoute = async ({ cookies, redirect }) => handle(cookies, redirect);

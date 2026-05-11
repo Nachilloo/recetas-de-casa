@@ -1,0 +1,130 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import RecetaCard from "../../components/RecetaCard.astro";
+import { supabaseAdmin, supabase } from "../../lib/supabase";
+import type { Profile, Coleccion } from "../../lib/types";
+
+const { username } = Astro.params;
+
+if (!username) return Astro.redirect("/");
+
+// Usamos el cliente admin (service role) si está disponible para bypass RLS
+// (favoritos están protegidos por RLS y los queremos mostrar públicos para perfiles públicos).
+// Si no, caemos al cliente anon (no verá favoritos).
+const client = supabaseAdmin ?? supabase;
+
+const { data: profileRaw } = await client
+  .from("profiles")
+  .select("*")
+  .eq("username", username)
+  .maybeSingle();
+
+const profile = profileRaw as Profile | null;
+
+if (!profile || !profile.is_public) {
+  return Astro.redirect("/404");
+}
+
+// Favoritos del usuario (los públicos por ser perfil público)
+const { data: favRows } = (await client
+  .from("favoritos")
+  .select("receta_slug, created_at")
+  .eq("user_id", profile.id)
+  .order("created_at", { ascending: false })
+  .limit(60)) as { data: { receta_slug: string }[] | null };
+
+const favoritosSlugs = (favRows ?? []).map((f) => f.receta_slug);
+
+let recetas: any[] = [];
+if (favoritosSlugs.length > 0) {
+  const { data } = (await client.from("recetas").select("*").in("slug", favoritosSlugs)) as {
+    data: any[] | null;
+  };
+  if (data) {
+    const map = new Map<string, any>(data.map((r) => [r.slug as string, r]));
+    recetas = favoritosSlugs.map((s) => map.get(s)).filter(Boolean);
+  }
+}
+
+const { data: coleccionesRows } = await client
+  .from("colecciones")
+  .select("*")
+  .eq("user_id", profile.id)
+  .eq("is_public", true)
+  .order("created_at", { ascending: false });
+const colecciones = (coleccionesRows ?? []) as Coleccion[];
+
+const displayName = profile.display_name || `@${profile.username}`;
+const initial = displayName.charAt(0).toUpperCase();
+
+const pageTitle = `${displayName} — Recetas guardadas`;
+const pageDesc =
+  profile.bio ||
+  `Las recetas favoritas y colecciones de ${displayName} en Recetas de Casa.`;
+---
+
+<Layout title={pageTitle} description={pageDesc}>
+  <Header />
+  <main class="bg-canvas">
+    <section class="border-b border-border bg-surface">
+      <div class="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-12 sm:flex-row sm:items-center sm:px-6 sm:py-16">
+        <div
+          class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-soft text-3xl font-semibold text-accent sm:h-24 sm:w-24"
+          aria-hidden="true"
+        >
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt="" class="h-full w-full object-cover" />
+          ) : (
+            <span>{initial}</span>
+          )}
+        </div>
+
+        <div class="min-w-0">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Perfil</p>
+          <h1 class="mt-1 font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+            {displayName}
+          </h1>
+          <p class="mt-1 text-sm text-fg-subtle">@{profile.username}</p>
+          {profile.bio && <p class="mt-4 max-w-2xl text-base text-fg-muted">{profile.bio}</p>}
+        </div>
+      </div>
+    </section>
+
+    {colecciones.length > 0 && (
+      <section class="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+        <h2 class="font-display text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
+          Colecciones
+        </h2>
+        <div class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {colecciones.map((c) => (
+            <article class="rounded-[var(--radius-lg)] border border-border bg-surface p-6">
+              <h3 class="font-display text-lg font-semibold text-fg">{c.nombre}</h3>
+              {c.descripcion && (
+                <p class="mt-2 text-sm text-fg-muted">{c.descripcion}</p>
+              )}
+              <p class="mt-3 text-xs text-fg-subtle">
+                {c.slugs.length} {c.slugs.length === 1 ? "receta" : "recetas"}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <section class="mx-auto max-w-5xl px-4 pb-16 sm:px-6 sm:pb-24">
+      <h2 class="font-display text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
+        Recetas favoritas
+      </h2>
+      {recetas.length === 0 ? (
+        <p class="mt-6 text-sm text-fg-muted">
+          {displayName} aún no ha marcado recetas como favoritas.
+        </p>
+      ) : (
+        <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {recetas.map((r) => <RecetaCard receta={r} />)}
+        </div>
+      )}
+    </section>
+  </main>
+</Layout>

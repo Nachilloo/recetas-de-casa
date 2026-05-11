@@ -1,0 +1,54 @@
+---
+import PerfilLayout from "../../layouts/PerfilLayout.astro";
+import RecetaCard from "../../components/RecetaCard.astro";
+import { createServerClient } from "../../lib/supabase";
+
+const baseUrl = import.meta.env.BASE_URL;
+const user = Astro.locals.user!;
+
+const client = await createServerClient(Astro.cookies);
+
+const { data: favRows } = (await client
+  .from("favoritos")
+  .select("receta_slug, created_at")
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false })) as { data: { receta_slug: string }[] | null };
+
+const slugs = (favRows ?? []).map((r) => r.receta_slug);
+
+let recetas: any[] = [];
+if (slugs.length > 0) {
+  const { data } = (await client.from("recetas").select("*").in("slug", slugs)) as {
+    data: any[] | null;
+  };
+  if (data) {
+    const map = new Map<string, any>(data.map((r) => [r.slug as string, r]));
+    recetas = slugs.map((s) => map.get(s)).filter(Boolean);
+  }
+}
+---
+
+<PerfilLayout
+  title="Mis favoritos"
+  description="Las recetas que has guardado. Pulsa el corazón en cualquier receta para añadirla o quitarla."
+  active="favoritos"
+>
+  {recetas.length === 0 ? (
+    <div class="rounded-[var(--radius-lg)] border border-dashed border-border bg-surface p-10 text-center">
+      <h2 class="font-display text-xl font-semibold text-fg">Aún no tienes favoritos</h2>
+      <p class="mx-auto mt-2 max-w-md text-sm text-fg-muted">
+        Explora el recetario y pulsa el corazón en cualquier receta para guardarla aquí.
+      </p>
+      <a
+        href={`${baseUrl}recetas/`}
+        class="mt-6 inline-flex items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+      >
+        Ver recetas
+      </a>
+    </div>
+  ) : (
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {recetas.map((r) => <RecetaCard receta={r} />)}
+    </div>
+  )}
+</PerfilLayout>

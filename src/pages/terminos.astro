@@ -1,0 +1,76 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+
+const updated = "11 de mayo de 2026";
+---
+
+<Layout
+  title="Términos y condiciones"
+  description="Términos de uso del servicio Recetas de Casa."
+>
+  <Header />
+  <main class="bg-canvas py-16 sm:py-24">
+    <article class="mx-auto max-w-3xl px-4 sm:px-6 prose prose-stone dark:prose-invert">
+      <p class="text-xs uppercase tracking-[0.2em] text-accent">Legal</p>
+      <h1>Términos y condiciones</h1>
+      <p class="text-sm text-fg-subtle">Última actualización: {updated}</p>
+
+      <h2>1. Aceptación</h2>
+      <p>
+        Al crear una cuenta y usar Recetas de Casa aceptas estos términos. Si no estás de acuerdo,
+        no uses el servicio.
+      </p>
+
+      <h2>2. Uso del servicio</h2>
+      <p>
+        El recetario es de consulta libre. La cuenta gratuita permite guardar favoritos, crear
+        colecciones y generar un menú semanal con IA cada 2 meses. El Plan Pro añade generaciones
+        ilimitadas y funciones adicionales.
+      </p>
+
+      <h2>3. Cuenta y seguridad</h2>
+      <p>
+        Eres responsable de mantener la confidencialidad de tu contraseña y de la actividad de tu
+        cuenta. Notifícanos cualquier uso no autorizado.
+      </p>
+
+      <h2>4. Contenido</h2>
+      <p>
+        Las recetas y textos son propiedad de Recetas de Casa o están licenciados para su uso aquí.
+        Puedes consultar y cocinar las recetas libremente; no está permitido reproducirlas en masa
+        ni revenderlas.
+      </p>
+
+      <h2>5. Suscripción Pro</h2>
+      <p>
+        La suscripción se cobra mensual o anualmente por adelantado a través de Stripe. Cancelas en
+        cualquier momento desde tu cuenta y mantienes acceso hasta el final del período facturado.
+        No hay reembolsos por períodos parciales.
+      </p>
+
+      <h2>6. Cancelación de cuenta</h2>
+      <p>
+        Puedes eliminar tu cuenta en cualquier momento desde la sección Cuenta. Eliminaremos tus
+        datos personales en un plazo razonable salvo obligación legal de conservación.
+      </p>
+
+      <h2>7. Limitación de responsabilidad</h2>
+      <p>
+        Recetas de Casa no se hace responsable de alergias, intolerancias o decisiones nutricionales
+        derivadas del uso de las recetas o del menú con IA. Consulta a un profesional para
+        recomendaciones médicas.
+      </p>
+
+      <h2>8. Cambios</h2>
+      <p>
+        Podemos actualizar estos términos. Te avisaremos por email de cambios sustanciales.
+      </p>
+
+      <h2>9. Contacto</h2>
+      <p>
+        Para cualquier duda: <a href="mailto:hola@recetasdecasa.es">hola@recetasdecasa.es</a>.
+      </p>
+    </article>
+  </main>
+</Layout>

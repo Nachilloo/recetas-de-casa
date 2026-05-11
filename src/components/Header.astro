@@ -1,6 +1,10 @@
 ---
 import LogoMark from './LogoMark.astro';
+import UserMenu from './UserMenu.astro';
+
 const baseUrl = import.meta.env.BASE_URL;
+const user = Astro.locals.user;
+const profile = Astro.locals.profile;
 ---
 
 <header
@@ -137,16 +141,24 @@ const baseUrl = import.meta.env.BASE_URL;
         {/* Auth UI (desktop) */}
         <div class="hidden md:flex md:items-center md:gap-1.5 md:pl-1.5">
           <span class="hidden h-5 w-px bg-border lg:inline-block" aria-hidden="true"></span>
-          <a
-            href={`${baseUrl}login`}
-            class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:text-accent lg:px-3"
-            >Iniciar sesión</a
-          >
-          <a
-            href={`${baseUrl}registro`}
-            class="rounded-lg border border-accent px-3 py-2 text-sm font-semibold text-accent transition-colors hover:bg-accent hover:text-[var(--color-accent-contrast)]"
-            >Crear cuenta</a
-          >
+          {user ? (
+            <UserMenu profile={profile} email={user.email ?? ''} />
+          ) : (
+            <>
+              <a
+                href={`${baseUrl}login`}
+                class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:text-accent lg:px-3"
+              >
+                Iniciar sesión
+              </a>
+              <a
+                href={`${baseUrl}registro`}
+                class="rounded-lg border border-accent px-3 py-2 text-sm font-semibold text-accent transition-colors hover:bg-accent hover:text-[var(--color-accent-contrast)]"
+              >
+                Crear cuenta
+              </a>
+            </>
+          )}
         </div>
 
         {/* Móvil: buscar + hamburguesa */}
@@ -248,18 +260,60 @@ const baseUrl = import.meta.env.BASE_URL;
           Menú semanal
         </a>
 
-        <div class="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
-          <a
-            href={`${baseUrl}login`}
-            class="rounded-lg border border-border px-3 py-2.5 text-center text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent"
-            >Iniciar sesión</a
-          >
-          <a
-            href={`${baseUrl}registro`}
-            class="rounded-lg border border-accent bg-accent px-3 py-2.5 text-center text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
-            >Crear cuenta</a
-          >
-        </div>
+        {user ? (
+          <div class="mt-3 space-y-0.5 border-t border-border pt-3">
+            <p class="px-3 pt-1 text-xs font-semibold uppercase tracking-wider text-fg-subtle">
+              Mi cuenta
+            </p>
+            <a
+              href={`${baseUrl}perfil/favoritos`}
+              class="block rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+            >
+              Mis favoritos
+            </a>
+            <a
+              href={`${baseUrl}perfil/colecciones`}
+              class="block rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+            >
+              Mis colecciones
+            </a>
+            <a
+              href={`${baseUrl}perfil/cuenta`}
+              class="block rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+            >
+              Cuenta
+            </a>
+            <a
+              href={`${baseUrl}perfil/plan`}
+              class="block rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+            >
+              Plan
+            </a>
+            <form action={`${baseUrl}api/auth/logout`} method="post" class="px-3 pt-2">
+              <button
+                type="submit"
+                class="w-full rounded-lg border border-border px-3 py-2 text-center text-sm font-medium text-fg-muted transition-colors hover:border-accent hover:text-accent"
+              >
+                Cerrar sesión
+              </button>
+            </form>
+          </div>
+        ) : (
+          <div class="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
+            <a
+              href={`${baseUrl}login`}
+              class="rounded-lg border border-border px-3 py-2.5 text-center text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent"
+            >
+              Iniciar sesión
+            </a>
+            <a
+              href={`${baseUrl}registro`}
+              class="rounded-lg border border-accent bg-accent px-3 py-2.5 text-center text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+            >
+              Crear cuenta
+            </a>
+          </div>
+        )}
       </div>
     </nav>
   </div>

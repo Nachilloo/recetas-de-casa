@@ -1,0 +1,141 @@
+---
+import type { Profile, Plan } from "../lib/types";
+
+interface Props {
+  profile: Profile | null;
+  email: string;
+}
+
+const { profile, email } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL;
+
+const displayName = profile?.display_name || email.split("@")[0];
+const username = profile?.username;
+const avatarUrl = profile?.avatar_url;
+
+const plan: Plan = profile?.plan ?? "free";
+const trialEnds = profile?.trial_ends_at ? new Date(profile.trial_ends_at) : null;
+const trialActive = plan === "trial" && trialEnds && trialEnds > new Date();
+const trialDaysLeft =
+  trialActive && trialEnds
+    ? Math.max(0, Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
+
+const initial = (displayName || "?").charAt(0).toUpperCase();
+---
+
+<details class="relative">
+  <summary
+    class="flex cursor-pointer list-none items-center gap-2 rounded-lg p-1 text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent [&::-webkit-details-marker]:hidden"
+    aria-haspopup="menu"
+  >
+    <span
+      class="relative inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-accent-soft text-sm font-semibold text-accent"
+    >
+      {
+        avatarUrl ? (
+          <img src={avatarUrl} alt="" class="h-full w-full object-cover" />
+        ) : (
+          <span>{initial}</span>
+        )
+      }
+      {
+        plan === "pro" && (
+          <span
+            class="absolute -bottom-0.5 -right-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-surface bg-accent text-[8px] font-bold text-[var(--color-accent-contrast)]"
+            aria-label="Suscripción Pro"
+            title="Suscripción Pro"
+          >
+            P
+          </span>
+        )
+      }
+    </span>
+    <svg
+      class="hidden h-4 w-4 opacity-60 sm:block"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+    </svg>
+  </summary>
+
+  <div
+    role="menu"
+    class="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-lg"
+  >
+    <div class="border-b border-border px-4 py-3">
+      <p class="truncate text-sm font-semibold text-fg">{displayName}</p>
+      <p class="truncate text-xs text-fg-muted">{email}</p>
+      <p class="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider">
+        {
+          plan === "pro" ? (
+            <span class="rounded-full bg-accent px-2 py-0.5 text-[var(--color-accent-contrast)]">
+              Pro
+            </span>
+          ) : trialActive ? (
+            <span class="rounded-full bg-accent-soft px-2 py-0.5 text-accent">
+              Trial · {trialDaysLeft}d
+            </span>
+          ) : (
+            <span class="rounded-full bg-canvas px-2 py-0.5 text-fg-muted">Gratis</span>
+          )
+        }
+      </p>
+    </div>
+
+    <a
+      href={`${baseUrl}perfil/favoritos`}
+      class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+      role="menuitem"
+    >
+      Mis favoritos
+    </a>
+    <a
+      href={`${baseUrl}perfil/colecciones`}
+      class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+      role="menuitem"
+    >
+      Mis colecciones
+    </a>
+    {
+      username && (
+        <a
+          href={`${baseUrl}u/${username}`}
+          class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+          role="menuitem"
+        >
+          Ver mi perfil público
+        </a>
+      )
+    }
+    <a
+      href={`${baseUrl}perfil/cuenta`}
+      class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+      role="menuitem"
+    >
+      {username ? "Cuenta" : "Cuenta · elegir username"}
+    </a>
+    <a
+      href={`${baseUrl}perfil/plan`}
+      class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+      role="menuitem"
+    >
+      Plan {plan === "pro" ? "Pro" : trialActive ? "(Trial)" : "(Gratis)"}
+    </a>
+
+    <div class="my-1 border-t border-border"></div>
+
+    <form action={`${baseUrl}api/auth/logout`} method="post">
+      <button
+        type="submit"
+        class="block w-full px-4 py-2.5 text-left text-sm text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent"
+        role="menuitem"
+      >
+        Cerrar sesión
+      </button>
+    </form>
+  </div>
+</details>

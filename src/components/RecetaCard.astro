@@ -2,12 +2,14 @@
 import type { Receta } from '../lib/types';
 import { categorias as categoriasNombres } from '../content/config';
 import { getCategoriasList, primaryCategoria } from '../lib/recetaCategorias';
+import FavoritoButton from './FavoritoButton.tsx';
 
 export interface Props {
   receta: Receta | any;
 }
 
 const { receta } = Astro.props;
+const loggedIn = !!Astro.locals.user;
 
 const isSupabase = 'slug' in receta && !('data' in receta);
 const slug = isSupabase ? receta.slug : receta.slug;
@@ -43,7 +45,10 @@ const dificultadLabel =
   dificultad === 'facil' ? 'Fácil' : dificultad === 'media' ? 'Media' : 'Difícil';
 ---
 
-<article class="group h-full overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface transition-colors hover:border-accent">
+<article class="group relative h-full overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface transition-colors hover:border-accent">
+  <div class="absolute left-3 top-3 z-10">
+    <FavoritoButton client:load slug={slug} loggedIn={loggedIn} baseUrl={baseUrl} size="sm" floating />
+  </div>
   <a href={`${baseUrl}recetas/${slug}/`} class="block h-full">
     <div class="relative">
       <img

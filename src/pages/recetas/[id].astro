@@ -5,6 +5,7 @@ import Header from '../../components/Header.astro';
 import RecipeSchema from '../../components/RecipeSchema.astro';
 import BreadcrumbSchema from '../../components/BreadcrumbSchema.astro';
 import FaqSchema from '../../components/FaqSchema.astro';
+import FavoritoButton from '../../components/FavoritoButton.tsx';
 import { categorias, dificultades } from '../../content/config';
 import { getCategoriasList, primaryCategoria } from '../../lib/recetaCategorias';
 import type { Receta } from '../../lib/types';
@@ -22,6 +23,20 @@ if (error || !recetaRaw) {
 }
 
 const receta = recetaRaw as Receta;
+
+const loggedIn = !!Astro.locals.user;
+let isFavorito = false;
+if (Astro.locals.user) {
+  const { createServerClient } = await import('../../lib/supabase');
+  const client = await createServerClient(Astro.cookies);
+  const { data: fav } = await client
+    .from('favoritos')
+    .select('user_id')
+    .eq('user_id', Astro.locals.user.id)
+    .eq('receta_slug', receta.slug)
+    .maybeSingle();
+  isFavorito = !!fav;
+}
 
 const {
   title,
@@ -150,11 +165,21 @@ if (tips && tips.length > 0) {
 
           <div class="order-1 space-y-6 lg:order-2">
             <div>
-              <p class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-                {categoriaNombre}
-              </p>
+              <div class="flex items-start justify-between gap-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+                  {categoriaNombre}
+                </p>
+                <FavoritoButton
+                  client:load
+                  slug={receta.slug}
+                  loggedIn={loggedIn}
+                  baseUrl={baseUrl}
+                  size="md"
+                  initialFavorito={isFavorito}
+                />
+              </div>
 
-              <h1 class="font-display text-4xl font-semibold leading-tight tracking-tight text-fg lg:text-5xl">
+              <h1 class="mt-3 font-display text-4xl font-semibold leading-tight tracking-tight text-fg lg:text-5xl">
                 {title}
               </h1>
 

@@ -142,9 +142,13 @@ Estados a diseñar **antes** de implementar cobro:
 - [x] Landing reescrito sin emojis chrome, hero editorial sin overlay negro.
 - [x] Páginas `/login`, `/registro`, `/precios` (UI estática).
 - [x] `RecetaCard`, `RecetaCardCompact`, listado y detalle de receta migrados a tokens.
-- [ ] Auth real (Supabase) + estado “sesión iniciada” en header.
-- [ ] Stripe + paywall en menú semanal.
-- [ ] Limpiar Tailwind crudo restante en `/admin/*` y `MenuSemanal.tsx` (fuera del recetario público).
+- [x] Auth real (Supabase email + Google OAuth) + UserMenu en header (Fase D).
+- [x] Sistema de favoritos + colecciones + perfil público `/u/[username]` (Fase D).
+- [x] Gating del menú IA: cuota free 1 generación / 2 meses, opciones avanzadas Pro/Trial (Fase D).
+- [x] Trial Pro de 10 días sin tarjeta, opt-in desde `/precios` y `/perfil/plan` (Fase D).
+- [x] Stripe Checkout + webhook + billing portal (Fase D — requiere `pnpm add stripe`).
+- [x] Páginas `/terminos` y `/privacidad` (Fase D).
+- [ ] Limpiar Tailwind crudo restante en `/admin/*` (fuera del recetario público).
 
 ---
 
@@ -155,6 +159,7 @@ Estados a diseñar **antes** de implementar cobro:
 | (inicial) | Versión 1.0 — dirección premium + preparación suscripciones / menú |
 | Fase A+B | Tokens `@theme` + DM Sans / Fraunces; Header con nav completa + menú móvil; `Footer`; `Layout` con `hideFooter` en `/admin`; `theme-color` acorde |
 | Fase C | Dark mode con auto + toggle 3 estados, anti-flash inline, landing editorial sin emoji, auth UI placeholder, página `/precios`, RecetaCard rediseñada |
+| Fase D | Sistema de usuarios (Supabase Auth + Google OAuth), favoritos + colecciones + perfil público `/u/[username]`, gating del menú IA con cuota free 1/2 meses, opciones avanzadas (aprovechamiento / temporada) y onboarding (alergias / dieta) en el propio formulario del generador, Trial Pro 10d sin tarjeta, Stripe Checkout + webhook + portal, `/terminos` y `/privacidad`. |
 
 ---
 
@@ -190,28 +195,57 @@ Radios unificados: `--radius-sm` (6 px), `--radius` (10 px), `--radius-lg` (14 p
 
 ---
 
-## 13. Auth UI states (placeholders)
+## 13. Sistema de usuarios y planes (implementado)
 
-Estado actual: **solo UI**, sin backend. Páginas creadas:
+### Estados
 
-- `/login` — formulario email + password, botón submit deshabilitado, mensaje "Próximamente".
-- `/registro` — formulario nombre + email + password + check de términos, mismo estado.
-- `/precios` — dos tarjetas (Gratis / Pro), Pro marcado "Próximamente", FAQ.
+| Estado | Comportamiento |
+|--------|----------------|
+| Invitado | Navegación completa de recetas; botón ♥ pide login; menú IA pide registro. |
+| Free | Favoritos y colecciones ilimitados; 1 generación de menú IA cada 2 meses; sin aprovechamiento ni temporada. |
+| Trial (10 días, opt-in, una vez por cuenta) | Acceso completo Pro durante 10 días sin tarjeta. |
+| Pro | Generaciones ilimitadas, aprovechamiento, temporada, lista exportable, badge `Pro` en avatar. |
 
-En `Header.astro`:
+### Header
 
-- **Invitado** (estado actual): zona derecha muestra `Iniciar sesión` (link ghost) + `Crear cuenta` (botón outline acento). En móvil aparecen al final del panel hamburguesa, en grid 2 columnas.
-- **Sesión iniciada** (futuro): sustituir las dos acciones por un avatar con dropdown (`Mi perfil`, `Mis recetas`, `Plan`, `Cerrar sesión`).
-- **Suscriptor** (futuro): mismo avatar con anillo `--accent` o pill `Pro` discreto en el dropdown. **No** badge en cada página.
+- Invitado: `Iniciar sesión` + `Crear cuenta`.
+- Sesión: `<UserMenu>` con avatar, badge `Pro` si aplica, pill `Trial · Xd` cuando proceda. Items: Mis favoritos, Mis colecciones, Cuenta, Plan, Cerrar sesión.
 
-Migración prevista:
+### Rutas (Fase D)
 
-1. Habilitar Supabase Auth (email + Google OAuth).
-2. Extender `src/middleware.ts` para inyectar `Astro.locals.user`.
-3. En `Header.astro`, renderizar `{user ? <UserMenu/> : <LoginButtons/>}` según `Astro.locals.user`.
-4. Página `/perfil` (favoritos, menús guardados, plan).
-5. Stripe Checkout + webhook → tabla `subscriptions` o `user_metadata.plan`.
-6. Paywall únicamente en `/menu-semanal` (resto sigue público para SEO).
+- Auth API: `/api/auth/{signup,login,logout,google,callback}`.
+- Favoritos / colecciones / perfil: `/api/{favoritos,colecciones/[id],profile}`.
+- Plan e IA: `/api/plan/status`, `/api/menu/generar` (gating 401/402 + cuota).
+- Trial: `/api/trial/start` (POST/GET, one-shot, RLS-bypassed con service_role).
+- Stripe: `/api/stripe/{checkout,portal,webhook}`. Lazy via `src/lib/stripe.ts` (la dependencia `stripe` solo se carga si está instalada y `STRIPE_SECRET_KEY` configurada).
+- Páginas: `/perfil/{favoritos,colecciones,cuenta,plan}` (privadas, gated en middleware) y `/u/[username]` (perfil público SEO-friendly, gated por `is_public`).
+
+### Esquema de datos
+
+Migración `20260511120000_users_favoritos_planes.sql` añade:
+
+- `profiles` (1:1 con `auth.users`) — username, display_name, bio, avatar_url, is_public, plan (`free|trial|pro`), trial_*, stripe_*.
+- `favoritos` (composite PK `user_id` + `receta_slug`).
+- `colecciones` (id, user_id, nombre, slugs[], is_public).
+- `menu_usage` (cada generación de menú IA registrada por usuario; el endpoint comprueba cuota leyendo `max(used_at)` y compara con 60 días).
+
+RLS: profiles SELECT abierto (necesario para `/u/<username>`), UPDATE solo propio y SIN tocar plan/trial/stripe (eso lo escribe service_role desde endpoints). Favoritos privados por defecto (los públicos los leemos en `/u/[username]` con service_role). Colecciones públicas se ven sin sesión.
+
+Trigger `on_auth_user_created` crea automáticamente el profile con `plan='free'` al registrarse (sin trial automático: el trial es opt-in).
+
+### Variables de entorno necesarias
+
+```
+PUBLIC_SUPABASE_URL
+PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY      # imprescindible para trial + Stripe + favoritos públicos
+OPENAI_API_KEY                 # menú IA
+STRIPE_SECRET_KEY              # opcional hasta activar cobro
+STRIPE_WEBHOOK_SECRET
+PUBLIC_STRIPE_PRICE_MONTHLY
+PUBLIC_STRIPE_PRICE_YEARLY
+PUBLIC_SITE_URL                # ej. https://recetasdecasa.es
+```
 
 ---
 

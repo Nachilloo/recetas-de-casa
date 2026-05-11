@@ -7,6 +7,8 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type Plan = 'free' | 'trial' | 'pro';
+
 export interface Database {
   public: {
     Tables: {
@@ -81,12 +83,137 @@ export interface Database {
           updated_at?: string
         }
       }
+      profiles: {
+        Row: {
+          id: string
+          username: string | null
+          display_name: string | null
+          avatar_url: string | null
+          bio: string | null
+          is_public: boolean
+          plan: Plan
+          trial_started_at: string | null
+          trial_ends_at: string | null
+          trial_used_at: string | null
+          pro_renews_at: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          username?: string | null
+          display_name?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          is_public?: boolean
+          plan?: Plan
+          trial_started_at?: string | null
+          trial_ends_at?: string | null
+          trial_used_at?: string | null
+          pro_renews_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          username?: string | null
+          display_name?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          is_public?: boolean
+          plan?: Plan
+          trial_started_at?: string | null
+          trial_ends_at?: string | null
+          trial_used_at?: string | null
+          pro_renews_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      favoritos: {
+        Row: {
+          user_id: string
+          receta_slug: string
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          receta_slug: string
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          receta_slug?: string
+          created_at?: string
+        }
+      }
+      colecciones: {
+        Row: {
+          id: string
+          user_id: string
+          nombre: string
+          descripcion: string | null
+          slugs: string[]
+          is_public: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          nombre: string
+          descripcion?: string | null
+          slugs?: string[]
+          is_public?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          nombre?: string
+          descripcion?: string | null
+          slugs?: string[]
+          is_public?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      menu_usage: {
+        Row: {
+          id: string
+          user_id: string
+          used_at: string
+          plan_at_time: Plan
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          used_at?: string
+          plan_at_time: Plan
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          used_at?: string
+          plan_at_time?: Plan
+        }
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      puede_generar_menu: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
@@ -99,3 +226,26 @@ export type Receta = Database['public']['Tables']['recetas']['Row'];
 export type RecetaInsert = Database['public']['Tables']['recetas']['Insert'];
 export type RecetaUpdate = Database['public']['Tables']['recetas']['Update'];
 
+export type Profile = Database['public']['Tables']['profiles']['Row'];
+export type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
+
+export type Favorito = Database['public']['Tables']['favoritos']['Row'];
+export type Coleccion = Database['public']['Tables']['colecciones']['Row'];
+export type ColeccionInsert = Database['public']['Tables']['colecciones']['Insert'];
+
+export type MenuUsage = Database['public']['Tables']['menu_usage']['Row'];
+
+/** Estado consolidado de un usuario para chequeos de gating en UI. */
+export interface PlanStatus {
+  plan: Plan;
+  /** Trial activo (no caducado) */
+  trialActive: boolean;
+  /** Días restantes de trial. Negativo si caducó. Null si no está en trial. */
+  trialDaysLeft: number | null;
+  /** ¿Ya usó su trial alguna vez? (bloquea reintento) */
+  trialUsed: boolean;
+  /** ¿Puede generar un menú con IA ahora mismo? */
+  canGenerateMenu: boolean;
+  /** Si es free y aún tiene cuota: null. Si no la tiene, fecha en la que vuelve a tenerla. */
+  menuCooldownUntil: string | null;
+}

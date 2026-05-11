@@ -25,6 +25,40 @@ interface MenuData {
   aprovechamiento?: string;
 }
 
+type Plan = 'free' | 'trial' | 'pro';
+
+interface PlanInfo {
+  loggedIn: boolean;
+  plan: Plan;
+  trialActive: boolean;
+  trialUsed: boolean;
+  canGenerateMenu: boolean;
+  menuCooldownUntil: string | null;
+}
+
+type ApiError =
+  | { error: 'auth_required'; message: string; redirect?: string }
+  | { error: 'paywall_feature'; message: string; upgrade: string }
+  | { error: 'paywall_quota'; message: string; cooldownUntil?: string; upgrade: string }
+  | { error: string; message?: string };
+
+const ALERGIAS_COMUNES = [
+  { id: 'gluten', label: 'Gluten' },
+  { id: 'lactosa', label: 'Lactosa' },
+  { id: 'huevo', label: 'Huevo' },
+  { id: 'frutos secos', label: 'Frutos secos' },
+  { id: 'marisco', label: 'Marisco' },
+  { id: 'pescado', label: 'Pescado' },
+  { id: 'soja', label: 'Soja' },
+];
+
+const DIETAS = [
+  { id: 'omnivora', label: 'Sin restricción' },
+  { id: 'vegetariana', label: 'Vegetariana' },
+  { id: 'vegana', label: 'Vegana' },
+  { id: 'pescetariana', label: 'Pescetariana' },
+];
+
 interface MenuGuardado {
   id: string;
   fecha: string;
@@ -40,18 +74,6 @@ const STORAGE_KEY = 'menus_guardados';
 const siteBase = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
 const apiUrl = (path: string) => `${siteBase}${path.replace(/^\//, '')}`;
-
-const CATEGORIAS: Record<string, string> = {
-  'arroz-paellas': '🥘',
-  'tortillas-pasta': '🥚',
-  'sopas-cremas': '🍲',
-  'carnes-aves': '🍖',
-  'pescados-mariscos': '🐟',
-  'pan-masas': '🥖',
-  'postres': '🍰',
-  'ensaladas-tapas': '🥗',
-  'air-fryer': '🍗',
-};
 
 /** Badges sobre foto: contraste en claro y oscuro */
 const DIFICULTAD_COLORES: Record<string, string> = {
@@ -72,11 +94,15 @@ export default function MenuSemanal() {
   const [dificultadMax, setDificultadMax] = useState('dificil');
   const [aprovechamiento, setAprovechamiento] = useState(false);
   const [temporada, setTemporada] = useState(false);
+  const [alergias, setAlergias] = useState<string[]>([]);
+  const [dieta, setDieta] = useState<string>('omnivora');
   const [loading, setLoading] = useState(false);
   const [menuData, setMenuData] = useState<MenuData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [paywall, setPaywall] = useState<ApiError | null>(null);
   const [menusGuardados, setMenusGuardados] = useState<MenuGuardado[]>([]);
   const [guardadoOk, setGuardadoOk] = useState(false);
+  const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
 
   useEffect(() => {
     try {
@@ -84,6 +110,24 @@ export default function MenuSemanal() {
       setMenusGuardados(saved);
     } catch { /* ignore */ }
   }, []);
+
+  useEffect(() => {
+    fetch(apiUrl('api/plan/status'), { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data: PlanInfo) => setPlanInfo(data))
+      .catch(() => {});
+  }, []);
+
+  const isPro = planInfo?.plan === 'pro' || planInfo?.trialActive;
+  const isFreeLogged = planInfo?.loggedIn && planInfo.plan === 'free' && !planInfo.trialActive;
+  const isAnon = planInfo && !planInfo.loggedIn;
+  const advancedDisabled = !isPro;
+
+  const toggleAlergia = (id: string) => {
+    setAlergias((prev) =>
+      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
+    );
+  };
 
   const guardarMenu = () => {
     if (!menuData) return;
@@ -117,28 +161,44 @@ export default function MenuSemanal() {
   const generarMenu = async () => {
     setLoading(true);
     setError(null);
+    setPaywall(null);
     setMenuData(null);
 
     try {
       const res = await fetch(apiUrl('api/menu/generar'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           tipo,
           personas,
           dificultadMax,
-          aprovechamiento,
-          temporada,
+          aprovechamiento: isPro ? aprovechamiento : false,
+          temporada: isPro ? temporada : false,
+          alergias,
+          dieta,
         }),
       });
 
-      if (!res.ok) {
+      if (res.status === 401 || res.status === 402) {
         const err = await res.json();
-        throw new Error(err.error || 'Error generando menú');
+        setPaywall(err as ApiError);
+        return;
       }
 
-      const data: MenuData = await res.json();
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || err.message || 'Error generando menú');
+      }
+
+      const data: MenuData & { plan?: Plan } = await res.json();
       setMenuData(data);
+
+      // Refrescar plan info para que el siguiente intento muestre el cooldown
+      fetch(apiUrl('api/plan/status'), { credentials: 'include' })
+        .then((r) => r.json())
+        .then((d: PlanInfo) => setPlanInfo(d))
+        .catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error desconocido');
     } finally {
@@ -178,6 +238,10 @@ export default function MenuSemanal() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
+      {planInfo && (
+        <PlanBanner planInfo={planInfo} baseUrl={siteBase} />
+      )}
+
       {/* Configuración */}
       <div className="rounded-2xl shadow-lg p-6 md:p-8 border border-border bg-surface mb-8">
         <h2 className="text-2xl font-bold text-fg mb-6">
@@ -262,19 +326,26 @@ export default function MenuSemanal() {
             </div>
           </div>
 
-          {/* Opciones extra */}
+          {/* Opciones extra (avanzadas, gated por plan) */}
           <div>
             <label className="block text-sm font-semibold text-fg mb-2">
-              Opciones
+              Opciones avanzadas
+              {advancedDisabled && (
+                <span className="ml-2 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+                  Pro
+                </span>
+              )}
             </label>
-            <div className="flex flex-col gap-2">
+            <div className={`flex flex-col gap-2 ${advancedDisabled ? 'opacity-60' : ''}`}>
               <button
-                onClick={() => setAprovechamiento(!aprovechamiento)}
+                onClick={() => !advancedDisabled && setAprovechamiento(!aprovechamiento)}
+                disabled={advancedDisabled}
                 className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all text-left ${
-                  aprovechamiento
+                  aprovechamiento && !advancedDisabled
                     ? 'bg-success/15 border-2 border-success text-success'
                     : 'bg-canvas border-2 border-border text-fg-muted hover:border-border-strong'
-                }`}
+                } ${advancedDisabled ? 'cursor-not-allowed' : ''}`}
+                title={advancedDisabled ? 'Disponible en Pro / Trial' : ''}
               >
                 <div>
                   <div className="font-semibold">Aprovechamiento</div>
@@ -284,12 +355,14 @@ export default function MenuSemanal() {
                 </div>
               </button>
               <button
-                onClick={() => setTemporada(!temporada)}
+                onClick={() => !advancedDisabled && setTemporada(!temporada)}
+                disabled={advancedDisabled}
                 className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all text-left ${
-                  temporada
+                  temporada && !advancedDisabled
                     ? 'bg-accent-soft border-2 border-accent text-accent'
                     : 'bg-canvas border-2 border-border text-fg-muted hover:border-border-strong'
-                }`}
+                } ${advancedDisabled ? 'cursor-not-allowed' : ''}`}
+                title={advancedDisabled ? 'Disponible en Pro / Trial' : ''}
               >
                 <div>
                   <div className="font-semibold">Productos de temporada</div>
@@ -299,6 +372,57 @@ export default function MenuSemanal() {
                 </div>
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Preferencias dietéticas (todos los planes) */}
+        <div className="mt-8 grid grid-cols-1 gap-6 border-t border-border pt-8 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-fg">Dieta</label>
+            <div className="flex flex-wrap gap-2">
+              {DIETAS.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDieta(d.id)}
+                  className={`rounded-full border-2 px-4 py-1.5 text-sm font-medium transition-colors ${
+                    dieta === d.id
+                      ? 'border-accent bg-accent-soft text-accent'
+                      : 'border-border bg-canvas text-fg-muted hover:border-border-strong'
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-fg">
+              Alergias / a evitar
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {ALERGIAS_COMUNES.map((a) => {
+                const selected = alergias.includes(a.id);
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => toggleAlergia(a.id)}
+                    className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium transition-colors ${
+                      selected
+                        ? 'border-accent bg-accent-soft text-accent'
+                        : 'border-border bg-canvas text-fg-muted hover:border-border-strong'
+                    }`}
+                  >
+                    {a.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-xs text-fg-subtle">
+              La IA intentará evitar las recetas con esos ingredientes.
+            </p>
           </div>
         </div>
 
@@ -325,8 +449,24 @@ export default function MenuSemanal() {
               'Generar menú semanal'
             )}
           </button>
+          {isAnon && (
+            <p className="mt-3 text-xs text-fg-subtle">
+              Si no tienes cuenta, te pediremos crear una gratis antes de generar.
+            </p>
+          )}
+          {isFreeLogged && planInfo?.canGenerateMenu && (
+            <p className="mt-3 text-xs text-fg-subtle">
+              Plan gratis: 1 generación cada 2 meses. Para ilimitado, prueba Pro o
+              {' '}<a href={`${siteBase}precios`} className="text-accent hover:underline">suscríbete</a>.
+            </p>
+          )}
         </div>
       </div>
+
+      {/* Paywall */}
+      {paywall && (
+        <Paywall paywall={paywall} baseUrl={siteBase} />
+      )}
 
       {/* Error */}
       {error && (
@@ -835,6 +975,121 @@ function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: num
 
       <div className="border-t border-border bg-canvas px-6 py-4 text-center text-sm text-fg-muted">
         Ingredientes de <strong className="text-fg">{menuData.menu.length} días</strong> para <strong className="text-fg">{personas} personas</strong> · Pulsa ▾ para ver cantidades por receta
+      </div>
+    </div>
+  );
+}
+
+function PlanBanner({ planInfo, baseUrl }: { planInfo: PlanInfo; baseUrl: string }) {
+  if (!planInfo.loggedIn) {
+    return (
+      <div className="mb-6 flex flex-col gap-3 rounded-xl border border-accent/40 bg-accent-soft p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-accent">
+            Crea tu cuenta gratis para generar tu menú con IA
+          </p>
+          <p className="mt-1 text-xs text-fg-muted">
+            Sin tarjeta, sin compromiso. 1 generación cada 2 meses incluida.
+          </p>
+        </div>
+        <a
+          href={`${baseUrl}registro?next=/menu-semanal`}
+          className="shrink-0 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+        >
+          Crear cuenta
+        </a>
+      </div>
+    );
+  }
+
+  if (planInfo.plan === 'pro') {
+    return (
+      <div className="mb-6 flex items-center gap-3 rounded-xl border border-border bg-surface px-5 py-3 text-sm text-fg-muted">
+        <span className="inline-flex items-center rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-contrast)]">
+          Pro
+        </span>
+        Generaciones ilimitadas. Opciones avanzadas activadas.
+      </div>
+    );
+  }
+
+  if (planInfo.trialActive) {
+    return (
+      <div className="mb-6 flex items-center gap-3 rounded-xl border border-border bg-surface px-5 py-3 text-sm text-fg-muted">
+        <span className="inline-flex items-center rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">
+          Trial
+        </span>
+        Disfruta de generaciones ilimitadas durante tu prueba.
+      </div>
+    );
+  }
+
+  if (!planInfo.canGenerateMenu && planInfo.menuCooldownUntil) {
+    const fecha = new Date(planInfo.menuCooldownUntil).toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'long',
+    });
+    return (
+      <div className="mb-6 flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-fg">
+            Ya usaste tu generación gratuita
+          </p>
+          <p className="mt-1 text-xs text-fg-muted">
+            Disponible de nuevo el {fecha}. O prueba Pro 10 días gratis sin tarjeta.
+          </p>
+        </div>
+        <a
+          href={`${baseUrl}precios`}
+          className="shrink-0 rounded-full border border-accent bg-surface px-5 py-2.5 text-sm font-semibold text-accent transition-colors hover:bg-accent hover:text-[var(--color-accent-contrast)]"
+        >
+          Ver Pro
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6 flex flex-col gap-3 rounded-xl border border-border bg-surface px-5 py-3 text-sm text-fg-muted sm:flex-row sm:items-center sm:justify-between">
+      <span>Plan gratis: 1 generación disponible.</span>
+      {!planInfo.trialUsed && (
+        <a
+          href={`${baseUrl}precios`}
+          className="text-xs font-semibold text-accent hover:underline"
+        >
+          Probar Pro 10 días gratis →
+        </a>
+      )}
+    </div>
+  );
+}
+
+function Paywall({ paywall, baseUrl }: { paywall: ApiError; baseUrl: string }) {
+  const isAuth = paywall.error === 'auth_required';
+  const message = paywall.message || 'No tienes acceso a esta función.';
+  const ctaHref =
+    isAuth && 'redirect' in paywall && paywall.redirect
+      ? `${baseUrl}${paywall.redirect.replace(/^\//, '')}`
+      : 'upgrade' in paywall && paywall.upgrade
+        ? `${baseUrl}${paywall.upgrade.replace(/^\//, '')}`
+        : `${baseUrl}precios`;
+  const ctaLabel = isAuth ? 'Crear cuenta gratis' : 'Ver Plan Pro';
+
+  return (
+    <div className="mb-8 rounded-2xl border-2 border-accent/40 bg-accent-soft p-6 sm:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+            {isAuth ? 'Necesitas una cuenta' : 'Función Pro'}
+          </p>
+          <p className="mt-1 text-base font-semibold text-fg">{message}</p>
+        </div>
+        <a
+          href={ctaHref}
+          className="shrink-0 rounded-full bg-accent px-6 py-2.5 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+        >
+          {ctaLabel}
+        </a>
       </div>
     </div>
   );
