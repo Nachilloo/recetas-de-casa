@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 type Mode = 'login' | 'signup';
 
@@ -13,6 +14,7 @@ export default function AuthForm({ mode, baseUrl }: Props) {
   const [displayName, setDisplayName] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -60,7 +62,26 @@ export default function AuthForm({ mode, baseUrl }: Props) {
     }
   };
 
-  const googleUrl = `${baseUrl}api/auth/google?next=${encodeURIComponent(initialNext)}`;
+  const handleGoogle = async () => {
+    setError(null);
+    setInfo(null);
+    setGoogleLoading(true);
+    try {
+      const redirectTo = `${window.location.origin}/auth/finish?next=${encodeURIComponent(initialNext)}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo },
+      });
+      if (error) {
+        setError(error.message);
+        setGoogleLoading(false);
+      }
+      // Si no hay error, el cliente redirige a Google automáticamente.
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo iniciar Google.');
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <form
@@ -68,13 +89,15 @@ export default function AuthForm({ mode, baseUrl }: Props) {
       className="space-y-5 rounded-[var(--radius-lg)] border border-border bg-surface p-6 sm:p-8"
       noValidate
     >
-      <a
-        href={googleUrl}
-        className="inline-flex w-full items-center justify-center gap-3 rounded-[var(--radius)] border border-border bg-canvas px-5 py-2.5 text-sm font-semibold text-fg transition-colors hover:border-accent hover:text-accent"
+      <button
+        type="button"
+        onClick={handleGoogle}
+        disabled={googleLoading}
+        className="inline-flex w-full items-center justify-center gap-3 rounded-[var(--radius)] border border-border bg-canvas px-5 py-2.5 text-sm font-semibold text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
       >
         <GoogleIcon />
-        Continuar con Google
-      </a>
+        {googleLoading ? 'Redirigiendo…' : 'Continuar con Google'}
+      </button>
 
       <div className="relative flex items-center gap-3">
         <span className="h-px flex-1 bg-border" aria-hidden />

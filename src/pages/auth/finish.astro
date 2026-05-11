@@ -1,0 +1,107 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Conectando…" noindex>
+  <main class="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-canvas px-4">
+    <div class="max-w-md text-center">
+      <div class="mx-auto mb-6 h-10 w-10 animate-spin rounded-full border-4 border-border border-t-accent" aria-hidden="true"></div>
+      <h1 class="font-display text-2xl font-semibold text-fg">Iniciando sesión…</h1>
+      <p id="auth-finish-status" class="mt-3 text-sm text-fg-muted">
+        Estamos completando tu inicio de sesión. Un segundo.
+      </p>
+      <p id="auth-finish-error" class="mt-3 hidden text-sm text-danger"></p>
+      <a
+        id="auth-finish-retry"
+        href="/login"
+        class="mt-6 hidden text-sm font-medium text-accent hover:underline"
+      >
+        Volver a intentar
+      </a>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from "../../lib/supabase";
+
+  const statusEl = document.getElementById("auth-finish-status");
+  const errorEl = document.getElementById("auth-finish-error");
+  const retryEl = document.getElementById("auth-finish-retry");
+
+  function showError(msg: string) {
+    if (statusEl) statusEl.classList.add("hidden");
+    if (errorEl) {
+      errorEl.textContent = msg;
+      errorEl.classList.remove("hidden");
+    }
+    if (retryEl) retryEl.classList.remove("hidden");
+  }
+
+  function sanitizeNext(input: string | null): string {
+    if (!input) return "/";
+    if (!input.startsWith("/") || input.startsWith("//")) return "/";
+    return input;
+  }
+
+  async function finish() {
+    const params = new URLSearchParams(window.location.search);
+    const next = sanitizeNext(params.get("next"));
+    const errorParam =
+      params.get("error_description") || params.get("error");
+
+    if (errorParam) {
+      showError(errorParam);
+      return;
+    }
+
+    const code = params.get("code");
+
+    try {
+      // Si hay code, lo intercambiamos manualmente. El cliente JS de
+      // Supabase ya tiene el code_verifier en localStorage (lo guardó
+      // signInWithOAuth) y completará el flujo PKCE.
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          showError(error.message);
+          return;
+        }
+      }
+
+      // Tras `exchangeCodeForSession` (o si la sesión ya estaba activa),
+      // leemos la sesión actual.
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
+
+      if (!session) {
+        showError("No se pudo recuperar la sesión.");
+        return;
+      }
+
+      // Subimos los tokens al servidor para que ponga las cookies httpOnly.
+      const res = await fetch("/api/auth/set-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showError(err.error ?? "No se pudieron guardar las cookies de sesión.");
+        return;
+      }
+
+      window.location.replace(next);
+    } catch (err) {
+      console.error(err);
+      showError(err instanceof Error ? err.message : "Error desconocido");
+    }
+  }
+
+  finish();
+</script>
