@@ -13,30 +13,31 @@ const enTrial =
   new Date(profile.trial_ends_at) > new Date();
 const trialUsado = !!profile?.trial_used_at;
 
-const features = {
-  free: [
-    "Acceso completo al recetario",
-    "Búsqueda y filtros por categoría y tiempo",
-    "Receta del día y novedades",
-    "Favoritos y colecciones ilimitadas",
-    "1 generación de menú con IA cada 2 meses",
-  ],
-  pro: [
-    "Todo lo del plan gratuito",
-    "Menú semanal con IA ilimitado",
-    "Aprovechamiento de ingredientes",
-    "Productos de temporada",
-    "Lista de la compra exportable",
-    "Perfil público destacado",
-    "Sin anuncios cuando se incorporen",
-    "Soporte prioritario",
-  ],
-};
+/** Filas comparativas: qué tienen Invitado / Registrado / Pro */
+const compareRows = [
+  { label: "Recetas: leer todas y buscar", invitado: true, gratis: true, pro: true },
+  { label: "Receta del día y novedades", invitado: true, gratis: true, pro: true },
+  { label: "Favoritos y colecciones", invitado: false, gratis: true, pro: true },
+  { label: "Perfil público (/u/usuario)", invitado: false, gratis: true, pro: true },
+  { label: "Menú semanal con IA", invitado: false, gratis: "limited", pro: true },
+  { label: "Opciones Pro en el menú (aprovechamiento, temporada)", invitado: false, gratis: false, pro: true },
+  { label: "Lista de la compra y exportar menú*", invitado: false, gratis: "limited", pro: true },
+  { label: "Sin anuncios (cuando se incorporen)", invitado: false, gratis: false, pro: true },
+  { label: "Soporte prioritario", invitado: false, gratis: false, pro: true },
+] as const;
+
+type Cell = boolean | "limited";
+
+function cellIcon(cell: Cell) {
+  if (cell === true) return "yes";
+  if (cell === "limited") return "limited";
+  return "no";
+}
 ---
 
 <Layout
-  title="Precios"
-  description="Plan gratuito para todo el recetario y favoritos. Plan Pro para menú con IA ilimitado, aprovechamiento y temporada. 10 días gratis sin tarjeta."
+  title="Precios y planes"
+  description="Invitado, cuenta gratis y Plan Pro: qué incluye cada uno. Pro ofrece menú con IA sin límites, opciones avanzadas y herramientas de compra."
 >
   <Header />
   <main>
@@ -44,150 +45,336 @@ const features = {
       <div class="mx-auto max-w-3xl px-4 text-center sm:px-6">
         <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">Planes</p>
         <h1 class="font-display text-4xl font-semibold leading-tight tracking-tight text-fg sm:text-5xl">
-          Cocina abierta. Planificación, opcional.
+          Tres formas de usar Recetas de Casa
         </h1>
         <p class="mt-5 text-base leading-relaxed text-fg-muted sm:text-lg">
-          El recetario, los favoritos y las colecciones son gratis. Si quieres organizar tu semana
-          con IA sin límites, el Plan Pro lo hace por ti.
+          El recetario es abierto para todos. Con cuenta gratis guardas y organizas. El plan Pro está pensado si
+          quieres organizar la semana con IA en serio, sin topes ni limitaciones de uso.
         </p>
         {!user && (
           <p class="mt-3 text-sm text-fg-subtle">
-            <a href={`${baseUrl}registro`} class="font-medium text-accent hover:underline">
-              Crea tu cuenta gratis
+            ¿Aún sin cuenta?
+            <a href={`${baseUrl}registro`} class="ml-1 font-medium text-accent hover:underline">
+              Registrarte gratis
             </a>{" "}
-            para empezar.
+            solo lleva un minuto.
           </p>
         )}
       </div>
     </section>
 
-    <section class="bg-surface py-16 sm:py-20">
-      <div class="mx-auto max-w-5xl px-4 sm:px-6">
-        <div class="grid gap-6 md:grid-cols-2 md:gap-8">
-          {/* Plan gratis */}
-          <article class="flex flex-col rounded-[var(--radius-lg)] border border-border bg-canvas p-8">
+    <section class="bg-surface py-14 sm:py-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6">
+        <div class="grid gap-6 lg:grid-cols-3 lg:gap-8">
+          <!-- Invitado -->
+          <article
+            class="flex flex-col rounded-[var(--radius-lg)] border border-border bg-canvas p-7 sm:p-8"
+          >
             <header>
-              <h2 class="font-display text-2xl font-semibold text-fg">Gratis</h2>
-              <p class="mt-1 text-sm text-fg-muted">Para cocinar el día a día sin compromisos.</p>
-              <p class="mt-6">
-                <span class="font-display text-4xl font-semibold text-fg">0&nbsp;€</span>
-                <span class="ml-1 text-sm text-fg-subtle">para siempre</span>
+              <p class="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Sin cuenta</p>
+              <h2 class="mt-2 font-display text-2xl font-semibold text-fg">Invitado</h2>
+              <p class="mt-2 text-sm text-fg-muted">
+                Cocina inspirándote sin registrarte.
+              </p>
+              <p class="mt-6 font-display text-3xl font-semibold text-fg sm:text-4xl">
+                0&nbsp;€
+                <span class="ml-1 text-base font-normal text-fg-subtle">solo lectura</span>
               </p>
             </header>
 
-            <ul class="mt-8 space-y-3 text-sm">
-              {features.free.map((f) => (
-                <li class="flex items-start gap-3 text-fg">
-                  <svg
-                    class="mt-0.5 h-5 w-5 shrink-0 text-accent"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>{f}</span>
-                </li>
-              ))}
+            <ul class="mt-8 flex-1 space-y-3 text-sm">
+              <li class="flex gap-3 text-fg">
+                <span class="text-accent" aria-hidden="true">{/* check */}<svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                <span>Todas las recetas publicadas: texto, fotos y pasos.</span>
+              </li>
+              <li class="flex gap-3 text-fg">
+                <span class="text-accent" aria-hidden="true"><svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                <span>Búsqueda, categorías y filtros por tiempo.</span>
+              </li>
+              <li class="flex gap-3 text-fg">
+                <span class="text-accent" aria-hidden="true"><svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                <span>Receta del día y secciones de novedades / ideas.</span>
+              </li>
             </ul>
 
-            <a
-              href={user ? `${baseUrl}recetas/` : `${baseUrl}registro`}
-              class="mt-10 inline-flex items-center justify-center rounded-[var(--radius)] border border-border bg-surface px-5 py-3 text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent"
-            >
-              {user ? "Ir al recetario" : "Crear cuenta gratis"}
-            </a>
+            <p class="mt-6 rounded-lg border border-border bg-surface px-4 py-3 text-xs leading-relaxed text-fg-muted">
+              <strong class="font-medium text-fg">Para activar cuenta gratis:</strong>
+              necesitas cuenta para favoritos, colecciones y el primer menú con IA (hay una cuota cada 2 meses).
+            </p>
+
+            <div class="mt-8 flex flex-col gap-2">
+              {!user ? (
+                <a
+                  href={`${baseUrl}registro`}
+                  class="inline-flex items-center justify-center rounded-[var(--radius)] border border-border bg-surface px-5 py-3 text-sm font-semibold text-fg transition-colors hover:border-accent hover:text-accent"
+                >
+                  Crear cuenta gratis
+                </a>
+              ) : (
+                <p class="text-center text-sm text-fg-subtle">
+                  Ya tienes cuenta → estás como <strong class="font-medium text-fg">registrado</strong>.
+                </p>
+              )}
+              <a
+                href={`${baseUrl}recetas/`}
+                class="inline-flex items-center justify-center rounded-[var(--radius)] px-5 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:text-accent"
+              >
+                Seguir navegando el recetario
+              </a>
+            </div>
           </article>
 
-          {/* Plan Pro */}
-          <article class="relative flex flex-col rounded-[var(--radius-lg)] border-2 border-accent bg-canvas p-8 shadow-sm">
+          <!-- Registrado gratis -->
+          <article
+            class:list={[
+              "relative flex flex-col rounded-[var(--radius-lg)] border bg-canvas p-7 sm:p-8",
+              user && !yaPro ? "border-2 border-accent shadow-sm" : "border-border",
+            ]}
+          >
+            {user && !yaPro && (
+              <span class="absolute -top-3 left-6 inline-flex rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
+                Tu perfil
+              </span>
+            )}
+            <header>
+              <p class="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Con cuenta</p>
+              <h2 class="mt-2 font-display text-2xl font-semibold text-fg">Registrado</h2>
+              <p class="mt-2 text-sm text-fg-muted">Gratis siempre · guardar y ordenar tus recetas.</p>
+              <p class="mt-6 font-display text-3xl font-semibold text-fg sm:text-4xl">
+                0&nbsp;€
+                <span class="ml-1 text-base font-normal text-fg-subtle">para siempre</span>
+              </p>
+            </header>
+
+            <ul class="mt-8 flex-1 space-y-3 text-sm">
+              <li class="flex gap-3 text-fg">
+                <span class="text-accent" aria-hidden="true"><svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                <span>Todo lo que puede hacer un invitado.</span>
+              </li>
+              <li class="flex gap-3 text-fg">
+                <span class="text-accent" aria-hidden="true"><svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                <span>Favoritos y colecciones ilimitadas.</span>
+              </li>
+              <li class="flex gap-3 text-fg">
+                <span class="text-accent" aria-hidden="true"><svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                <span>Perfil público opcional y preferencias dietéticas en el generador.</span>
+              </li>
+              <li class="flex gap-3 text-fg">
+                <span class="text-amber-600 dark:text-amber-400" aria-hidden="true">
+                  <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </span>
+                <span>
+                  <strong class="font-medium text-fg">Menú con IA:</strong>
+                  una generación gratis cada <strong class="font-medium text-fg">2&nbsp;meses</strong>; sin opciones “Pro”
+                  de aprovechamiento ni temporada.
+                </span>
+              </li>
+            </ul>
+
+            <div class="mt-8 flex flex-col gap-2">
+              {!user ? (
+                <a
+                  href={`${baseUrl}registro`}
+                  class="inline-flex items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+                >
+                  Registrarte gratis
+                </a>
+              ) : (
+                <>
+                  {!yaPro && (
+                    <a
+                      href={`${baseUrl}menu-semanal`}
+                      class="inline-flex items-center justify-center rounded-[var(--radius)] border border-accent bg-accent-soft px-5 py-3 text-sm font-semibold text-accent transition-colors hover:bg-accent hover:text-[var(--color-accent-contrast)]"
+                    >
+                      Ir al menú semanal
+                    </a>
+                  )}
+                  <a
+                    href={`${baseUrl}perfil/favoritos`}
+                    class="inline-flex items-center justify-center rounded-[var(--radius)] border border-border px-5 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:border-accent hover:text-accent"
+                  >
+                    Ver mis favoritos
+                  </a>
+                </>
+              )}
+            </div>
+          </article>
+
+          <!-- Pro -->
+          <article class="relative flex flex-col rounded-[var(--radius-lg)] border-2 border-accent bg-canvas p-7 shadow-md sm:p-8">
             <span class="absolute -top-3 right-6 inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--color-accent-contrast)]">
-              {yaPro ? "Tu plan" : enTrial ? "En trial" : "Recomendado"}
+              {yaPro ? "Tu plan" : enTrial ? "Trial activo" : "Más completo"}
             </span>
 
             <header>
-              <h2 class="font-display text-2xl font-semibold text-fg">Pro</h2>
-              <p class="mt-1 text-sm text-fg-muted">Para planificar la semana en serio.</p>
-              <p class="mt-6">
-                <span class="font-display text-4xl font-semibold text-fg">4,99&nbsp;€</span>
-                <span class="ml-1 text-sm text-fg-subtle">/ mes</span>
+              <p class="text-xs font-semibold uppercase tracking-wider text-accent">Suscripción</p>
+              <h2 class="mt-2 font-display text-2xl font-semibold text-fg">Plan Pro</h2>
+              <p class="mt-2 text-sm text-fg-muted">
+                Lo que marca la diferencia si cocinas cada semana y quieres dejar que la IA trabaje fuerte por ti.
+              </p>
+
+              <div class="mt-5 rounded-xl border border-accent/30 bg-accent-soft/40 px-4 py-4">
+                <p class="text-xs font-semibold uppercase tracking-wider text-accent">Solo incluido en Pro</p>
+                <ul class="mt-3 space-y-2 text-sm font-medium leading-snug text-fg">
+                  <li class="flex gap-2">
+                    <span class="text-accent" aria-hidden="true"><svg class="mt-1 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                    Menú con IA ilimitado (sin esperar cada 2 meses).
+                  </li>
+                  <li class="flex gap-2">
+                    <span class="text-accent" aria-hidden="true"><svg class="mt-1 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                    Opciones avanzadas: <strong class="font-semibold">aprovechar ingredientes</strong> y{' '}
+                    <strong class="font-semibold">temporada</strong> en el prompt.
+                  </li>
+                  <li class="flex gap-2">
+                    <span class="text-accent" aria-hidden="true"><svg class="mt-1 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                    Lista de la compra y exportaciones sin topes de uso del generador.
+                  </li>
+                  <li class="flex gap-2">
+                    <span class="text-accent" aria-hidden="true"><svg class="mt-1 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                    Sin publicidad cuando se incorporen anuncios y soporte prioritario.
+                  </li>
+                </ul>
+              </div>
+
+              <p class="mt-5 font-display text-3xl font-semibold text-fg sm:text-4xl">
+                4,99&nbsp;€
+                <span class="ml-1 text-base font-normal text-fg-subtle">/ mes</span>
               </p>
               <p class="mt-1 text-xs text-fg-subtle">o 39&nbsp;€ al año (35&nbsp;% de descuento)</p>
               {!yaPro && !enTrial && !trialUsado && (
                 <p class="mt-3 inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
-                  Prueba 10 días gratis sin tarjeta
+                  10&nbsp;días de Pro gratis sin tarjeta (una vez)
                 </p>
               )}
             </header>
 
-            <ul class="mt-8 space-y-3 text-sm">
-              {features.pro.map((f) => (
-                <li class="flex items-start gap-3 text-fg">
-                  <svg
-                    class="mt-0.5 h-5 w-5 shrink-0 text-accent"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>{f}</span>
-                </li>
-              ))}
+            <ul class="mt-6 flex-1 space-y-3 text-sm text-fg-muted">
+              <li class="flex gap-3">
+                <span class="text-accent" aria-hidden="true"><svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+                <span class="text-fg"><strong class="font-medium text-fg">Todo lo del plan gratis</strong> (recetas, favoritos, perfil público).</span>
+              </li>
             </ul>
 
-            {yaPro ? (
-              <a
-                href={`${baseUrl}perfil/plan`}
-                class="mt-10 inline-flex items-center justify-center rounded-[var(--radius)] border border-accent bg-surface px-5 py-3 text-sm font-semibold text-accent transition-colors hover:bg-accent hover:text-[var(--color-accent-contrast)]"
-              >
-                Gestionar mi plan
-              </a>
-            ) : !user ? (
-              <a
-                href={`${baseUrl}registro?next=/perfil/plan`}
-                class="mt-10 inline-flex items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
-              >
-                Crear cuenta y probar
-              </a>
-            ) : enTrial ? (
-              <a
-                href={`${baseUrl}perfil/plan`}
-                class="mt-10 inline-flex items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
-              >
-                Suscribirme antes del fin del trial
-              </a>
-            ) : trialUsado ? (
-              <a
-                href={`${baseUrl}perfil/plan`}
-                class="mt-10 inline-flex items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
-              >
-                Suscribirme a Pro
-              </a>
-            ) : (
-              <form action={`${baseUrl}api/trial/start`} method="post" class="mt-10">
-                <button
-                  type="submit"
+            <div class="mt-8">
+              {yaPro ? (
+                <a
+                  href={`${baseUrl}perfil/plan`}
+                  class="inline-flex w-full items-center justify-center rounded-[var(--radius)] border border-accent bg-surface px-5 py-3 text-sm font-semibold text-accent transition-colors hover:bg-accent hover:text-[var(--color-accent-contrast)]"
+                >
+                  Gestionar mi suscripción
+                </a>
+              ) : !user ? (
+                <a
+                  href={`${baseUrl}registro?next=/perfil/plan`}
                   class="inline-flex w-full items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
                 >
-                  Probar Pro 10 días gratis
-                </button>
-              </form>
-            )}
+                  Crear cuenta y conocer Pro
+                </a>
+              ) : enTrial ? (
+                <a
+                  href={`${baseUrl}perfil/plan`}
+                  class="inline-flex w-full items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+                >
+                  Contratar antes de que acabe el trial
+                </a>
+              ) : trialUsado ? (
+                <a
+                  href={`${baseUrl}perfil/plan`}
+                  class="inline-flex w-full items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+                >
+                  Pasar a Pro
+                </a>
+              ) : (
+                <form action={`${baseUrl}api/trial/start`} method="post" class="flex flex-col gap-2">
+                  <button
+                    type="submit"
+                    class="inline-flex w-full items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+                  >
+                    Probar Pro 10 días gratis
+                  </button>
+                  <span class="text-center text-xs text-fg-subtle">Sin tarjeta. Cancelas antes si no te convence.</span>
+                </form>
+              )}
+            </div>
           </article>
         </div>
 
-        <p class="mt-12 text-center text-sm text-fg-subtle">
-          Pago con tarjeta a través de Stripe. Cancelas cuando quieras desde tu cuenta.
+        <p class="mt-10 text-center text-xs text-fg-subtle">
+          <span aria-hidden="true">*</span> Lista y exportaciones cuando generas menú:
+          cuenta gratis sólo dentro de tu cuota (1 uso cada ~2&nbsp;meses).
+          Plan Pro permite usar el generador y las herramientas asociadas sin ese límite.
+        </p>
+
+        <p class="mt-4 text-center text-sm text-fg-subtle">
+          Pago con tarjeta (Stripe). Sin permanencia: gestionas la suscripción desde tu cuenta.
         </p>
       </div>
     </section>
 
-    <section class="border-t border-border bg-canvas py-16 sm:py-20">
+    <!-- Tabla rápida -->
+    <section class="border-y border-border bg-canvas py-14 sm:py-18">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6">
+        <h2 class="font-display text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
+          Comparativa rápida
+        </h2>
+        <p class="mt-2 max-w-2xl text-sm text-fg-muted">
+          Lo esencial entre invitado, registrado gratis y suscripción Pro en una tabla.
+        </p>
+
+        <div class="-mx-4 mt-8 overflow-x-auto sm:mx-0">
+          <table class="w-full min-w-[36rem] border-collapse rounded-xl border border-border bg-surface text-left text-sm">
+            <thead>
+              <tr class="border-b border-border bg-canvas">
+                <th scope="col" class="sticky left-0 z-10 bg-canvas px-4 py-3 font-semibold text-fg shadow-[2px_0_8px_-2px_rgb(0_0_0/0.08)]">
+                  Función
+                </th>
+                <th scope="col" class="px-4 py-3 text-center font-semibold text-fg-muted">Invitado</th>
+                <th scope="col" class="px-4 py-3 text-center font-semibold text-fg-muted">Gratis</th>
+                <th scope="col" class="px-4 py-3 text-center font-semibold text-accent">Pro</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              {compareRows.map((row) => (
+                <tr class="hover:bg-accent-soft/20">
+                  <th scope="row" class="sticky left-0 z-10 bg-surface px-4 py-3 font-normal text-fg shadow-[2px_0_8px_-2px_rgb(0_0_0/0.06)] sm:bg-inherit">
+                    {row.label}
+                  </th>
+                  {[row.invitado, row.gratis, row.pro].map((cell, i) => {
+                    const kind = cellIcon(cell as Cell);
+                    const isLast = i === 2;
+                    return (
+                      <td class:list={["px-4 py-3 text-center", isLast && "bg-accent-soft/15"]}>
+                        {kind === "yes" ? (
+                          <span class="inline-flex justify-center text-accent" title="Incluido">
+                            <span class="sr-only">Incluido</span>
+                            <svg class="mx-auto h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </span>
+                        ) : kind === "limited" ? (
+                          <span class="text-xs font-medium text-amber-700 dark:text-amber-300" title="Con límites">
+                            Con límites
+                          </span>
+                        ) : (
+                          <span class="text-fg-muted" title="No incluido">
+                            <span class="sr-only">No incluido</span>
+                            <span aria-hidden="true">—</span>
+                          </span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-t border-border bg-surface py-16 sm:py-20">
       <div class="mx-auto max-w-3xl px-4 sm:px-6">
         <h2 class="font-display text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
           Preguntas frecuentes
@@ -196,28 +383,34 @@ const features = {
           <div class="py-6">
             <dt class="font-medium text-fg">¿Las recetas se vuelven de pago?</dt>
             <dd class="mt-2 text-sm leading-relaxed text-fg-muted">
-              No. El recetario completo seguirá siendo gratuito y abierto. El Plan Pro solo añade
-              herramientas de planificación con IA y exportación.
+              No: invitados y cuentas gratis siguen leyendo todo el recetario. Pro añade planificación avanzada
+              con IA y ventajas alrededor de esa herramienta.
+            </dd>
+          </div>
+          <div class="py-6">
+            <dt class="font-medium text-fg">¿Qué gano frente al plan gratis?</dt>
+            <dd class="mt-2 text-sm leading-relaxed text-fg-muted">
+              Generas menús con IA todas las veces que quieras, activas aprovechamiento y temporada en el generador,
+              y no hay que esperar 2&nbsp;meses entre un menú generado y el siguiente si no eres suscriptor.
             </dd>
           </div>
           <div class="py-6">
             <dt class="font-medium text-fg">¿Cómo funciona la generación gratuita?</dt>
             <dd class="mt-2 text-sm leading-relaxed text-fg-muted">
-              Tu cuenta gratuita puede generar un menú semanal con IA cada 2 meses. Si quieres usarlo
-              sin límites (más opciones, aprovechamiento, temporada), prueba Pro 10 días gratis.
+              Una vez registrado, tienes derecho a un menú con IA gratis cada dos meses hasta que pases a Pro o
+              actives los 10 días de trial. Los invitados no pueden lanzar la IA sin crear cuenta.
             </dd>
           </div>
           <div class="py-6">
             <dt class="font-medium text-fg">¿Hace falta tarjeta para el trial?</dt>
             <dd class="mt-2 text-sm leading-relaxed text-fg-muted">
-              No. Activas tu trial de 10 días desde tu cuenta sin introducir tarjeta. Al terminar
-              vuelves a Gratis automáticamente; si quieres seguir con Pro, te suscribes con tarjeta.
+              No. Activas tu trial desde la cuenta sin introducir tarjeta; al terminar vuelves a Gratis hasta que decidas pagar Pro.
             </dd>
           </div>
           <div class="py-6">
             <dt class="font-medium text-fg">¿Cómo se cobra?</dt>
             <dd class="mt-2 text-sm leading-relaxed text-fg-muted">
-              Mensual o anual, con tarjeta a través de Stripe. Sin permanencia y con factura.
+              Mensual o anual mediante Stripe; cancelas cuando quieras desde el área de plan de tu cuenta.
             </dd>
           </div>
         </dl>
