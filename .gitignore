@@ -32,6 +32,16 @@ errores.json
 errores_airfryer.json
 recetas_economicas_reescritas.json
 errores_economicas.json
+recetas_canarias_reescritas.json
+errores_canarias.json
+recetas_canarias02_reescritas.json
+errores_canarias02.json
+recetas_canarias03_reescritas.json
+errores_canarias03.json
+recetas_canarias04_reescritas.json
+errores_canarias04.json
+recetas_canarias05_reescritas.json
+errores_canarias05.json
 venv/
 fix_imagenes.py
 borrar_recetas.py
