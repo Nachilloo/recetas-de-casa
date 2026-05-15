@@ -2,7 +2,8 @@
 import LogoMark from './LogoMark.astro';
 import UserMenu from './UserMenu.astro';
 
-const baseUrl = import.meta.env.BASE_URL;
+// BASE_URL con barra final (como HeroSearch / MenuSemanal).
+const baseUrl = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const user = Astro.locals.user;
 const profile = Astro.locals.profile;
 ---
@@ -31,98 +32,96 @@ const profile = Astro.locals.profile;
       </a>
 
       <nav
-        class="hidden flex-1 items-center justify-center gap-0.5 md:flex lg:gap-1"
+        class="hidden min-w-0 flex-1 items-center justify-center gap-0.5 md:flex lg:gap-1"
         aria-label="Principal"
       >
-        <a
-          href={baseUrl}
-          class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
-          >Inicio</a
-        >
-        <a
-          href={`${baseUrl}recetas/`}
-          class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
-          >Recetas</a
-        >
-        <a
-          href={`${baseUrl}buscar`}
-          class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
-          >Buscar</a
-        >
-        <a
-          href={`${baseUrl}precios`}
-          class="rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
-          >Planes</a
-        >
-        <details class="relative">
-          <summary
-            class="flex cursor-pointer list-none items-center gap-0.5 rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3 [&::-webkit-details-marker]:hidden"
+        {/* Solo estos enlaces van en zona con scroll; Ideas queda fuera para que el <details> no quede recortado por overflow-x. */}
+        <div class="flex min-w-0 max-w-full items-center justify-center gap-0.5 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] lg:gap-1 [&::-webkit-scrollbar]:hidden">
+          <a
+            href={baseUrl}
+            class="shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
+            >Inicio</a
           >
-            Ideas
-            <svg class="h-4 w-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          <a
+            href={`${baseUrl}buscar`}
+            class="shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
+            >Buscar</a
+          >
+          <a
+            href={`${baseUrl}precios`}
+            class="shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3"
+            >Planes</a
+          >
+        </div>
+        <details class="relative shrink-0">
+            <summary
+              class="flex cursor-pointer list-none items-center gap-0.5 rounded-lg px-2.5 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-accent-soft hover:text-accent lg:px-3 [&::-webkit-details-marker]:hidden"
+            >
+              Ideas
+              <svg class="h-4 w-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </summary>
+            <div
+              class="absolute left-0 top-full z-50 mt-1 max-h-[min(70vh,22rem)] w-52 overflow-y-auto overscroll-contain rounded-xl border border-border bg-surface py-1 shadow-lg lg:left-1/2 lg:w-56 lg:-translate-x-1/2"
+            >
+              <a
+                href={`${baseUrl}recetas-faciles/`}
+                class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+                >Recetas fáciles</a
+              >
+              <a
+                href={`${baseUrl}cenas-rapidas/`}
+                class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+                >Cenas rápidas</a
+              >
+              <a
+                href={`${baseUrl}comidas-rapidas/`}
+                class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+                >Comidas rápidas</a
+              >
+              <a
+                href={`${baseUrl}recetas-con-pollo/`}
+                class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+                >Recetas con pollo</a
+              >
+              <a
+                href={`${baseUrl}recetas-baratas/`}
+                class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+                >Recetas baratas</a
+              >
+              <a
+                href={`${baseUrl}recetas-airfryer/`}
+                class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+                >Air fryer</a
+              >
+              <a
+                href={`${baseUrl}postres-faciles/`}
+                class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+                >Postres fáciles</a
+              >
+              <a
+                href={`${baseUrl}recetas-saludables/`}
+                class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+                >Recetas saludables</a
+              >
+              <a
+                href={`${baseUrl}recetas-para-ninos/`}
+                class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
+                >Recetas para niños</a
+              >
+            </div>
+          </details>
+          <a
+            href={`${baseUrl}menu-semanal`}
+            class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-2 text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent lg:ml-0.5 lg:px-3"
+          >
+            <svg class="h-4 w-4 shrink-0 text-fg-muted" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
             </svg>
-          </summary>
-          <div
-            class="absolute left-0 top-full z-50 mt-1 max-h-[min(70vh,22rem)] w-52 overflow-y-auto overscroll-contain rounded-xl border border-border bg-surface py-1 shadow-lg lg:left-1/2 lg:w-56 lg:-translate-x-1/2"
-          >
-            <a
-              href={`${baseUrl}recetas-faciles/`}
-              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
-              >Recetas fáciles</a
-            >
-            <a
-              href={`${baseUrl}cenas-rapidas/`}
-              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
-              >Cenas rápidas</a
-            >
-            <a
-              href={`${baseUrl}comidas-rapidas/`}
-              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
-              >Comidas rápidas</a
-            >
-            <a
-              href={`${baseUrl}recetas-con-pollo/`}
-              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
-              >Recetas con pollo</a
-            >
-            <a
-              href={`${baseUrl}recetas-baratas/`}
-              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
-              >Recetas baratas</a
-            >
-            <a
-              href={`${baseUrl}recetas-airfryer/`}
-              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
-              >Air fryer</a
-            >
-            <a
-              href={`${baseUrl}postres-faciles/`}
-              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
-              >Postres fáciles</a
-            >
-            <a
-              href={`${baseUrl}recetas-saludables/`}
-              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
-              >Recetas saludables</a
-            >
-            <a
-              href={`${baseUrl}recetas-para-ninos/`}
-              class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
-              >Recetas para niños</a
-            >
-          </div>
-        </details>
-        <a
-          href={`${baseUrl}menu-semanal`}
-          class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-2 text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent lg:ml-0.5 lg:px-3"
-        >
-          <svg class="h-4 w-4 shrink-0 text-fg-muted" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <span class="hidden lg:inline">Menú semanal</span>
-          <span class="lg:hidden">Menú</span>
-        </a>
+            <span class="hidden lg:inline">Menú semanal</span>
+            <span class="lg:hidden">Menú</span>
+          </a>
       </nav>
 
       <div class="relative z-20 flex shrink-0 items-center gap-1">
@@ -198,11 +197,6 @@ const profile = Astro.locals.profile;
           href={baseUrl}
           class="rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
           >Inicio</a
-        >
-        <a
-          href={`${baseUrl}recetas/`}
-          class="rounded-lg px-3 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-accent-soft hover:text-accent"
-          >Recetas</a
         >
         <a
           href={`${baseUrl}buscar`}

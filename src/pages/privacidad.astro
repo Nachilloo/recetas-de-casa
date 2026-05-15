@@ -3,6 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 
 const updated = "11 de mayo de 2026";
+const baseUrl = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
 
 <Layout
@@ -21,6 +22,7 @@ const updated = "11 de mayo de 2026";
         <li>Email y contraseña (cifrada) para autenticación.</li>
         <li>Nombre, username, biografía y avatar opcionales (perfil público si lo activas).</li>
         <li>Favoritos, colecciones y uso del menú con IA.</li>
+        <li>Mensajes enviados por el <a href={`${baseUrl}sugerencias`}>buzón de sugerencias</a> (contenido, tipo y email si lo indicas).</li>
         <li>Datos de pago: solo IDs de Stripe; los datos de tarjeta NO los guardamos nosotros.</li>
       </ul>
 
@@ -30,6 +32,7 @@ const updated = "11 de mayo de 2026";
         <li>Aplicar la cuota gratuita del menú IA.</li>
         <li>Procesar pagos vía Stripe.</li>
         <li>Comunicaciones operativas (confirmación de email, cambios de plan).</li>
+        <li>Responder consultas enviadas por correo o formularios (p. ej. buzón de sugerencias).</li>
       </ul>
 
       <h2>3. Encargados de tratamiento</h2>

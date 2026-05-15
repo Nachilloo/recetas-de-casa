@@ -20,7 +20,7 @@ const compareRows = [
   { label: "Favoritos y colecciones", invitado: false, gratis: true, pro: true },
   { label: "Perfil público (/u/usuario)", invitado: false, gratis: true, pro: true },
   { label: "Menú semanal con IA", invitado: false, gratis: "limited", pro: true },
-  { label: "Opciones Pro en el menú (aprovechamiento, temporada)", invitado: false, gratis: false, pro: true },
+  { label: "Opciones Pro en menú semanal", invitado: false, gratis: false, pro: true },
   { label: "Lista de la compra y exportar menú*", invitado: false, gratis: "limited", pro: true },
   { label: "Sin anuncios (cuando se incorporen)", invitado: false, gratis: false, pro: true },
   { label: "Soporte prioritario", invitado: false, gratis: false, pro: true },
@@ -37,7 +37,7 @@ function cellIcon(cell: Cell) {
 
 <Layout
   title="Precios y planes"
-  description="Invitado, cuenta gratis y Plan Pro: qué incluye cada uno. Pro ofrece menú con IA sin límites, opciones avanzadas y herramientas de compra."
+  description="Invitado, cuenta gratis y Plan Pro: qué incluye cada uno. Pro ofrece menú con IA sin límites, opciones Pro en menú semanal y herramientas de compra."
 >
   <Header />
   <main>
@@ -167,8 +167,8 @@ function cellIcon(cell: Cell) {
                 </span>
                 <span>
                   <strong class="font-medium text-fg">Menú con IA:</strong>
-                  una generación gratis cada <strong class="font-medium text-fg">2&nbsp;meses</strong>; sin opciones “Pro”
-                  de aprovechamiento ni temporada.
+                  una generación gratis cada <strong class="font-medium text-fg">2&nbsp;meses</strong>; sin opciones Pro del
+                  menú semanal.
                 </span>
               </li>
             </ul>
@@ -224,8 +224,7 @@ function cellIcon(cell: Cell) {
                   </li>
                   <li class="flex gap-2">
                     <span class="text-accent" aria-hidden="true"><svg class="mt-1 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
-                    Opciones avanzadas: <strong class="font-semibold">aprovechar ingredientes</strong> y{' '}
-                    <strong class="font-semibold">temporada</strong> en el prompt.
+                    Opciones Pro en menú semanal.
                   </li>
                   <li class="flex gap-2">
                     <span class="text-accent" aria-hidden="true"><svg class="mt-1 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
@@ -390,7 +389,7 @@ function cellIcon(cell: Cell) {
           <div class="py-6">
             <dt class="font-medium text-fg">¿Qué gano frente al plan gratis?</dt>
             <dd class="mt-2 text-sm leading-relaxed text-fg-muted">
-              Generas menús con IA todas las veces que quieras, activas aprovechamiento y temporada en el generador,
+              Generas menús con IA todas las veces que quieras, con las opciones Pro del menú semanal,
               y no hay que esperar 2&nbsp;meses entre un menú generado y el siguiente si no eres suscriptor.
             </dd>
           </div>

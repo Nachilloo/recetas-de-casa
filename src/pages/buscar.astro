@@ -20,6 +20,21 @@ const tiempoFiltro = normalizaFiltroTiempo(url.searchParams.get("tiempo"));
 
 const tiempoLabel = TEXTO_FILTRO_TIEMPO;
 
+/** Listado compacto (cards); evita select('*') — menos JSON y menos RAM en Vercel. */
+const SEL_LISTADO_BUSCAR =
+  "slug, title, imagen, imagen_alt, tiempo, porciones, dificultad, categoria, categorias, created_at";
+const SEL_CONTADORES_CAT = "categoria, categorias, created_at";
+const SEL_ING_TAGS = "slug, ingredientes, tags";
+
+/** Vista /buscar sin filtros: listado ligero (no descargar ~1500 filas). */
+const MUESTRA_LISTADO = 10;
+const MUESTRA_POOL_MAX = 80;
+
+const categoriaValida =
+  categoria && categoria in categorias ? categoria : "";
+const tieneBusquedaTexto = Boolean(termino.trim());
+const tieneFiltroCategoria = Boolean(categoriaValida);
+
 // Helper: carga todas las filas paginando (supera el límite de 1000 de Supabase)
 async function fetchAll(table: string, select: string, filters?: { categoria?: string; termino?: string }) {
   const PAGE = 1000;
@@ -53,34 +68,98 @@ async function fetchAll(table: string, select: string, filters?: { categoria?: s
   return all;
 }
 
-// Buscar recetas por título/descripción en Supabase
+/** Ventana aleatoria sobre el listado ordenado + mezcla (sin RPC). */
+async function fetchRecetasMuestraAleatoria(select: string): Promise<any[]> {
+  const { count, error: cErr } = await supabase
+    .from("recetas")
+    .select("slug", { count: "exact", head: true });
+
+  if (cErr || count === null || count === 0) {
+    if (cErr) console.error("[buscar] count recetas", cErr);
+    return [];
+  }
+
+  const pool = Math.min(MUESTRA_POOL_MAX, count);
+  const maxOff = Math.max(0, count - pool);
+  const off = Math.floor(Math.random() * (maxOff + 1));
+
+  const { data, error } = await supabase
+    .from("recetas")
+    .select(select)
+    .order("created_at", { ascending: false })
+    .range(off, off + pool - 1);
+
+  if (error) {
+    console.error("[buscar] muestra aleatoria", error);
+    return [];
+  }
+  if (!data?.length) return [];
+
+  const shuffled = [...data];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const take = Math.min(MUESTRA_LISTADO, shuffled.length);
+  return shuffled.slice(0, take);
+}
+
 const filtros: { categoria?: string; termino?: string } = {};
-if (categoria && categoria in categorias) filtros.categoria = categoria;
-if (termino.trim()) filtros.termino = termino.trim();
+if (tieneFiltroCategoria) filtros.categoria = categoriaValida;
+if (tieneBusquedaTexto) filtros.termino = termino.trim();
 
-let recetas = await fetchAll('recetas', '*', filtros);
+let recetas: any[] = [];
+let allRecetas: any[] = [];
+let esVistaMuestra = false;
 
-// Búsqueda complementaria en ingredientes y tags (son arrays, se filtran en JS)
-if (termino.trim()) {
+if (!tieneBusquedaTexto && !tieneFiltroCategoria && tiempoFiltro === "all") {
+  esVistaMuestra = true;
+  Astro.response.headers.set(
+    "Cache-Control",
+    "private, no-store, must-revalidate"
+  );
+  [allRecetas, recetas] = await Promise.all([
+    fetchAll("recetas", SEL_CONTADORES_CAT),
+    fetchRecetasMuestraAleatoria(SEL_LISTADO_BUSCAR),
+  ]);
+} else if (!tieneBusquedaTexto && !tieneFiltroCategoria) {
+  allRecetas = await fetchAll("recetas", SEL_LISTADO_BUSCAR);
+  recetas = allRecetas;
+} else {
+  [recetas, allRecetas] = await Promise.all([
+    fetchAll("recetas", SEL_LISTADO_BUSCAR, filtros),
+    fetchAll("recetas", SEL_CONTADORES_CAT),
+  ]);
+}
+
+// Búsqueda complementaria en ingredientes y tags (arrays; en JS)
+if (tieneBusquedaTexto) {
   const terminoLower = termino.toLowerCase().trim();
   const slugsYa = new Set(recetas.map((r: any) => r.slug));
 
   const todasRaw = await fetchAll(
-    'recetas',
-    'slug, ingredientes, tags',
-    categoria ? { categoria } : undefined
+    "recetas",
+    SEL_ING_TAGS,
+    tieneFiltroCategoria ? { categoria: categoriaValida } : undefined
   );
 
   const slugsExtra: string[] = [];
   for (const r of todasRaw) {
     if (slugsYa.has(r.slug)) continue;
-    const enIng = r.ingredientes?.some((i: string) => i.toLowerCase().includes(terminoLower));
-    const enTag = r.tags?.some((t: string) => t.toLowerCase().includes(terminoLower));
+    const enIng = r.ingredientes?.some((i: string) =>
+      i.toLowerCase().includes(terminoLower)
+    );
+    const enTag = r.tags?.some((t: string) =>
+      t.toLowerCase().includes(terminoLower)
+    );
     if (enIng || enTag) slugsExtra.push(r.slug);
   }
 
   if (slugsExtra.length > 0) {
-    const { data: extras } = await supabase.from('recetas').select('*').in('slug', slugsExtra);
+    const { data: extras } = await supabase
+      .from("recetas")
+      .select(SEL_LISTADO_BUSCAR)
+      .in("slug", slugsExtra);
     if (extras) recetas = recetas.concat(extras);
   }
 }
@@ -92,9 +171,6 @@ if (tiempoFiltro !== "all") {
 }
 
 const totalRecetas = recetas.length;
-
-// Contadores de categoría (todos los registros, sin filtro de búsqueda ni tiempo — consistencia con el grid de categorías)
-const allRecetas = await fetchAll('recetas', 'categoria, categorias, created_at');
 
 const resultadoPartes = [
   termino.trim() ? `"${termino.trim()}"` : null,
@@ -117,9 +193,6 @@ const metaDescription =
     : termino.trim()
       ? `Resultados para "${termino.trim()}". Recetas españolas por ingredientes y categorías.`
       : "Busca recetas caseras españolas por texto, categoría y tiempo de cocina.";
-
-const categoriaValida =
-  categoria && categoria in categorias ? categoria : "";
 ---
 
 <Layout
@@ -211,6 +284,7 @@ const categoriaValida =
         categoria={categoriaValida}
         tiempoFiltro={tiempoFiltro}
         totalRecetas={totalRecetas}
+        esVistaMuestra={esVistaMuestra}
       />
     </div>
   </main>

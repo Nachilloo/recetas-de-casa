@@ -1,0 +1,143 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+
+const baseUrl = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const user = Astro.locals.user;
+const emailDefault = user?.email ?? '';
+
+const enviado = Astro.url.searchParams.get('enviado') === '1';
+const err = Astro.url.searchParams.get('error');
+
+const errorText: Record<string, string> = {
+  config: 'El buzón no está disponible temporalmente. Escríbenos a hola@recetasdecasa.es.',
+  formulario: 'No se pudo leer el formulario. Vuelve a intentarlo.',
+  tipo: 'Elige un tipo de mensaje válido.',
+  mensaje: 'El mensaje debe tener entre 10 y 8000 caracteres.',
+  servidor: 'No se pudo guardar tu mensaje. Prueba de nuevo o escríbenos por email.',
+};
+
+const errorMsg = err ? errorText[err] ?? 'Ha ocurrido un error.' : null;
+---
+
+<Layout
+  title="Buzón de sugerencias"
+  description="Envía ideas, propuestas de recetas o comentarios para mejorar Recetas de Casa."
+>
+  <Header />
+  <main class="bg-canvas py-16 sm:py-24">
+    <article class="mx-auto max-w-3xl px-4 sm:px-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Tu opinión</p>
+      <h1 class="mt-2 font-display text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
+        Buzón de sugerencias
+      </h1>
+      <p class="mt-5 text-base leading-relaxed text-fg-muted sm:text-lg">
+        Cuéntanos qué echarías en falta, qué receta te gustaría ver o cómo podríamos mejorar la web.
+        Las leemos con cariño; no todas las ideas encajan con el proyecto, pero sí nos ayudan a priorizar.
+      </p>
+
+      {enviado && (
+        <div
+          class="mt-8 rounded-[var(--radius-lg)] border border-border bg-surface px-5 py-4 text-sm text-fg"
+          role="status"
+        >
+          <strong class="font-semibold text-fg">Gracias.</strong>
+          <span class="mt-1 block text-fg-muted">
+            Hemos recibido tu mensaje. Si necesitamos más datos y dejaste email, te escribiremos cuando podamos.
+          </span>
+        </div>
+      )}
+
+      {errorMsg && (
+        <div
+          class="mt-8 rounded-[var(--radius-lg)] border border-border bg-surface px-5 py-4 text-sm text-fg"
+          role="alert"
+        >
+          <strong class="font-semibold text-[var(--color-danger)]">No se ha podido enviar.</strong>
+          <span class="mt-1 block text-fg-muted">{errorMsg}</span>
+        </div>
+      )}
+
+      <form
+        action={`${baseUrl}api/sugerencias`}
+        method="post"
+        class="mt-10 space-y-6 rounded-[var(--radius-lg)] border border-border bg-surface p-6 shadow-sm sm:p-8"
+      >
+        {/* Honeypot anti-spam: dejar vacío */}
+        <input type="text" name="_gotcha" value="" class="sr-only" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+        <input type="hidden" name="page_url" value={Astro.url.href} />
+
+        <div>
+          <label for="sug-tipo" class="block text-sm font-medium text-fg">
+            Tipo
+          </label>
+          <select
+            id="sug-tipo"
+            name="tipo"
+            required
+            class="mt-2 w-full rounded-[var(--radius)] border border-border bg-canvas px-4 py-3 text-fg focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+          >
+            <option value="idea">Idea o mejora para la web</option>
+            <option value="receta">Propuesta o petición de receta</option>
+            <option value="web">Fallo o algo que no funciona</option>
+            <option value="cuenta">Cuenta, acceso o datos</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="sug-email" class="block text-sm font-medium text-fg">
+            Email <span class="font-normal text-fg-muted">(opcional, para responderte)</span>
+          </label>
+          <input
+            id="sug-email"
+            type="email"
+            name="email"
+            value={emailDefault}
+            autocomplete="email"
+            class="mt-2 w-full rounded-[var(--radius)] border border-border bg-canvas px-4 py-3 text-fg placeholder-fg-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+            placeholder="tu@email.com"
+          />
+        </div>
+
+        <div>
+          <label for="sug-mensaje" class="block text-sm font-medium text-fg">
+            Mensaje <span class="text-[var(--color-danger)]">*</span>
+            <span class="font-normal text-fg-muted"> (10–8000 caracteres)</span>
+          </label>
+          <textarea
+            id="sug-mensaje"
+            name="mensaje"
+            required
+            minlength={10}
+            maxlength={8000}
+            rows={8}
+            class="mt-2 w-full rounded-[var(--radius)] border border-border bg-canvas px-4 py-3 text-fg placeholder-fg-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+            placeholder="Escribe con el detalle que quieras…"
+          />
+        </div>
+
+        <p class="text-xs leading-relaxed text-fg-subtle">
+          Al enviar, aceptas que guardemos este mensaje para gestionarlo según nuestra{' '}
+          <a href={`${baseUrl}privacidad`} class="text-accent underline-offset-2 hover:underline">política de privacidad</a>.
+          No incluyas datos personales que no quieras compartir en el texto.
+        </p>
+
+        <button
+          type="submit"
+          class="inline-flex w-full items-center justify-center rounded-[var(--radius)] bg-accent px-5 py-3 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover sm:w-auto"
+        >
+          Enviar sugerencia
+        </button>
+      </form>
+
+      <p class="mt-10 text-sm text-fg-muted">
+        ¿Problema urgente con el pago o la cuenta?{' '}
+        <a href={`${baseUrl}contacto`} class="font-medium text-accent hover:underline">Contacto directo</a>
+        ·{' '}
+        <a href={`${baseUrl}soporte`} class="font-medium text-accent hover:underline">Más ayuda</a>
+      </p>
+    </article>
+  </main>
+</Layout>

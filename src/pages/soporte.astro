@@ -1,0 +1,92 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+
+const baseUrl = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<Layout
+  title="Soporte"
+  description="Ayuda con Recetas de Casa: cuenta, menú semanal, planes y privacidad. Enlaces útiles y contacto."
+>
+  <Header />
+  <main class="bg-canvas py-16 sm:py-24">
+    <article class="mx-auto max-w-3xl px-4 sm:px-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Ayuda</p>
+      <h1 class="mt-2 font-display text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
+        Centro de soporte
+      </h1>
+      <p class="mt-5 text-base leading-relaxed text-fg-muted sm:text-lg">
+        Aquí tienes las rutas más habituales. Si no encuentras respuesta, escríbenos: te indicamos el siguiente paso.
+      </p>
+
+      <section class="mt-12 space-y-8">
+        <div class="rounded-[var(--radius-lg)] border border-border bg-surface p-6 shadow-sm">
+          <h2 class="font-display text-xl font-semibold text-fg">Cuenta y acceso</h2>
+          <ul class="mt-4 space-y-2 text-sm text-fg-muted">
+            <li>
+              <a href={`${baseUrl}login`} class="font-medium text-accent hover:underline">Iniciar sesión</a>
+            </li>
+            <li>
+              <a href={`${baseUrl}registro`} class="font-medium text-accent hover:underline">Crear cuenta</a>
+            </li>
+            <li>
+              <a href={`${baseUrl}perfil/cuenta`} class="font-medium text-accent hover:underline">Datos y preferencias</a>
+              {' '}(requiere sesión)
+            </li>
+          </ul>
+        </div>
+
+        <div class="rounded-[var(--radius-lg)] border border-border bg-surface p-6 shadow-sm">
+          <h2 class="font-display text-xl font-semibold text-fg">Menú semanal, IA y planes</h2>
+          <ul class="mt-4 space-y-2 text-sm text-fg-muted">
+            <li>
+              <a href={`${baseUrl}menu-semanal`} class="font-medium text-accent hover:underline">Generador de menú</a>
+            </li>
+            <li>
+              <a href={`${baseUrl}precios`} class="font-medium text-accent hover:underline">Precios, Pro y trial</a>
+            </li>
+            <li>
+              <a href={`${baseUrl}perfil/plan`} class="font-medium text-accent hover:underline">Gestionar suscripción</a>
+              {' '}(si ya eres usuario)
+            </li>
+          </ul>
+        </div>
+
+        <div class="rounded-[var(--radius-lg)] border border-border bg-surface p-6 shadow-sm">
+          <h2 class="font-display text-xl font-semibold text-fg">Legal y datos</h2>
+          <ul class="mt-4 space-y-2 text-sm text-fg-muted">
+            <li>
+              <a href={`${baseUrl}terminos`} class="font-medium text-accent hover:underline">Términos de uso</a>
+            </li>
+            <li>
+              <a href={`${baseUrl}privacidad`} class="font-medium text-accent hover:underline">Privacidad</a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="rounded-[var(--radius-lg)] border border-accent/30 bg-accent-soft/40 p-6">
+          <h2 class="font-display text-xl font-semibold text-fg">¿Sigues atascado?</h2>
+          <p class="mt-2 text-sm leading-relaxed text-fg-muted">
+            Escríbenos y, si puede ayudar, indica tu navegador y qué estabas intentando hacer (por ejemplo:
+            «no me deja generar menú» o «error al pagar»).
+          </p>
+          <p class="mt-4 flex flex-wrap gap-4">
+            <a
+              href={`${baseUrl}contacto`}
+              class="inline-flex items-center rounded-[var(--radius)] bg-accent px-5 py-2.5 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
+            >
+              Ir a contacto
+            </a>
+            <a
+              href={`${baseUrl}sugerencias`}
+              class="inline-flex items-center rounded-[var(--radius)] border border-border bg-surface px-5 py-2.5 text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent"
+            >
+              Buzón de sugerencias
+            </a>
+          </p>
+        </div>
+      </section>
+    </article>
+  </main>
+</Layout>

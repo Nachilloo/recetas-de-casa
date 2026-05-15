@@ -64,7 +64,10 @@ const year = new Date().getFullYear();
     </div>
     <div class="mt-10 flex flex-col gap-3 border-t border-border pt-8 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-xs text-fg-subtle">© {year} Recetas de Casa. Todos los derechos reservados.</p>
-      <nav class="flex flex-wrap gap-4 text-xs text-fg-subtle" aria-label="Legal">
+      <nav class="flex flex-wrap gap-4 text-xs text-fg-subtle" aria-label="Legal y ayuda">
+        <a href={`${baseUrl}soporte`} class="transition-colors hover:text-accent">Soporte</a>
+        <a href={`${baseUrl}contacto`} class="transition-colors hover:text-accent">Contacto</a>
+        <a href={`${baseUrl}sugerencias`} class="transition-colors hover:text-accent">Sugerencias</a>
         <a href={`${baseUrl}precios`} class="transition-colors hover:text-accent">Precios</a>
         <a href={`${baseUrl}terminos`} class="transition-colors hover:text-accent">Términos</a>
         <a href={`${baseUrl}privacidad`} class="transition-colors hover:text-accent">Privacidad</a>

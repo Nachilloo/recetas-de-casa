@@ -205,6 +205,38 @@ export interface Database {
           plan_at_time?: Plan
         }
       }
+      sugerencias: {
+        Row: {
+          id: string
+          created_at: string
+          tipo: string
+          email: string | null
+          mensaje: string
+          user_id: string | null
+          page_url: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          tipo: string
+          email?: string | null
+          mensaje: string
+          user_id?: string | null
+          page_url?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          tipo?: string
+          email?: string | null
+          mensaje?: string
+          user_id?: string | null
+          page_url?: string | null
+          user_agent?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never

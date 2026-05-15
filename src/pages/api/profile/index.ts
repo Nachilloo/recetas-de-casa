@@ -17,6 +17,7 @@ const RESERVED = new Set([
   'admin', 'api', 'login', 'logout', 'registro', 'register', 'perfil',
   'profile', 'precios', 'pricing', 'menu-semanal', 'recetas', 'buscar',
   'about', 'u', 'usuarios', 'user', 'cuenta', 'soporte', 'help',
+  'contacto', 'sugerencias',
 ]);
 
 export const PATCH: APIRoute = async ({ cookies, request }) => {

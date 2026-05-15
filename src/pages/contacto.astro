@@ -1,0 +1,59 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+
+const baseUrl = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<Layout
+  title="Contacto"
+  description="Escribe a Recetas de Casa: consultas generales, colaboraciones y soporte."
+>
+  <Header />
+  <main class="bg-canvas py-16 sm:py-24">
+    <article class="mx-auto max-w-3xl px-4 sm:px-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Hola</p>
+      <h1 class="mt-2 font-display text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
+        Contacto
+      </h1>
+      <p class="mt-5 text-base leading-relaxed text-fg-muted sm:text-lg">
+        Para cualquier consulta sobre el recetario, tu cuenta o el menú semanal, escríbenos por correo.
+        No ofrecemos consejo médico ni dietético; para alergias o patologías, consulta siempre con un
+        profesional.
+      </p>
+
+      <div class="mt-10 rounded-[var(--radius-lg)] border border-border bg-surface p-6 shadow-sm sm:p-8">
+        <h2 class="font-display text-lg font-semibold text-fg">Email</h2>
+        <p class="mt-2 text-sm text-fg-muted">
+          Intentamos responder en unos días laborables (no somos un call center 24/7).
+        </p>
+        <p class="mt-4">
+          <a
+            href="mailto:hola@recetasdecasa.es"
+            class="text-lg font-semibold text-accent underline-offset-2 transition-colors hover:text-[var(--color-accent-hover)] hover:underline"
+          >
+            hola@recetasdecasa.es
+          </a>
+        </p>
+      </div>
+
+      <ul class="mt-10 space-y-3 text-sm text-fg-muted">
+        <li>
+          <strong class="font-medium text-fg">Ayuda con la web o tu cuenta:</strong>{' '}
+          <a href={`${baseUrl}soporte`} class="font-medium text-accent hover:underline">Centro de soporte</a>
+        </li>
+        <li>
+          <strong class="font-medium text-fg">Ideas y mejoras:</strong>{' '}
+          <a href={`${baseUrl}sugerencias`} class="font-medium text-accent hover:underline">Buzón de sugerencias</a>
+        </li>
+        <li>
+          <strong class="font-medium text-fg">Planes y facturación:</strong>{' '}
+          <a href={`${baseUrl}precios`} class="font-medium text-accent hover:underline">Precios</a>
+          {' · '}
+          Tras iniciar sesión, también desde tu{' '}
+          <a href={`${baseUrl}perfil/plan`} class="font-medium text-accent hover:underline">área de plan</a>.
+        </li>
+      </ul>
+    </article>
+  </main>
+</Layout>

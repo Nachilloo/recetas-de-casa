@@ -41,6 +41,9 @@ const {
 const base = Astro.site?.href ?? 'http://localhost:4321/';
 const canonicalUrl = new URL(canonicalPath.replace(/^\//, ''), base).href;
 
+const [introLead, ...introRest] = introParagraphs;
+const introHasMore = introRest.length > 0;
+
 const faqLd = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -61,27 +64,51 @@ const faqLd = {
   <Header />
 
   <main class="min-h-screen bg-canvas">
-    <article class="mx-auto max-w-4xl px-6 pt-10 pb-6">
-      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent">
-        Recetas de Casa
-      </p>
-      <h1 class="mb-4 text-3xl font-black leading-tight text-fg md:text-4xl lg:text-5xl">
-        {h1}
-      </h1>
-      <p
-        class="mb-8 inline-flex flex-wrap items-center gap-2 rounded-full border border-border bg-accent-soft px-4 py-2 text-sm font-semibold text-accent"
-      >
-        {badgeText}
-      </p>
+    <div class="mx-auto max-w-7xl px-6 pt-10 pb-6">
+      <article>
+        <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent">
+          Recetas de Casa
+        </p>
+        <h1 class="mb-4 text-3xl font-black leading-tight text-fg md:text-4xl lg:text-5xl">
+          {h1}
+        </h1>
+        <p
+          class="mb-8 inline-flex flex-wrap items-center gap-2 rounded-full border border-border bg-accent-soft px-4 py-2 text-sm font-semibold text-accent"
+        >
+          {badgeText}
+        </p>
 
-      <div
-        class="prose prose-lg max-w-none prose-headings:font-semibold prose-headings:text-fg prose-p:leading-relaxed prose-p:text-fg-muted prose-strong:text-fg"
-      >
-        {introParagraphs.map((p) => (
-          <p>{p}</p>
-        ))}
-      </div>
-    </article>
+        {
+          introParagraphs.length > 0 && (
+            <div
+              class="prose prose-lg max-w-none prose-headings:font-semibold prose-headings:text-fg prose-p:mt-0 prose-p:leading-relaxed prose-p:text-fg-muted prose-strong:text-fg"
+            >
+              <p>{introLead}</p>
+              {introHasMore ? (
+                <>
+                  <div id="seo-intro-more" class="seo-intro-more hidden space-y-4">
+                    {introRest.map((p) => (
+                      <p>{p}</p>
+                    ))}
+                  </div>
+                  <p class="not-prose mb-0 mt-3">
+                    <button
+                      type="button"
+                      id="seo-intro-toggle"
+                      class="text-sm font-semibold text-accent underline-offset-2 transition-colors hover:text-[var(--color-accent-hover)] hover:underline"
+                      aria-expanded="false"
+                      aria-controls="seo-intro-more"
+                    >
+                      Leer más
+                    </button>
+                  </p>
+                </>
+              ) : null}
+            </div>
+          )
+        }
+      </article>
+    </div>
 
     <section class="mx-auto max-w-7xl px-6 pb-12" aria-labelledby="recetas-listado">
       <h2 id="recetas-listado" class="sr-only">
@@ -129,6 +156,25 @@ const faqLd = {
       </div>
     </section>
   </main>
+
+  <script is:inline>
+    (function () {
+      if (window.__seoIntroReadMore) return;
+      window.__seoIntroReadMore = true;
+      document.addEventListener("click", function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        var btn = t.closest("#seo-intro-toggle");
+        if (!btn) return;
+        var more = document.getElementById("seo-intro-more");
+        if (!more) return;
+        more.classList.toggle("hidden");
+        var expanded = !more.classList.contains("hidden");
+        btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+        btn.textContent = expanded ? "Leer menos" : "Leer más";
+      });
+    })();
+  </script>
 </Layout>
 
 <style>

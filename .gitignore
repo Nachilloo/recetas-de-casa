@@ -24,7 +24,25 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# Script de importación de recetas
+# VS Code
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+
+# Supabase en raíz (migraciones + scripts SQL locales)
+/supabase/
+
+# Carpeta scripts en raíz del repo
+/scripts/
+
+# Scripts .py solo en la raíz del proyecto (no afecta src/ ni subcarpetas)
+/*.py
+
+# Script de importación de recetas / dumps
 *.pdf
 recetas_reescritas.json
 recetas_airfryer_reescritas.json
@@ -42,10 +60,11 @@ recetas_canarias04_reescritas.json
 errores_canarias04.json
 recetas_canarias05_reescritas.json
 errores_canarias05.json
-venv/
-fix_imagenes.py
-borrar_recetas.py
-seed_recetas.py
-seed_recetas_airfryer.py
-seed_recetas_economicas.py
+recetas_supabase_dump.json
+
+# Piloto / barridos de imágenes IA
+public/images/recetas/_test_ai/
+public/images/recetas/_backup_pre_ai/
+public/piloto.html
+
 requirements.txt

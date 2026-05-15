@@ -14,8 +14,14 @@ const STATIC_PATHS = [
   '/',
   '/about/',
   '/buscar/',
+  '/contacto/',
   '/menu-semanal/',
+  '/privacidad/',
   '/recetas/',
+  '/registro/',
+  '/soporte/',
+  '/sugerencias/',
+  '/terminos/',
   '/recetas-faciles/',
   '/cenas-rapidas/',
   '/recetas-con-pollo/',
@@ -26,7 +32,6 @@ const STATIC_PATHS = [
   '/comidas-rapidas/',
   '/recetas-para-ninos/',
   '/login/',
-  '/registro/',
   '/precios/',
 ] as const;
 

@@ -11,6 +11,8 @@ export interface Props {
   /** Filtro de tiempo activo (desde ?tiempo=) */
   tiempoFiltro?: FiltroTiempoURL;
   totalRecetas: number;
+  /** /buscar sin filtros: solo muestra de recetas, no el archivo completo */
+  esVistaMuestra?: boolean;
 }
 
 const {
@@ -19,14 +21,17 @@ const {
   categoria = '',
   tiempoFiltro = 'all',
   totalRecetas,
+  esVistaMuestra = false,
 } = Astro.props;
 
 const catValida =
   categoria && categoria in categorias ? categoria : '';
 const tiempoTxt = textoFiltroTiempo(tiempoFiltro);
+const baseUrl = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
 let tituloResultados = 'Todas las recetas';
-if (termino.trim()) tituloResultados = `Resultados para "${termino.trim()}"`;
+if (esVistaMuestra) tituloResultados = 'Recetas al azar';
+else if (termino.trim()) tituloResultados = `Resultados para "${termino.trim()}"`;
 else if (tiempoTxt) tituloResultados = tiempoTxt;
 ---
 
@@ -45,6 +50,16 @@ else if (tiempoTxt) tituloResultados = tiempoTxt;
         {totalRecetas} {totalRecetas === 1 ? 'receta' : 'recetas'}
       </span>
     </div>
+
+    {esVistaMuestra ? (
+      <p class="mb-4 text-sm leading-relaxed text-fg-muted">
+        Estas son solo algunas ideas.{' '}
+        <a href={`${baseUrl}recetas/`} class="font-medium text-accent underline-offset-2 hover:text-[var(--color-accent-hover)] hover:underline">
+          Ver todas las recetas
+        </a>
+        {' '}o usa la búsqueda y los filtros de arriba para el listado completo.
+      </p>
+    ) : null}
 
     {(termino.trim() || catValida || tiempoFiltro !== 'all') && (
       <div class="flex flex-wrap items-center gap-2 mb-4">
