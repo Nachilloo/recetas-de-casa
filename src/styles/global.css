@@ -146,6 +146,36 @@
   animation: shake 0.5s ease-in-out;
 }
 
+/* Barra indeterminada (p. ej. generación de menú con IA) */
+@keyframes menu-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+.menu-indeterminate-track {
+  position: relative;
+  overflow: hidden;
+  height: 0.5rem;
+  width: 100%;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-border);
+}
+
+.menu-indeterminate-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 38%;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-accent);
+  animation: menu-indeterminate 1.15s ease-in-out infinite;
+}
+
 /* Menú móvil: foco accesible en botón hamburguesa */
 .nav-toggle:focus-visible + label,
 .nav-mobile-panel:focus-within {

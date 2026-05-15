@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface RecetaMenu {
   slug: string;
@@ -88,6 +88,15 @@ const DIFICULTAD_NOMBRE: Record<string, string> = {
   'dificil': 'Difícil',
 };
 
+/** Pasos rotatorios durante la generación (una sola petición; son orientativos). */
+const GENERACION_PASOS = [
+  'Aplicamos tu dieta y lo que quieres evitar…',
+  'Revisamos el recetario para esta semana…',
+  'Combinamos platos para equilibrar la semana…',
+  'Afinamos comidas y cenas según el plan…',
+  'Preparamos el resumen y los consejos…',
+];
+
 export default function MenuSemanal() {
   const [tipo, setTipo] = useState<'comida' | 'cena' | 'ambos'>('ambos');
   const [personas, setPersonas] = useState(4);
@@ -103,6 +112,8 @@ export default function MenuSemanal() {
   const [menusGuardados, setMenusGuardados] = useState<MenuGuardado[]>([]);
   const [guardadoOk, setGuardadoOk] = useState(false);
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
+  const [generacionPaso, setGeneracionPaso] = useState(0);
+  const generacionMsgId = useRef(0);
 
   useEffect(() => {
     try {
@@ -117,6 +128,21 @@ export default function MenuSemanal() {
       .then((data: PlanInfo) => setPlanInfo(data))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!loading) return;
+    setGeneracionPaso(0);
+    generacionMsgId.current += 1;
+    const tick = generacionMsgId.current;
+    const id = window.setInterval(() => {
+      if (generacionMsgId.current !== tick) return;
+      setGeneracionPaso((i) => (i + 1) % GENERACION_PASOS.length);
+    }, 2600);
+    return () => {
+      generacionMsgId.current += 1;
+      window.clearInterval(id);
+    };
+  }, [loading]);
 
   const isPro = planInfo?.plan === 'pro' || planInfo?.trialActive;
   const isFreeLogged = planInfo?.loggedIn && planInfo.plan === 'free' && !planInfo.trialActive;
@@ -459,6 +485,25 @@ export default function MenuSemanal() {
               Plan gratis: 1 generación cada 2 meses. Para ilimitado, prueba Pro o
               {' '}<a href={`${siteBase}precios`} className="text-accent hover:underline">suscríbete</a>.
             </p>
+          )}
+
+          {loading && (
+            <div
+              className="mx-auto mt-6 max-w-md text-left"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <div className="menu-indeterminate-track" aria-hidden="true">
+                <div className="menu-indeterminate-fill" />
+              </div>
+              <p className="mt-3 min-h-[2.75rem] text-sm leading-relaxed text-fg-muted motion-safe:transition-opacity motion-safe:duration-300">
+                {GENERACION_PASOS[generacionPaso]}
+              </p>
+              <p className="mt-1 text-xs text-fg-subtle">
+                Suele tardar un poco: la IA está elaborando todo el menú. No cierres esta pestaña.
+              </p>
+            </div>
           )}
         </div>
       </div>
