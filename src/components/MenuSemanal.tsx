@@ -88,14 +88,27 @@ const DIFICULTAD_NOMBRE: Record<string, string> = {
   'dificil': 'Difícil',
 };
 
+/**
+ * Dieta y alergias en el generador: desactivadas temporalmente.
+ * Pon en false para volver a habilitarlas y pon `MENU_DIETAS_ALERGIAS_API_HABILITADAS = true` en `src/pages/api/menu/generar.ts`.
+ */
+const MENU_DIETAS_ALERGIAS_PROXIMA = true;
+
 /** Pasos rotatorios durante la generación (una sola petición; son orientativos). */
-const GENERACION_PASOS = [
-  'Aplicamos tu dieta y lo que quieres evitar…',
-  'Revisamos el recetario para esta semana…',
-  'Combinamos platos para equilibrar la semana…',
-  'Afinamos comidas y cenas según el plan…',
-  'Preparamos el resumen y los consejos…',
-];
+const GENERACION_PASOS = MENU_DIETAS_ALERGIAS_PROXIMA
+  ? [
+      'Revisamos el recetario para esta semana…',
+      'Combinamos platos para equilibrar la semana…',
+      'Afinamos comidas y cenas según el plan…',
+      'Preparamos el resumen y los consejos…',
+    ]
+  : [
+      'Aplicamos tu dieta y lo que quieres evitar…',
+      'Revisamos el recetario para esta semana…',
+      'Combinamos platos para equilibrar la semana…',
+      'Afinamos comidas y cenas según el plan…',
+      'Preparamos el resumen y los consejos…',
+    ];
 
 export default function MenuSemanal() {
   const [tipo, setTipo] = useState<'comida' | 'cena' | 'ambos'>('ambos');
@@ -145,9 +158,19 @@ export default function MenuSemanal() {
   }, [loading]);
 
   const isPro = planInfo?.plan === 'pro' || planInfo?.trialActive;
+
+  useEffect(() => {
+    if (planInfo == null) return;
+    if (!isPro || MENU_DIETAS_ALERGIAS_PROXIMA) {
+      setDieta('omnivora');
+      setAlergias([]);
+    }
+  }, [planInfo, isPro]);
+
   const isFreeLogged = planInfo?.loggedIn && planInfo.plan === 'free' && !planInfo.trialActive;
   const isAnon = planInfo && !planInfo.loggedIn;
   const advancedDisabled = !isPro;
+  const dietasAlergiasInteractivas = !MENU_DIETAS_ALERGIAS_PROXIMA && isPro;
 
   const toggleAlergia = (id: string) => {
     setAlergias((prev) =>
@@ -201,8 +224,8 @@ export default function MenuSemanal() {
           dificultadMax,
           aprovechamiento: isPro ? aprovechamiento : false,
           temporada: isPro ? temporada : false,
-          alergias,
-          dieta,
+          alergias: MENU_DIETAS_ALERGIAS_PROXIMA ? [] : isPro ? alergias : [],
+          dieta: MENU_DIETAS_ALERGIAS_PROXIMA ? 'omnivora' : isPro ? dieta : 'omnivora',
         }),
       });
 
@@ -401,31 +424,78 @@ export default function MenuSemanal() {
           </div>
         </div>
 
-        {/* Preferencias dietéticas (todos los planes) */}
-        <div className="mt-8 grid grid-cols-1 gap-6 border-t border-border pt-8 md:grid-cols-2">
+        {/* Preferencias dietéticas (Pro / trial) — temporalmente “Próximamente” */}
+        <div
+          className={`mt-8 grid grid-cols-1 gap-6 border-t border-border pt-8 md:grid-cols-2 ${
+            !dietasAlergiasInteractivas ? 'opacity-60' : ''
+          }`}
+        >
           <div>
-            <label className="mb-2 block text-sm font-semibold text-fg">Dieta</label>
+            <label className="mb-2 block text-sm font-semibold text-fg">
+              Dieta
+              {MENU_DIETAS_ALERGIAS_PROXIMA ? (
+                <span className="ml-2 rounded-full bg-fg-subtle/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+                  Próximamente
+                </span>
+              ) : (
+                advancedDisabled && (
+                  <span className="ml-2 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+                    Pro
+                  </span>
+                )
+              )}
+            </label>
             <div className="flex flex-wrap gap-2">
               {DIETAS.map((d) => (
                 <button
                   key={d.id}
                   type="button"
-                  onClick={() => setDieta(d.id)}
+                  disabled={!dietasAlergiasInteractivas}
+                  onClick={() => dietasAlergiasInteractivas && setDieta(d.id)}
+                  title={
+                    MENU_DIETAS_ALERGIAS_PROXIMA
+                      ? 'Próximamente'
+                      : advancedDisabled
+                        ? 'Disponible en Pro / Trial'
+                        : ''
+                  }
                   className={`rounded-full border-2 px-4 py-1.5 text-sm font-medium transition-colors ${
                     dieta === d.id
                       ? 'border-accent bg-accent-soft text-accent'
                       : 'border-border bg-canvas text-fg-muted hover:border-border-strong'
-                  }`}
+                  } ${!dietasAlergiasInteractivas ? 'cursor-not-allowed' : ''}`}
                 >
                   {d.label}
                 </button>
               ))}
             </div>
+            {MENU_DIETAS_ALERGIAS_PROXIMA ? (
+              <p className="mt-2 text-xs text-fg-subtle">
+                Estamos preparando esta opción. El menú se genera sin filtro de dieta.
+              </p>
+            ) : (
+              advancedDisabled && (
+                <p className="mt-2 text-xs text-fg-subtle">
+                  Plan gratis: menú sin restricción de dieta. Personaliza en Pro o en tu trial.
+                </p>
+              )
+            )}
           </div>
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-fg">
               Alergias / a evitar
+              {MENU_DIETAS_ALERGIAS_PROXIMA ? (
+                <span className="ml-2 rounded-full bg-fg-subtle/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+                  Próximamente
+                </span>
+              ) : (
+                advancedDisabled && (
+                  <span className="ml-2 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+                    Pro
+                  </span>
+                )
+              )}
             </label>
             <div className="flex flex-wrap gap-2">
               {ALERGIAS_COMUNES.map((a) => {
@@ -434,12 +504,20 @@ export default function MenuSemanal() {
                   <button
                     key={a.id}
                     type="button"
-                    onClick={() => toggleAlergia(a.id)}
+                    disabled={!dietasAlergiasInteractivas}
+                    onClick={() => dietasAlergiasInteractivas && toggleAlergia(a.id)}
+                    title={
+                      MENU_DIETAS_ALERGIAS_PROXIMA
+                        ? 'Próximamente'
+                        : advancedDisabled
+                          ? 'Disponible en Pro / Trial'
+                          : ''
+                    }
                     className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium transition-colors ${
                       selected
                         ? 'border-accent bg-accent-soft text-accent'
                         : 'border-border bg-canvas text-fg-muted hover:border-border-strong'
-                    }`}
+                    } ${!dietasAlergiasInteractivas ? 'cursor-not-allowed' : ''}`}
                   >
                     {a.label}
                   </button>
@@ -447,7 +525,11 @@ export default function MenuSemanal() {
               })}
             </div>
             <p className="mt-2 text-xs text-fg-subtle">
-              La IA intentará evitar las recetas con esos ingredientes.
+              {MENU_DIETAS_ALERGIAS_PROXIMA
+                ? 'Pronto podrás indicar alérgenos a evitar. Mientras tanto, revisa siempre los ingredientes de cada receta.'
+                : advancedDisabled
+                  ? 'En Pro, la IA evitará ingredientes que marques.'
+                  : 'La IA intentará evitar las recetas con esos ingredientes.'}
             </p>
           </div>
         </div>
@@ -482,8 +564,25 @@ export default function MenuSemanal() {
           )}
           {isFreeLogged && planInfo?.canGenerateMenu && (
             <p className="mt-3 text-xs text-fg-subtle">
-              Plan gratis: 1 generación cada 2 meses. Para ilimitado, prueba Pro o
-              {' '}<a href={`${siteBase}precios`} className="text-accent hover:underline">suscríbete</a>.
+              {MENU_DIETAS_ALERGIAS_PROXIMA ? (
+                <>
+                  Plan gratis: 1 generación cada 2 meses. Dieta y alergias en el generador, próximamente. Para
+                  ilimitado y más opciones,{' '}
+                  <a href={`${siteBase}precios`} className="text-accent hover:underline">
+                    ver Pro
+                  </a>
+                  .
+                </>
+              ) : (
+                <>
+                  Plan gratis: 1 generación cada 2 meses; dieta y alergias son Pro. Para ilimitado y preferencias,
+                  {' '}
+                  <a href={`${siteBase}precios`} className="text-accent hover:underline">
+                    ver Pro
+                  </a>
+                  .
+                </>
+              )}
             </p>
           )}
 

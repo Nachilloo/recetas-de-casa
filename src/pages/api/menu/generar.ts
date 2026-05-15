@@ -6,6 +6,9 @@ import { getCategoriasList, recetaTieneCategoria } from '../../../lib/recetaCate
 
 export const prerender = false;
 
+/** Alinear con `MENU_DIETAS_ALERGIAS_PROXIMA` en MenuSemanal.tsx (true allí ⇒ false aquí). */
+const MENU_DIETAS_ALERGIAS_API_HABILITADAS = false;
+
 interface RecetaRow {
   slug: string;
   title: string;
@@ -54,14 +57,25 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       excluirCategorias = [] as string[],
       aprovechamiento = false,
       temporada = false,
-      // Nuevas preferencias (preferencias-de-receta integradas en el formulario)
-      alergias = [] as string[],
-      dieta = '' as string,
+      alergias: alergiasBody = [] as string[],
+      dieta: dietaBody = '' as string,
     } = body;
 
+    let alergias: string[] = Array.isArray(alergiasBody) ? alergiasBody : [];
+    let dieta: string = typeof dietaBody === 'string' ? dietaBody : '';
+
+    if (!MENU_DIETAS_ALERGIAS_API_HABILITADAS) {
+      alergias = [];
+      dieta = 'omnivora';
+    }
+
     // ── PAYWALL ────────────────────────────────────────────────────
-    // Las opciones avanzadas son solo Pro/Trial
+    // Opciones avanzadas y preferencias dietéticas detalladas: solo Pro/Trial
     const pideOpcionAvanzada = aprovechamiento || temporada;
+    const pideDietaOAlergiasPro =
+      (Array.isArray(alergias) && alergias.length > 0) ||
+      (typeof dieta === 'string' && dieta && dieta !== 'omnivora');
+
     if (pideOpcionAvanzada && status.plan === 'free') {
       return json(
         {
@@ -69,6 +83,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           feature: 'aprovechamiento_temporada',
           message:
             'Las opciones de aprovechamiento y productos de temporada están disponibles en el plan Pro o durante tu trial.',
+          upgrade: '/precios',
+        },
+        402
+      );
+    }
+
+    if (pideDietaOAlergiasPro && status.plan === 'free') {
+      return json(
+        {
+          error: 'paywall_feature',
+          feature: 'dieta_alergias',
+          message:
+            'Elegir dieta (vegetariana, vegana, etc.) y marcar alergias está disponible en el plan Pro o durante tu trial.',
           upgrade: '/precios',
         },
         402
