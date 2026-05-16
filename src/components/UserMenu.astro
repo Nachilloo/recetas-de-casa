@@ -13,13 +13,8 @@ const displayName = profile?.display_name || email.split("@")[0];
 const username = profile?.username;
 const avatarUrl = profile?.avatar_url;
 
-const plan: Plan = profile?.plan ?? "free";
-const trialEnds = profile?.trial_ends_at ? new Date(profile.trial_ends_at) : null;
-const trialActive = plan === "trial" && trialEnds && trialEnds > new Date();
-const trialDaysLeft =
-  trialActive && trialEnds
-    ? Math.max(0, Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : null;
+const planRaw: Plan = profile?.plan ?? "free";
+const plan: "pro" | "free" = planRaw === "pro" ? "pro" : "free";
 
 const initial = (displayName || "?").charAt(0).toUpperCase();
 ---
@@ -75,10 +70,6 @@ const initial = (displayName || "?").charAt(0).toUpperCase();
             <span class="rounded-full bg-accent px-2 py-0.5 text-[var(--color-accent-contrast)]">
               Pro
             </span>
-          ) : trialActive ? (
-            <span class="rounded-full bg-accent-soft px-2 py-0.5 text-accent">
-              Trial · {trialDaysLeft}d
-            </span>
           ) : (
             <span class="rounded-full bg-canvas px-2 py-0.5 text-fg-muted">Gratis</span>
           )
@@ -123,7 +114,7 @@ const initial = (displayName || "?").charAt(0).toUpperCase();
       class="block px-4 py-2.5 text-sm text-fg transition-colors hover:bg-accent-soft hover:text-accent"
       role="menuitem"
     >
-      Plan {plan === "pro" ? "Pro" : trialActive ? "(Trial)" : "(Gratis)"}
+      Plan {plan === "pro" ? "Pro (suscripción)" : "(Gratis)"}
     </a>
 
     <div class="my-1 border-t border-border"></div>

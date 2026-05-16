@@ -157,7 +157,7 @@ export default function MenuSemanal() {
     };
   }, [loading]);
 
-  const isPro = planInfo?.plan === 'pro' || planInfo?.trialActive;
+  const isPro = planInfo?.plan === 'pro';
 
   useEffect(() => {
     if (planInfo == null) return;
@@ -167,7 +167,7 @@ export default function MenuSemanal() {
     }
   }, [planInfo, isPro]);
 
-  const isFreeLogged = planInfo?.loggedIn && planInfo.plan === 'free' && !planInfo.trialActive;
+  const isFreeLogged = planInfo?.loggedIn && planInfo.plan === 'free';
   const isAnon = planInfo && !planInfo.loggedIn;
   const advancedDisabled = !isPro;
   const dietasAlergiasInteractivas = !MENU_DIETAS_ALERGIAS_PROXIMA && isPro;
@@ -394,7 +394,7 @@ export default function MenuSemanal() {
                     ? 'bg-success/15 border-2 border-success text-success'
                     : 'bg-canvas border-2 border-border text-fg-muted hover:border-border-strong'
                 } ${advancedDisabled ? 'cursor-not-allowed' : ''}`}
-                title={advancedDisabled ? 'Disponible en Pro / Trial' : ''}
+                title={advancedDisabled ? 'Disponible con plan Pro' : ''}
               >
                 <div>
                   <div className="font-semibold">Aprovechamiento</div>
@@ -411,7 +411,7 @@ export default function MenuSemanal() {
                     ? 'bg-accent-soft border-2 border-accent text-accent'
                     : 'bg-canvas border-2 border-border text-fg-muted hover:border-border-strong'
                 } ${advancedDisabled ? 'cursor-not-allowed' : ''}`}
-                title={advancedDisabled ? 'Disponible en Pro / Trial' : ''}
+                title={advancedDisabled ? 'Disponible con plan Pro' : ''}
               >
                 <div>
                   <div className="font-semibold">Productos de temporada</div>
@@ -424,7 +424,7 @@ export default function MenuSemanal() {
           </div>
         </div>
 
-        {/* Preferencias dietéticas (Pro / trial) — temporalmente “Próximamente” */}
+        {/* Preferencias dietéticas solo Pro */}
         <div
           className={`mt-8 grid grid-cols-1 gap-6 border-t border-border pt-8 md:grid-cols-2 ${
             !dietasAlergiasInteractivas ? 'opacity-60' : ''
@@ -456,7 +456,7 @@ export default function MenuSemanal() {
                     MENU_DIETAS_ALERGIAS_PROXIMA
                       ? 'Próximamente'
                       : advancedDisabled
-                        ? 'Disponible en Pro / Trial'
+                        ? 'Disponible con plan Pro'
                         : ''
                   }
                   className={`rounded-full border-2 px-4 py-1.5 text-sm font-medium transition-colors ${
@@ -476,7 +476,7 @@ export default function MenuSemanal() {
             ) : (
               advancedDisabled && (
                 <p className="mt-2 text-xs text-fg-subtle">
-                  Plan gratis: menú sin restricción de dieta. Personaliza en Pro o en tu trial.
+                  Plan gratis: menú sin restricción de dieta. Personalización de dieta y alergias con plan Pro.
                 </p>
               )
             )}
@@ -510,7 +510,7 @@ export default function MenuSemanal() {
                       MENU_DIETAS_ALERGIAS_PROXIMA
                         ? 'Próximamente'
                         : advancedDisabled
-                          ? 'Disponible en Pro / Trial'
+                          ? 'Disponible con plan Pro'
                           : ''
                     }
                     className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -1157,17 +1157,6 @@ function PlanBanner({ planInfo, baseUrl }: { planInfo: PlanInfo; baseUrl: string
     );
   }
 
-  if (planInfo.trialActive) {
-    return (
-      <div className="mb-6 flex items-center gap-3 rounded-xl border border-border bg-surface px-5 py-3 text-sm text-fg-muted">
-        <span className="inline-flex items-center rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">
-          Trial
-        </span>
-        Disfruta de generaciones ilimitadas durante tu prueba.
-      </div>
-    );
-  }
-
   if (!planInfo.canGenerateMenu && planInfo.menuCooldownUntil) {
     const fecha = new Date(planInfo.menuCooldownUntil).toLocaleDateString('es-ES', {
       day: 'numeric',
@@ -1180,7 +1169,7 @@ function PlanBanner({ planInfo, baseUrl }: { planInfo: PlanInfo; baseUrl: string
             Ya usaste tu generación gratuita
           </p>
           <p className="mt-1 text-xs text-fg-muted">
-            Disponible de nuevo el {fecha}. O prueba Pro 10 días gratis sin tarjeta.
+            Disponible de nuevo el {fecha}. Con Pro puedes generar cuando quieras.
           </p>
         </div>
         <a
@@ -1196,14 +1185,12 @@ function PlanBanner({ planInfo, baseUrl }: { planInfo: PlanInfo; baseUrl: string
   return (
     <div className="mb-6 flex flex-col gap-3 rounded-xl border border-border bg-surface px-5 py-3 text-sm text-fg-muted sm:flex-row sm:items-center sm:justify-between">
       <span>Plan gratis: 1 generación disponible.</span>
-      {!planInfo.trialUsed && (
-        <a
-          href={`${baseUrl}precios`}
-          className="text-xs font-semibold text-accent hover:underline"
-        >
-          Probar Pro 10 días gratis →
-        </a>
-      )}
+      <a
+        href={`${baseUrl}precios`}
+        className="text-xs font-semibold text-accent hover:underline sm:shrink-0"
+      >
+        Ver plan Pro →
+      </a>
     </div>
   );
 }

@@ -4,11 +4,9 @@ import type { Plan } from '../lib/types';
 interface Props {
   baseUrl: string;
   plan: Plan;
-  trialActive: boolean;
-  trialUsed: boolean;
 }
 
-export default function PlanActions({ baseUrl, plan, trialActive, trialUsed }: Props) {
+export default function PlanActions({ baseUrl, plan }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,25 +76,6 @@ export default function PlanActions({ baseUrl, plan, trialActive, trialUsed }: P
   return (
     <div className="space-y-6">
       {error && <ErrorBox message={error} />}
-
-      {!trialUsed && plan === 'free' && (
-        <div className="rounded-[var(--radius)] border border-accent/40 bg-accent-soft p-5">
-          <p className="text-sm font-semibold text-accent">¿Quieres probar Pro 10 días?</p>
-          <p className="mt-1 text-sm text-fg-muted">
-            Sin tarjeta, sin compromiso. Activa tu trial gratuito y desbloquea generaciones
-            ilimitadas, aprovechamiento y productos de temporada.
-          </p>
-          <form action={`${baseUrl}api/trial/start`} method="post" className="mt-4">
-            <button
-              type="submit"
-              className="rounded-[var(--radius)] bg-accent px-5 py-2.5 text-sm font-semibold text-[var(--color-accent-contrast)] transition-colors hover:bg-accent-hover"
-            >
-              Empezar mi trial de 10 días
-            </button>
-          </form>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <article className="rounded-[var(--radius-lg)] border border-border bg-canvas p-5">
           <p className="text-xs uppercase tracking-wider text-fg-subtle">Mensual</p>
@@ -131,12 +110,6 @@ export default function PlanActions({ baseUrl, plan, trialActive, trialUsed }: P
           </button>
         </article>
       </div>
-
-      {trialActive && (
-        <p className="text-xs text-fg-subtle">
-          Tu trial sigue activo. Si te suscribes ahora, cobramos al terminar el trial.
-        </p>
-      )}
     </div>
   );
 }

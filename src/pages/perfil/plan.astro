@@ -9,12 +9,7 @@ const baseUrl = import.meta.env.BASE_URL;
 
 const status = await computePlanStatus(Astro.cookies, profile, user.id);
 
-const planLabel =
-  status.plan === "pro"
-    ? "Pro"
-    : status.trialActive
-      ? `Trial (quedan ${status.trialDaysLeft} días)`
-      : "Gratis";
+const planLabel = status.plan === "pro" ? "Pro" : "Gratis";
 
 const showStatusBanner = Astro.url.searchParams.get("status");
 ---
@@ -50,9 +45,7 @@ const showStatusBanner = Astro.url.searchParams.get("status");
           {status.canGenerateMenu
             ? status.plan === "pro"
               ? "Generaciones ilimitadas."
-              : status.trialActive
-                ? "Generaciones ilimitadas durante tu trial."
-                : "Tienes 1 generación disponible. Se renueva cada 2 meses en el plan gratis."
+              : "Tienes 1 generación disponible. Se renueva cada 2 meses en el plan gratis."
             : `Has usado tu generación gratuita. Disponible de nuevo el ${
                 status.menuCooldownUntil
                   ? new Date(status.menuCooldownUntil).toLocaleDateString("es-ES", {
@@ -72,13 +65,7 @@ const showStatusBanner = Astro.url.searchParams.get("status");
     </div>
 
     <div class="mt-8">
-      <PlanActions
-        client:load
-        baseUrl={baseUrl}
-        plan={status.plan}
-        trialActive={status.trialActive}
-        trialUsed={status.trialUsed}
-      />
+      <PlanActions client:load baseUrl={baseUrl} plan={status.plan} />
     </div>
   </section>
 </PerfilLayout>

@@ -70,7 +70,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     // ── PAYWALL ────────────────────────────────────────────────────
-    // Opciones avanzadas y preferencias dietéticas detalladas: solo Pro/Trial
+    // Opciones avanzadas y preferencias dietéticas: solo plan Pro
     const pideOpcionAvanzada = aprovechamiento || temporada;
     const pideDietaOAlergiasPro =
       (Array.isArray(alergias) && alergias.length > 0) ||
@@ -82,7 +82,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           error: 'paywall_feature',
           feature: 'aprovechamiento_temporada',
           message:
-            'Las opciones de aprovechamiento y productos de temporada están disponibles en el plan Pro o durante tu trial.',
+            'Las opciones de aprovechamiento y productos de temporada están disponibles en el plan Pro.',
           upgrade: '/precios',
         },
         402
@@ -95,7 +95,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           error: 'paywall_feature',
           feature: 'dieta_alergias',
           message:
-            'Elegir dieta (vegetariana, vegana, etc.) y marcar alergias está disponible en el plan Pro o durante tu trial.',
+            'Elegir dieta (vegetariana, vegana, etc.) y marcar alergias está disponible en el plan Pro.',
           upgrade: '/precios',
         },
         402

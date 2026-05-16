@@ -144,8 +144,7 @@ Estados a diseñar **antes** de implementar cobro:
 - [x] `RecetaCard`, `RecetaCardCompact`, listado y detalle de receta migrados a tokens.
 - [x] Auth real (Supabase email + Google OAuth) + UserMenu en header (Fase D).
 - [x] Sistema de favoritos + colecciones + perfil público `/u/[username]` (Fase D).
-- [x] Gating del menú IA: cuota free 1 generación / 2 meses, opciones avanzadas Pro/Trial (Fase D).
-- [x] Trial Pro de 10 días sin tarjeta, opt-in desde `/precios` y `/perfil/plan` (Fase D).
+- [x] Gating del menú IA: cuota free 1 generación / 2 meses, opciones avanzadas solo plan Pro (Fase D).
 - [x] Stripe Checkout + webhook + billing portal (Fase D — requiere `pnpm add stripe`).
 - [x] Páginas `/terminos` y `/privacidad` (Fase D).
 - [ ] Limpiar Tailwind crudo restante en `/admin/*` (fuera del recetario público).
@@ -159,7 +158,8 @@ Estados a diseñar **antes** de implementar cobro:
 | (inicial) | Versión 1.0 — dirección premium + preparación suscripciones / menú |
 | Fase A+B | Tokens `@theme` + DM Sans / Fraunces; Header con nav completa + menú móvil; `Footer`; `Layout` con `hideFooter` en `/admin`; `theme-color` acorde |
 | Fase C | Dark mode con auto + toggle 3 estados, anti-flash inline, landing editorial sin emoji, auth UI placeholder, página `/precios`, RecetaCard rediseñada |
-| Fase D | Sistema de usuarios (Supabase Auth + Google OAuth), favoritos + colecciones + perfil público `/u/[username]`, gating del menú IA con cuota free 1/2 meses, opciones avanzadas (aprovechamiento / temporada) y onboarding (alergias / dieta) en el propio formulario del generador, Trial Pro 10d sin tarjeta, Stripe Checkout + webhook + portal, `/terminos` y `/privacidad`. |
+| Fase D | Sistema de usuarios (Supabase Auth + Google OAuth), favoritos + colecciones + perfil público `/u/[username]`, gating del menú IA con cuota free 1/2 meses, opciones avanzadas (aprovechamiento / temporada) y onboarding (alergias / dieta) en el propio formulario del generador, Stripe Checkout + webhook + portal, `/terminos` y `/privacidad`. |
+| Post-Fase D | Retirado trial Pro 10 días sin tarjeta: `/api/trial/start` responde 410; migración `20260516120000` pasa perfiles `trial` → `free`. Pro solo vía suscripción. |
 
 ---
 
@@ -203,20 +203,20 @@ Radios unificados: `--radius-sm` (6 px), `--radius` (10 px), `--radius-lg` (14 p
 |--------|----------------|
 | Invitado | Navegación completa de recetas; botón ♥ pide login; menú IA pide registro. |
 | Free | Favoritos y colecciones ilimitados; 1 generación de menú IA cada 2 meses; sin aprovechamiento ni temporada. |
-| Trial (10 días, opt-in, una vez por cuenta) | Acceso completo Pro durante 10 días sin tarjeta. |
+| ~~Trial~~ (retirado) | Los perfiles que quedaran en `trial` en BD pasan a `free` vía migración; el producto ya no ofrece prueba sin tarjeta. El valor `trial` en enum queda solo por compatibilidad SQL. |
 | Pro | Generaciones ilimitadas, aprovechamiento, temporada, lista exportable, badge `Pro` en avatar. |
 
 ### Header
 
 - Invitado: `Iniciar sesión` + `Crear cuenta`.
-- Sesión: `<UserMenu>` con avatar, badge `Pro` si aplica, pill `Trial · Xd` cuando proceda. Items: Mis favoritos, Mis colecciones, Cuenta, Plan, Cerrar sesión.
+- Sesión: `<UserMenu>` con avatar, badge `Pro` si aplica. Items: Mis favoritos, Mis colecciones, Cuenta, Plan, Cerrar sesión.
 
 ### Rutas (Fase D)
 
 - Auth API: `/api/auth/{signup,login,logout,google,callback}`.
 - Favoritos / colecciones / perfil: `/api/{favoritos,colecciones/[id],profile}`.
 - Plan e IA: `/api/plan/status`, `/api/menu/generar` (gating 401/402 + cuota).
-- Trial: `/api/trial/start` (POST/GET, one-shot, RLS-bypassed con service_role).
+- `/api/trial/start` deshabilitado (410; el trial gratuito ya no se ofrece).
 - Stripe: `/api/stripe/{checkout,portal,webhook}`. Lazy via `src/lib/stripe.ts` (la dependencia `stripe` solo se carga si está instalada y `STRIPE_SECRET_KEY` configurada).
 - Páginas: `/perfil/{favoritos,colecciones,cuenta,plan}` (privadas, gated en middleware) y `/u/[username]` (perfil público SEO-friendly, gated por `is_public`).
 
@@ -231,14 +231,14 @@ Migración `20260511120000_users_favoritos_planes.sql` añade:
 
 RLS: profiles SELECT abierto (necesario para `/u/<username>`), UPDATE solo propio y SIN tocar plan/trial/stripe (eso lo escribe service_role desde endpoints). Favoritos privados por defecto (los públicos los leemos en `/u/[username]` con service_role). Colecciones públicas se ven sin sesión.
 
-Trigger `on_auth_user_created` crea automáticamente el profile con `plan='free'` al registrarse (sin trial automático: el trial es opt-in).
+Trigger `on_auth_user_created` crea automáticamente el profile con `plan='free'` al registrarse.
 
 ### Variables de entorno necesarias
 
 ```
 PUBLIC_SUPABASE_URL
 PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY      # imprescindible para trial + Stripe + favoritos públicos
+SUPABASE_SERVICE_ROLE_KEY      # API routes privilegiadas: Stripe webhook, escritura de planes, favoritos públicos `/u/[username]`
 OPENAI_API_KEY                 # menú IA
 STRIPE_SECRET_KEY              # opcional hasta activar cobro
 STRIPE_WEBHOOK_SECRET
