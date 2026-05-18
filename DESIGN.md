@@ -159,7 +159,7 @@ Estados a diseñar **antes** de implementar cobro:
 | Fase A+B | Tokens `@theme` + DM Sans / Fraunces; Header con nav completa + menú móvil; `Footer`; `Layout` con `hideFooter` en `/admin`; `theme-color` acorde |
 | Fase C | Dark mode con auto + toggle 3 estados, anti-flash inline, landing editorial sin emoji, auth UI placeholder, página `/precios`, RecetaCard rediseñada |
 | Fase D | Sistema de usuarios (Supabase Auth + Google OAuth), favoritos + colecciones + perfil público `/u/[username]`, gating del menú IA con cuota free 1/2 meses, opciones avanzadas (aprovechamiento / temporada) y onboarding (alergias / dieta) en el propio formulario del generador, Stripe Checkout + webhook + portal, `/terminos` y `/privacidad`. |
-| Post-Fase D | Retirado trial Pro 10 días sin tarjeta: `/api/trial/start` responde 410; migración `20260516120000` pasa perfiles `trial` → `free`. Pro solo vía suscripción. |
+| Post-Fase D | Retirado trial Pro 10 días sin tarjeta: `/api/trial/start` responde 410; Pro solo vía suscripción. Si en alguna BD legada quedara `plan='trial'`, ejecutar `UPDATE profiles SET plan='free' WHERE plan='trial'` (solo en ese caso). |
 
 ---
 
@@ -203,7 +203,7 @@ Radios unificados: `--radius-sm` (6 px), `--radius` (10 px), `--radius-lg` (14 p
 |--------|----------------|
 | Invitado | Navegación completa de recetas; botón ♥ pide login; menú IA pide registro. |
 | Free | Favoritos y colecciones ilimitados; 1 generación de menú IA cada 2 meses; sin aprovechamiento ni temporada. |
-| ~~Trial~~ (retirado) | Los perfiles que quedaran en `trial` en BD pasan a `free` vía migración; el producto ya no ofrece prueba sin tarjeta. El valor `trial` en enum queda solo por compatibilidad SQL. |
+| ~~Trial~~ (retirado) | Si en alguna instalación legada quedara `plan='trial'`, normalizar a `free` con un `UPDATE` puntual; el producto ya no ofrece prueba sin tarjeta. El valor `trial` en enum queda solo por compatibilidad SQL. |
 | Pro | Generaciones ilimitadas, aprovechamiento, temporada, lista exportable, badge `Pro` en avatar. |
 
 ### Header
