@@ -27,6 +27,9 @@ pnpm-debug.log*
 # VS Code
 .vscode/
 
+# CodeGraph
+.codegraph
+
 # Python
 __pycache__/
 *.py[cod]

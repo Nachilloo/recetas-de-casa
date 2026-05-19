@@ -26,6 +26,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@colbymchenry/codegraph": "^0.7.9",
     "@types/node": "^20.0.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
