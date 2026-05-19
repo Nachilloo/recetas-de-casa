@@ -16,6 +16,9 @@ import {
   esComidaRapidaAmpliada,
   esRecetaParaNinosEstricta,
   esRecetaParaNinosAmpliada,
+  esRecetaAptaPoolLandingFaciles,
+  esRecetaConPostre,
+  pickRecetasLandingFaciles,
 } from './seoLandingRecetas';
 
 /** Menos columnas = menos datos por petición (cards + filtros que no usan ingredientes). */
@@ -51,6 +54,15 @@ function filtrarNoPostre(pool: Receta[]): Receta[] {
   return pool.filter((r) => !esRecetaExclusivamentePostre(r));
 }
 
+/** Excluye cualquier receta con categoría postres (más estricto que solo «exclusivamente postre»). */
+function filtrarSinPostre(pool: Receta[]): Receta[] {
+  return pool.filter((r) => !esRecetaConPostre(r));
+}
+
+function filtrarPoolLandingFaciles(pool: Receta[]): Receta[] {
+  return pool.filter(esRecetaAptaPoolLandingFaciles);
+}
+
 async function fetchTopRecetas(
   limit: number,
   columns: string = SEL_LISTADO_SLIM,
@@ -74,56 +86,50 @@ async function fetchTopRecetas(
     return [];
   }
   const rows = (data ?? []) as Receta[];
-  return excludePostresCategoria
-    ? rows.filter((r) => !esRecetaExclusivamentePostre(r))
-    : rows;
+  return excludePostresCategoria ? rows.filter((r) => !esRecetaConPostre(r)) : rows;
 }
 
-/** Fáciles + un lote pequeño de «media»; máx. ~2 peticiones pequeñas. */
+/**
+ * Landing «recetas fáciles»:
+ * 1) Pool grande (fácil + media, sin postres).
+ * 2) Quitar postres, salsas y lista negra manual.
+ * 3) pickRecetasLandingFaciles: prioriza recetas SIN tag canarias; máx. 4 canarias en 24
+ *    (el volcado canario domina destacadas/fecha si no se equilibra).
+ */
 export async function fetchRecetasLandingFaciles(): Promise<Receta[]> {
-  const [{ data: facil = [] }, { data: media = [] }] = await Promise.all([
-    supabase
+  const PICK_OPTS = { min: 10, max: 24, maxCanarias: 4 } as const;
+
+  const { data, error } = await supabase
+    .from('recetas')
+    .select(SEL_LISTADO_SLIM)
+    .in('dificultad', ['facil', 'media'])
+    .neq('categoria', 'postres')
+    .order('destacada', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(800);
+
+  if (error) console.error('[fetchRecetasLandingFaciles]', error);
+
+  let pool = filtrarPoolLandingFaciles(dedupeRecetas((data ?? []) as Receta[]));
+  let picked = pickRecetasLandingFaciles(pool, PICK_OPTS);
+
+  if (picked.length < PICK_OPTS.max) {
+    const { data: more, error: e2 } = await supabase
       .from('recetas')
       .select(SEL_LISTADO_SLIM)
-      .eq('dificultad', 'facil')
+      .in('dificultad', ['facil', 'media'])
+      .neq('categoria', 'postres')
       .order('destacada', { ascending: false })
       .order('created_at', { ascending: false })
-      .limit(36),
-    supabase
-      .from('recetas')
-      .select(SEL_LISTADO_SLIM)
-      .eq('dificultad', 'media')
-      .order('destacada', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(48),
-  ]);
+      .range(800, 1599);
 
-  let pool = dedupeRecetas([...(facil as Receta[]), ...(media as Receta[])]);
-  let picked = pickRecetasParaLanding(
-    pool,
-    (r) => r.dificultad === 'facil',
-    (r) => {
-      const m = tiempoAMinutos(r.tiempo);
-      return r.dificultad === 'media' && m != null && m <= 45;
-    },
-    { min: 10, max: 24 }
-  );
-
-  if (picked.length < 10) {
-    const extra = await fetchTopRecetas(40);
-    pool = dedupeRecetas([...pool, ...extra]);
-    picked = pickRecetasParaLanding(
-      pool,
-      (r) => r.dificultad === 'facil',
-      (r) => {
-        const m = tiempoAMinutos(r.tiempo);
-        return r.dificultad === 'media' && m != null && m <= 45;
-      },
-      { min: 10, max: 24 }
-    );
+    if (!e2 && more?.length) {
+      pool = filtrarPoolLandingFaciles(dedupeRecetas([...pool, ...(more as Receta[])]));
+      picked = pickRecetasLandingFaciles(pool, PICK_OPTS);
+    }
   }
 
-  return picked;
+  return picked.filter(esRecetaAptaPoolLandingFaciles);
 }
 
 /** Un solo lote ordenado (destacadas primero); sin postres como cena. */

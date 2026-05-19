@@ -23,7 +23,7 @@ import Layout from "../../layouts/Layout.astro";
 </Layout>
 
 <script>
-  import { supabase } from "../../lib/supabase";
+  import { supabase } from "../../lib/supabase/client";
 
   const statusEl = document.getElementById("auth-finish-status");
   const errorEl = document.getElementById("auth-finish-error");

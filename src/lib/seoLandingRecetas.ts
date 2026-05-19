@@ -23,6 +23,267 @@ export function esRecetaExclusivamentePostre(r: Pick<Receta, 'categoria' | 'cate
   return food.every((c) => c === 'postres');
 }
 
+/** Cualquier receta etiquetada como postre (aunque tenga otra categoría secundaria). */
+export function esRecetaConPostre(r: Pick<Receta, 'categoria' | 'categorias'>): boolean {
+  return recetaTieneCategoria(r, 'postres');
+}
+
+/** Indica que el título describe un plato completo, no solo un acompañamiento / salsa. */
+const PLATOS_EN_TITULO = [
+  'pollo',
+  'pechuga',
+  'muslo',
+  'alita',
+  'pavo',
+  'ternera',
+  'cerdo',
+  'cordero',
+  'conejo',
+  'carne',
+  'chuleta',
+  'costilla',
+  'albóndiga',
+  'albondiga',
+  'hamburguesa',
+  'filete',
+  'bistec',
+  'merluza',
+  'lubina',
+  'dorada',
+  'bacalao',
+  'salmón',
+  'salmon',
+  'atún',
+  'atun',
+  'bonito',
+  'caballa',
+  'rape',
+  'pulpo',
+  'calamar',
+  'chipiron',
+  'chicharro',
+  'mejillon',
+  'gamba',
+  'langostino',
+  'pasta',
+  'espaguet',
+  'macarr',
+  'fideo',
+  'arroz',
+  'paella',
+  'tortilla',
+  'lasaña',
+  'lasana',
+  'patata',
+  'huevos',
+  'huevo',
+  'ensalada',
+  'crepe',
+  'empanadilla',
+  'sandwich',
+  'bocadillo',
+  'guiso',
+  'estofado',
+  'potaje',
+  'lenteja',
+  'garbanzo',
+  'croqueta',
+  'brocoli',
+  'brócoli',
+  'coliflor',
+  'verdura',
+];
+
+function tituloTienePlatoPrincipal(t: string): boolean {
+  return PLATOS_EN_TITULO.some((p) => t.includes(p));
+}
+
+/**
+ * Receta centrada en una salsa o en «X en salsa», no un plato fácil general.
+ * Usa título, slug y tags (p. ej. tag «salsa» sin proteína en el nombre).
+ */
+export function esRecetaPrincipalmenteSalsa(
+  r: Pick<Receta, 'title' | 'slug' | 'tags'>
+): boolean {
+  const t = (r.title ?? '').toLowerCase().trim();
+  const slug = (r.slug ?? '').toLowerCase();
+
+  if (/^salsa[\s-]/.test(t) || slug.startsWith('salsa-')) return true;
+
+  if (/^(mojo|romesco|salmorejo|alioli|ali-oli)\b/.test(t)) return true;
+
+  const enSalsa = t.match(/^(.+?)\s+en\s+salsa\b/);
+  if (enSalsa) {
+    const antes = enSalsa[1].trim();
+    const palabras = antes.split(/\s+/).filter(Boolean);
+    if (!tituloTienePlatoPrincipal(t) && palabras.length <= 4) return true;
+  }
+
+  if (/\bsalsa\s+de\s+/.test(t) && !tituloTienePlatoPrincipal(t)) return true;
+
+  if (/\b(salsa bechamel|a la bechamel|salsa velouté|salsa veloute)\b/.test(t)) {
+    return !tituloTienePlatoPrincipal(t);
+  }
+
+  const tags = (r.tags ?? []).map((x) => x.toLowerCase());
+  if (tags.includes('salsa') && !tituloTienePlatoPrincipal(t)) return true;
+
+  return false;
+}
+
+/**
+ * Platos canarios / aperitivos muy concretos que no encajan en «recetas fáciles» genéricas.
+ * Incluye duplicados en BD (-2, -3…).
+ */
+export const SLUGS_EXCLUIDOS_LANDING_FACILES = new Set([
+  'papas-arrugadas',
+  'papas-arrugadas-2',
+  'papas-arrugadas-3',
+  'gofio-amasado',
+  'gofio-amasado-2',
+  'almogrote',
+  'almogrote-gomero',
+  'sancocho-canario',
+  'pella-de-gofio',
+  'pella-de-gofio-2',
+  'perico-relleno-para-arepa',
+  'majado-para-bistec-o-pescado-empanado',
+  'leche-con-gofio',
+  'caldo-de-relinchones',
+  'tortitas',
+]);
+
+export function esRecetaExcluidaLandingFaciles(
+  r: Pick<Receta, 'slug' | 'title'>
+): boolean {
+  const slug = (r.slug ?? '').toLowerCase();
+  if (SLUGS_EXCLUIDOS_LANDING_FACILES.has(slug)) return true;
+
+  const t = (r.title ?? '').toLowerCase().trim();
+  if (/^papas arrugadas/.test(t)) return true;
+  if (/^gofio amasado/.test(t)) return true;
+  if (/^almogrote/.test(t)) return true;
+  if (t === 'sancocho canario') return true;
+  if (/^pella de gofio/.test(t)) return true;
+  if (/^perico(\s|$|\()/i.test(t)) return true;
+  if (/^majado para bistec/.test(t)) return true;
+  if (/^leche con gofio/.test(t)) return true;
+  if (/^caldo de relinchones/.test(t)) return true;
+  if (t === 'tortitas') return true;
+
+  return false;
+}
+
+/** Platos fáciles del día a día: no postres, salsas ni lista de exclusión. */
+export function esRecetaFacilEstricta(r: Receta): boolean {
+  if (
+    esRecetaConPostre(r) ||
+    esRecetaPrincipalmenteSalsa(r) ||
+    esRecetaExcluidaLandingFaciles(r)
+  ) {
+    return false;
+  }
+  return r.dificultad === 'facil';
+}
+
+/** Complemento: media con tiempo razonable, mismas exclusiones. */
+export function esRecetaFacilAmpliada(r: Receta): boolean {
+  if (
+    esRecetaConPostre(r) ||
+    esRecetaPrincipalmenteSalsa(r) ||
+    esRecetaExcluidaLandingFaciles(r)
+  ) {
+    return false;
+  }
+  const m = tiempoAMinutos(r.tiempo);
+  return r.dificultad === 'media' && m != null && m <= 45;
+}
+
+export function esRecetaAptaPoolLandingFaciles(r: Receta): boolean {
+  return (
+    !esRecetaConPostre(r) &&
+    !esRecetaPrincipalmenteSalsa(r) &&
+    !esRecetaExcluidaLandingFaciles(r)
+  );
+}
+
+/** Muchas filas del volcado canario llevan estos tags; priorizar el resto del recetario. */
+export function esRecetaMarcadaCanaria(
+  r: Pick<Receta, 'tags' | 'imagen_alt' | 'title'>
+): boolean {
+  const tags = (r.tags ?? []).map((x) => x.toLowerCase());
+  if (
+    tags.includes('canarias') ||
+    tags.includes('cocina-canaria') ||
+    tags.includes('canaria')
+  ) {
+    return true;
+  }
+  const alt = (r.imagen_alt ?? '').toLowerCase();
+  if (alt.includes('canaria')) return true;
+  const t = (r.title ?? '').toLowerCase();
+  if (/\b(gofio|mojo picón|mojo picon|papas arrugadas)\b/.test(t)) return true;
+  return false;
+}
+
+function compararPorDestacada(a: Receta, b: Receta): number {
+  return Number(b.destacada) - Number(a.destacada);
+}
+
+/** Resto del recetario primero; canarias al final del pool de candidatas. */
+export function prepararPoolLandingFaciles(pool: Receta[]): Receta[] {
+  const otras: Receta[] = [];
+  const canarias: Receta[] = [];
+  for (const r of pool) {
+    if (esRecetaMarcadaCanaria(r)) canarias.push(r);
+    else otras.push(r);
+  }
+  otras.sort(compararPorDestacada);
+  canarias.sort(compararPorDestacada);
+  return [...otras, ...canarias];
+}
+
+/**
+ * Selección para «recetas fáciles»: rellena hasta 24 priorizando cocina general
+ * y como máximo `maxCanarias` platos del bloque canario (p. ej. 4 de 24).
+ */
+export function pickRecetasLandingFaciles(
+  pool: Receta[],
+  opts: { min?: number; max?: number; maxCanarias?: number } = {}
+): Receta[] {
+  const min = opts.min ?? 10;
+  const max = opts.max ?? 24;
+  const maxCanarias = opts.maxCanarias ?? 4;
+  const candidatas = prepararPoolLandingFaciles(pool.filter(esRecetaAptaPoolLandingFaciles));
+  const otras = candidatas.filter((r) => !esRecetaMarcadaCanaria(r));
+  const canarias = candidatas.filter((r) => esRecetaMarcadaCanaria(r));
+
+  const seen = new Set<string>();
+  let canariasEnLista = 0;
+  const out: Receta[] = [];
+
+  const push = (lista: Receta[]) => {
+    for (const r of lista) {
+      if (out.length >= max) return;
+      if (seen.has(r.id)) continue;
+      const esCan = esRecetaMarcadaCanaria(r);
+      if (esCan && canariasEnLista >= maxCanarias) continue;
+      seen.add(r.id);
+      out.push(r);
+      if (esCan) canariasEnLista++;
+    }
+  };
+
+  push(otras.filter(esRecetaFacilEstricta));
+  push(canarias.filter(esRecetaFacilEstricta));
+  if (out.length < min) push(otras.filter(esRecetaFacilAmpliada));
+  if (out.length < min) push(canarias.filter(esRecetaFacilAmpliada));
+  if (out.length < min) push(otras);
+  if (out.length < min) push(canarias);
+
+  return out.slice(0, max);
+}
+
 function textoBusqueda(r: Receta): string {
   return [
     r.title ?? '',
@@ -202,10 +463,11 @@ export function pickRecetasParaLanding(
   todas: Receta[],
   criterioEstricto: (r: Receta) => boolean,
   criterioAmpliado: (r: Receta) => boolean,
-  opts: { min?: number; max?: number } = {}
+  opts: { min?: number; max?: number; apta?: (r: Receta) => boolean } = {}
 ): Receta[] {
   const min = opts.min ?? 10;
   const max = opts.max ?? 24;
+  const apta = opts.apta ?? (() => true);
   const seen = new Set<string>();
   const out: Receta[] = [];
 
@@ -213,6 +475,7 @@ export function pickRecetasParaLanding(
     for (const r of lista) {
       if (out.length >= max) return;
       if (seen.has(r.id)) continue;
+      if (!apta(r)) continue;
       seen.add(r.id);
       out.push(r);
     }
