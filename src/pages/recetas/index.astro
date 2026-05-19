@@ -1,7 +1,6 @@
 ---
 // src/pages/recetas/index.astro
 import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
 import RecetaCard from '../../components/RecetaCard.astro';
 import { supabase } from '../../lib/supabase';
 import { categorias } from '../../content/config';
@@ -253,7 +252,6 @@ while (true) {
   description={`Explora nuestra colección de ${recetas.length} recetas caseras españolas. Desde arroces y paellas hasta postres tradicionales.`}
   image="/images/hero-ingredientes-1024.webp"
 >
-  <Header />
   <main class="bg-canvas">
     <section class="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-16">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">

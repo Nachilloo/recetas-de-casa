@@ -1,6 +1,5 @@
 ---
 import Layout from "./Layout.astro";
-import Header from "../components/Header.astro";
 
 interface Props {
   title: string;
@@ -20,7 +19,6 @@ const tabs: { id: Props["active"]; label: string; href: string }[] = [
 ---
 
 <Layout title={title} description={description} noindex>
-  <Header />
   <main class="bg-canvas">
     <section class="border-b border-border bg-surface">
       <div class="mx-auto max-w-5xl px-4 pt-10 sm:px-6 sm:pt-14">

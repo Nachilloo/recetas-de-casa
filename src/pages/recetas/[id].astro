@@ -1,7 +1,6 @@
 ---
 import { supabase } from '../../lib/supabase';
 import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
 import RecipeSchema from '../../components/RecipeSchema.astro';
 import BreadcrumbSchema from '../../components/BreadcrumbSchema.astro';
 import FaqSchema from '../../components/FaqSchema.astro';
@@ -130,7 +129,6 @@ if (tips && tips.length > 0) {
   />
   <BreadcrumbSchema slot="head" items={breadcrumbLd} />
   <FaqSchema slot="head" faqs={faqItems} />
-  <Header />
 
   <main class="min-h-screen bg-canvas">
     {/* Hero detalle: foto + información */}

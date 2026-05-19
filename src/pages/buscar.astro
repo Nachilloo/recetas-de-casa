@@ -1,7 +1,6 @@
 ---
 import { supabase } from "../lib/supabase";
 import Layout from "../layouts/Layout.astro";
-import Header from "../components/Header.astro";
 import SearchBox from "../components/SearchBox.astro";
 import SearchResults from "../components/SearchResults.astro";
 import TiempoQuickLinks from "../components/TiempoQuickLinks.astro";
@@ -200,8 +199,6 @@ const metaDescription =
   description={metaDescription}
   noindex={true}
 >
-  <Header />
-
   <main class="bg-canvas">
     <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14">
       <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">Recetario</p>

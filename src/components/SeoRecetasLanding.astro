@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Header from './Header.astro';
 import RecetaCard from './RecetaCard.astro';
 import type { Receta } from '../lib/types';
 
@@ -60,8 +59,6 @@ const faqLd = {
 
 <Layout title={metaTitle} description={metaDescription} canonicalUrl={canonicalUrl} type="website">
   <script type="application/ld+json" slot="head" is:inline set:html={JSON.stringify(faqLd)} />
-
-  <Header />
 
   <main class="min-h-screen bg-canvas">
     <div class="mx-auto max-w-7xl px-6 pt-10 pb-6">

@@ -176,6 +176,23 @@
   animation: menu-indeterminate 1.15s ease-in-out infinite;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   View Transitions (Astro): evita flash blanco y encaja fondo al tema canvas.
+   ────────────────────────────────────────────────────────────────────────── */
+@supports (view-transition-name: none) {
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    background-color: var(--color-canvas);
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.2s;
+    mix-blend-mode: normal;
+  }
+}
+
 /* Menú móvil: foco accesible en botón hamburguesa */
 .nav-toggle:focus-visible + label,
 .nav-mobile-panel:focus-within {

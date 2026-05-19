@@ -1,6 +1,5 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import Header from "../components/Header.astro";
 
 const baseUrl = import.meta.env.BASE_URL;
 const user = Astro.locals.user;
@@ -34,7 +33,6 @@ function cellIcon(cell: Cell) {
   title="Precios y planes"
   description="Invitado, cuenta gratis y Plan Pro: qué incluye cada uno. Pro ofrece menú con IA sin límites, opciones Pro en menú semanal y herramientas de compra."
 >
-  <Header />
   <main>
     <section class="border-b border-border bg-canvas py-16 sm:py-24">
       <div class="mx-auto max-w-3xl px-4 text-center sm:px-6">

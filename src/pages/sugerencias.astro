@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
 
 const baseUrl = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const user = Astro.locals.user;
@@ -24,7 +23,6 @@ const errorMsg = err ? errorText[err] ?? 'Ha ocurrido un error.' : null;
   title="Buzón de sugerencias"
   description="Envía ideas, propuestas de recetas o comentarios para mejorar Recetas de Casa."
 >
-  <Header />
   <main class="bg-canvas py-16 sm:py-24">
     <article class="mx-auto max-w-3xl px-4 sm:px-6">
       <p class="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Tu opinión</p>

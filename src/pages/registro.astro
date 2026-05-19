@@ -1,6 +1,5 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import Header from "../components/Header.astro";
 import AuthForm from "../components/AuthForm.tsx";
 
 const baseUrl = import.meta.env.BASE_URL;
@@ -15,7 +14,6 @@ if (Astro.locals.user) {
   description="Crea tu cuenta gratuita en Recetas de Casa para guardar favoritos, crear colecciones y desbloquear el menú semanal con IA."
   noindex={true}
 >
-  <Header />
   <main class="min-h-[calc(100vh-4rem)] bg-canvas py-16 sm:py-24">
     <div class="mx-auto max-w-md px-4 sm:px-6">
       <div class="mb-10 text-center">
