@@ -80,6 +80,11 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Evita flash blanco del UA antes de que cargue Tailwind / tokens */
+    background-color: #0f0f0e;
+  }
+  html[data-theme="light"] {
+    background-color: #fafaf8;
   }
   body {
     font-family: var(--font-sans);
@@ -177,19 +182,46 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   View Transitions (Astro): evita flash blanco y encaja fondo al tema canvas.
+   View Transitions (Astro): fondo canvas en la capa del navegador + swap rápido.
    ────────────────────────────────────────────────────────────────────────── */
 @supports (view-transition-name: none) {
-  ::view-transition-group(root),
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    background-color: var(--color-canvas);
+  /* Lienzo detrás del crossfade (por defecto el UA usa blanco) */
+  ::view-transition {
+    background-color: #0f0f0e;
   }
 
+  html[data-theme="light"]::view-transition {
+    background-color: #fafaf8;
+  }
+
+  ::view-transition-group(root),
+  ::view-transition-image-pair(root),
   ::view-transition-old(root),
   ::view-transition-new(root) {
-    animation-duration: 0.2s;
+    background-color: #0f0f0e;
     mix-blend-mode: normal;
+  }
+
+  html[data-theme="light"] ::view-transition-group(root),
+  html[data-theme="light"] ::view-transition-image-pair(root),
+  html[data-theme="light"] ::view-transition-old(root),
+  html[data-theme="light"] ::view-transition-new(root) {
+    background-color: #fafaf8;
+  }
+
+  /* Sin fundido largo: evita ver “pantalla en blanco” entre snapshots */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @supports (view-transition-name: none) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation: none !important;
+    }
   }
 }
 

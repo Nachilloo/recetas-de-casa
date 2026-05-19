@@ -1,7 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import RecetaCard from "../components/RecetaCard.astro";
-import LogoMark from "../components/LogoMark.astro";
 import { supabase } from "../lib/supabase";
 import { categorias } from "../content/config";
 import { recetaTieneCategoria } from "../lib/recetaCategorias";
@@ -115,16 +114,9 @@ const ideas = [
     <section class="relative overflow-hidden bg-canvas">
       <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-12 lg:gap-16">
         <div class="lg:col-span-6">
-          <a
-            href={baseUrl}
-            class="mb-6 inline-flex min-w-0 max-w-full items-center gap-2.5 text-fg transition-colors hover:text-accent sm:mb-8 sm:gap-3"
-            aria-label="Recetas de Casa, inicio"
-          >
-            <LogoMark class="h-11 sm:h-14" variant="hero" />
-            <span class="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-fg sm:text-5xl lg:text-6xl">
-              Recetas de Casa
-            </span>
-          </a>
+          <p class="mb-6 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-fg sm:mb-8 sm:text-5xl lg:text-6xl">
+            Recetas de Casa
+          </p>
           <p class="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
             Cocina española casera
           </p>

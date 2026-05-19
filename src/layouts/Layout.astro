@@ -51,15 +51,28 @@ const assetBase = import.meta.env.BASE_URL.replace(/\/?$/, '') + '/';
 		<link rel="apple-touch-icon" href={`${assetBase}apple-touch-icon.png`} />
 		<link rel="manifest" href={`${assetBase}site.webmanifest`} />
 
+		{/* Fondo canvas antes del CSS compilado (evita flash blanco en VT y primera carga). */}
+		<style is:inline>
+			html { background-color: #0f0f0e; }
+			html[data-theme="light"] { background-color: #fafaf8; }
+		</style>
+
 		{/* Anti-flash: aplica el tema guardado antes del primer paint. */}
 		<script is:inline>
 			(function () {
-				try {
-					var t = localStorage.getItem("theme");
-					document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
-				} catch (e) {
-					document.documentElement.setAttribute("data-theme", "dark");
+				function applyTheme(doc) {
+					var el = doc ? doc.documentElement : document.documentElement;
+					try {
+						var t = localStorage.getItem("theme");
+						el.setAttribute("data-theme", t === "light" ? "light" : "dark");
+					} catch (e) {
+						el.setAttribute("data-theme", "dark");
+					}
 				}
+				applyTheme();
+				document.addEventListener("astro:before-swap", function (ev) {
+					if (ev.newDocument) applyTheme(ev.newDocument);
+				});
 			})();
 		</script>
 
@@ -99,14 +112,19 @@ const assetBase = import.meta.env.BASE_URL.replace(/\/?$/, '') + '/';
 		<slot name="head" />
 		<Analytics />
 	</head>
-	<body class="min-h-screen bg-canvas font-sans text-fg antialiased flex flex-col">
+	<body
+		class="min-h-screen bg-canvas font-sans text-fg antialiased flex flex-col"
+		transition:animate="none"
+	>
 		<div class="flex-1 flex flex-col">
 			{!hideHeader && (
 				<div transition:persist="site-header">
 					<Header />
 				</div>
 			)}
-			<slot />
+			<div class="flex-1 flex flex-col" transition:animate="none">
+				<slot />
+			</div>
 		</div>
 		{!hideFooter && <Footer />}
 	</body>
