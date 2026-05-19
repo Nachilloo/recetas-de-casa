@@ -181,50 +181,6 @@
   animation: menu-indeterminate 1.15s ease-in-out infinite;
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   View Transitions (Astro): fondo canvas en la capa del navegador + swap rápido.
-   ────────────────────────────────────────────────────────────────────────── */
-@supports (view-transition-name: none) {
-  /* Lienzo detrás del crossfade (por defecto el UA usa blanco) */
-  ::view-transition {
-    background-color: #0f0f0e;
-  }
-
-  html[data-theme="light"]::view-transition {
-    background-color: #fafaf8;
-  }
-
-  ::view-transition-group(root),
-  ::view-transition-image-pair(root),
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    background-color: #0f0f0e;
-    mix-blend-mode: normal;
-  }
-
-  html[data-theme="light"] ::view-transition-group(root),
-  html[data-theme="light"] ::view-transition-image-pair(root),
-  html[data-theme="light"] ::view-transition-old(root),
-  html[data-theme="light"] ::view-transition-new(root) {
-    background-color: #fafaf8;
-  }
-
-  /* Sin fundido largo: evita ver “pantalla en blanco” entre snapshots */
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  @supports (view-transition-name: none) {
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-      animation: none !important;
-    }
-  }
-}
-
 /* Menú móvil: foco accesible en botón hamburguesa */
 .nav-toggle:focus-visible + label,
 .nav-mobile-panel:focus-within {

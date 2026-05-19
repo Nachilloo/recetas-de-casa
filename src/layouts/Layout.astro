@@ -1,7 +1,6 @@
 ---
 // Importar el CSS global aquí
 import '../styles/global.css';
-import { ViewTransitions } from 'astro:transitions';
 import Analytics from '@vercel/analytics/astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
@@ -51,7 +50,7 @@ const assetBase = import.meta.env.BASE_URL.replace(/\/?$/, '') + '/';
 		<link rel="apple-touch-icon" href={`${assetBase}apple-touch-icon.png`} />
 		<link rel="manifest" href={`${assetBase}site.webmanifest`} />
 
-		{/* Fondo canvas antes del CSS compilado (evita flash blanco en VT y primera carga). */}
+		{/* Fondo canvas antes del CSS compilado (evita flash en primera carga). */}
 		<style is:inline>
 			html { background-color: #0f0f0e; }
 			html[data-theme="light"] { background-color: #fafaf8; }
@@ -60,19 +59,15 @@ const assetBase = import.meta.env.BASE_URL.replace(/\/?$/, '') + '/';
 		{/* Anti-flash: aplica el tema guardado antes del primer paint. */}
 		<script is:inline>
 			(function () {
-				function applyTheme(doc) {
-					var el = doc ? doc.documentElement : document.documentElement;
-					try {
-						var t = localStorage.getItem("theme");
-						el.setAttribute("data-theme", t === "light" ? "light" : "dark");
-					} catch (e) {
-						el.setAttribute("data-theme", "dark");
-					}
+				try {
+					var t = localStorage.getItem("theme");
+					document.documentElement.setAttribute(
+						"data-theme",
+						t === "light" ? "light" : "dark"
+					);
+				} catch (e) {
+					document.documentElement.setAttribute("data-theme", "dark");
 				}
-				applyTheme();
-				document.addEventListener("astro:before-swap", function (ev) {
-					if (ev.newDocument) applyTheme(ev.newDocument);
-				});
 			})();
 		</script>
 
@@ -106,25 +101,14 @@ const assetBase = import.meta.env.BASE_URL.replace(/\/?$/, '') + '/';
 		<meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)" />
 		<meta name="theme-color" content="#0f0f0e" media="(prefers-color-scheme: dark)" />
 
-		<ViewTransitions />
-		
 		<!-- Slot for page-specific head content (like JSON-LD) -->
 		<slot name="head" />
 		<Analytics />
 	</head>
-	<body
-		class="min-h-screen bg-canvas font-sans text-fg antialiased flex flex-col"
-		transition:animate="none"
-	>
+	<body class="min-h-screen bg-canvas font-sans text-fg antialiased flex flex-col">
 		<div class="flex-1 flex flex-col">
-			{!hideHeader && (
-				<div transition:persist="site-header">
-					<Header />
-				</div>
-			)}
-			<div class="flex-1 flex flex-col" transition:animate="none">
-				<slot />
-			</div>
+			{!hideHeader && <Header />}
+			<slot />
 		</div>
 		{!hideFooter && <Footer />}
 	</body>

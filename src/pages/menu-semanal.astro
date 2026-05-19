@@ -21,9 +21,6 @@ import MenuSemanalApp from '../components/MenuSemanal.tsx';
       </div>
     </section>
 
-    {/* transition:persist evita que la isla React quede vacía al volver con View Transitions */}
-    <div transition:persist="menu-semanal-inteligente">
-      <MenuSemanalApp client:load />
-    </div>
+    <MenuSemanalApp client:load />
   </main>
 </Layout>
