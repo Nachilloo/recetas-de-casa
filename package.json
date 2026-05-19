@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "check": "astro check"
+    "check": "astro check",
+    "graph": "codegraph index"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.6",
