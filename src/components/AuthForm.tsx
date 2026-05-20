@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase/client';
+import { getSupabaseBrowserClient } from '../lib/supabase/client';
 
 type Mode = 'login' | 'signup';
 
@@ -68,7 +68,7 @@ export default function AuthForm({ mode, baseUrl }: Props) {
     setGoogleLoading(true);
     try {
       const redirectTo = `${window.location.origin}/auth/finish?next=${encodeURIComponent(initialNext)}`;
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await getSupabaseBrowserClient().auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo },
       });

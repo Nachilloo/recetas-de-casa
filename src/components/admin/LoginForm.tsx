@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '../../lib/supabase/client';
+import { getSupabaseBrowserClient } from '../../lib/supabase/client';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -41,7 +41,7 @@ export default function LoginForm() {
       // Si el login fue exitoso, guardar la sesión en el cliente también
       if (result.session) {
         console.log('[Cliente] Guardando sesión en el cliente...');
-        const { error: sessionError } = await supabase.auth.setSession({
+        const { error: sessionError } = await getSupabaseBrowserClient().auth.setSession({
           access_token: result.session.access_token,
           refresh_token: result.session.refresh_token,
         });

@@ -23,7 +23,7 @@ import Layout from "../../layouts/Layout.astro";
 </Layout>
 
 <script>
-  import { supabase } from "../../lib/supabase/client";
+  import { getSupabaseBrowserClient } from "../../lib/supabase/client";
 
   const statusEl = document.getElementById("auth-finish-status");
   const errorEl = document.getElementById("auth-finish-error");
@@ -62,7 +62,7 @@ import Layout from "../../layouts/Layout.astro";
       // Supabase ya tiene el code_verifier en localStorage (lo guardó
       // signInWithOAuth) y completará el flujo PKCE.
       if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        const { error } = await getSupabaseBrowserClient().auth.exchangeCodeForSession(code);
         if (error) {
           showError(error.message);
           return;
@@ -71,7 +71,7 @@ import Layout from "../../layouts/Layout.astro";
 
       // Tras `exchangeCodeForSession` (o si la sesión ya estaba activa),
       // leemos la sesión actual.
-      const { data } = await supabase.auth.getSession();
+      const { data } = await getSupabaseBrowserClient().auth.getSession();
       const session = data.session;
 
       if (!session) {
