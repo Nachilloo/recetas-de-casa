@@ -4,6 +4,7 @@
  * Generates JSON-LD structured data for recipes following schema.org Recipe specification
  * This enables rich snippets in Google search results
  */
+import { sitePageUrl } from '../lib/siteUrl';
 
 export interface Props {
   title: string;
@@ -39,7 +40,7 @@ const {
 } = Astro.props;
 
 const siteUrl = Astro.site?.toString().replace(/\/$/, '') || '';
-const currentUrl = Astro.url.href;
+const currentUrl = sitePageUrl(Astro.site, Astro.url.pathname, Astro.url.search);
 
 // Parse tiempo to ISO 8601 duration format (e.g., "45 minutos" -> "PT45M")
 function parseTimeToISO(tiempo: string): string {

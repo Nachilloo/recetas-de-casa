@@ -26,7 +26,7 @@ function createUID(): string {
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { menu, siteUrl = 'https://recetasdecasa.es' } = await request.json() as {
+    const { menu, siteUrl = 'https://www.recetasdecasa.es' } = await request.json() as {
       menu: MenuDia[];
       siteUrl?: string;
     };

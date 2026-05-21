@@ -11,7 +11,7 @@ import tailwindcss from '@tailwindcss/vite';
 const isAstroDev = process.argv.includes('dev');
 
 export default defineConfig({
-  site: 'https://recetasdecasa.es',
+  site: 'https://www.recetasdecasa.es',
   output: 'server',
   adapter: vercel(),
   integrations: [react()],

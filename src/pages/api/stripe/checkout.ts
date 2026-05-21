@@ -14,7 +14,7 @@ export const prerender = false;
  *   - STRIPE_SECRET_KEY
  *   - PUBLIC_STRIPE_PRICE_MONTHLY  (price_... mensual)
  *   - PUBLIC_STRIPE_PRICE_YEARLY   (price_... anual)
- *   - PUBLIC_SITE_URL              (https://recetasdecasa.es)
+ *   - PUBLIC_SITE_URL              (https://www.recetasdecasa.es)
  */
 export const POST: APIRoute = async ({ cookies, request }) => {
   const stripe = await getStripe();

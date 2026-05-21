@@ -4,6 +4,7 @@ import '../styles/global.css';
 import Analytics from '@vercel/analytics/astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+import { sitePageUrl } from '../lib/siteUrl';
 
 export interface Props {
   title: string;
@@ -30,7 +31,12 @@ const {
 } = Astro.props;
 
 const siteUrl = Astro.site?.toString().replace(/\/$/, '') || '';
-const currentUrl = canonicalUrl || Astro.url.href;
+const currentUrl = sitePageUrl(
+  Astro.site,
+  Astro.url.pathname,
+  Astro.url.search,
+  canonicalUrl,
+);
 const fullImageUrl = image.startsWith('http') ? image : `${siteUrl}${image.startsWith('/') ? '' : '/'}${image}`;
 const siteName = 'Recetas de Casa';
 const fullTitle = title === siteName ? title : `${title} | ${siteName}`;

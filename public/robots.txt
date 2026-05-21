@@ -9,5 +9,5 @@ Disallow: /admin/
 Disallow: /api/
 
 # Sitemap (dinámico: incluye todas las recetas desde la base de datos)
-Sitemap: https://recetasdecasa.es/sitemap.xml
+Sitemap: https://www.recetasdecasa.es/sitemap.xml
 

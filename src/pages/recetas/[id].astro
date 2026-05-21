@@ -8,6 +8,7 @@ import FavoritoButton from '../../components/FavoritoButton.tsx';
 import { categorias, dificultades } from '../../content/config';
 import { getCategoriasList, primaryCategoria } from '../../lib/recetaCategorias';
 import type { Receta } from '../../lib/types';
+import { sitePageUrl } from '../../lib/siteUrl';
 
 const { id } = Astro.params;
 
@@ -70,7 +71,7 @@ const categoryUrl = new URL(
   `${baseUrl}buscar?categoria=${encodeURIComponent(categoria)}`,
   site,
 ).href;
-const recipeUrl = Astro.url.href;
+const recipeUrl = sitePageUrl(Astro.site, Astro.url.pathname, Astro.url.search);
 
 const breadcrumbLd = [
   { name: 'Inicio', item: homeUrl },

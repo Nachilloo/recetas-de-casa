@@ -2,6 +2,14 @@
   "buildCommand": "pnpm build",
   "framework": "astro",
   "devCommand": "pnpm dev",
-  "installCommand": "pnpm install"
+  "installCommand": "pnpm install",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "recetasdecasa.es" }],
+      "destination": "https://www.recetasdecasa.es/:path*",
+      "permanent": true
+    }
+  ]
 }
 
