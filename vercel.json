@@ -3,6 +3,12 @@
   "framework": "astro",
   "devCommand": "pnpm dev",
   "installCommand": "pnpm install",
+  "crons": [
+    {
+      "path": "/api/pinterest/publish-daily",
+      "schedule": "0 9 * * *"
+    }
+  ],
   "redirects": [
     {
       "source": "/:path*",

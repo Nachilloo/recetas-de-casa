@@ -237,6 +237,41 @@ export interface Database {
           user_agent?: string | null
         }
       }
+      pin_history: {
+        Row: {
+          id: string
+          receta_slug: string
+          posted_at: string
+          pinterest_pin_id: string | null
+          board_id: string | null
+          pin_title: string | null
+          pin_url: string | null
+          status: 'posted' | 'failed'
+          error_message: string | null
+        }
+        Insert: {
+          id?: string
+          receta_slug: string
+          posted_at?: string
+          pinterest_pin_id?: string | null
+          board_id?: string | null
+          pin_title?: string | null
+          pin_url?: string | null
+          status?: 'posted' | 'failed'
+          error_message?: string | null
+        }
+        Update: {
+          id?: string
+          receta_slug?: string
+          posted_at?: string
+          pinterest_pin_id?: string | null
+          board_id?: string | null
+          pin_title?: string | null
+          pin_url?: string | null
+          status?: 'posted' | 'failed'
+          error_message?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -266,6 +301,8 @@ export type Coleccion = Database['public']['Tables']['colecciones']['Row'];
 export type ColeccionInsert = Database['public']['Tables']['colecciones']['Insert'];
 
 export type MenuUsage = Database['public']['Tables']['menu_usage']['Row'];
+export type PinHistory = Database['public']['Tables']['pin_history']['Row'];
+export type PinHistoryInsert = Database['public']['Tables']['pin_history']['Insert'];
 
 /** Estado consolidado de un usuario para chequeos de gating en UI. */
 export interface PlanStatus {

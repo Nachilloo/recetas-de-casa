@@ -30,6 +30,12 @@ interface ImportMetaEnv {
   readonly PUBLIC_STRIPE_PRICE_MONTHLY?: string;
   readonly PUBLIC_STRIPE_PRICE_YEARLY?: string;
   readonly PUBLIC_SITE_URL?: string;
+  readonly CRON_SECRET?: string;
+  readonly PINTEREST_ACCESS_TOKEN?: string;
+  readonly PINTEREST_REFRESH_TOKEN?: string;
+  readonly PINTEREST_BOARD_ID?: string;
+  readonly PINTEREST_APP_ID?: string;
+  readonly PINTEREST_APP_SECRET?: string;
 }
 
 interface ImportMeta {
