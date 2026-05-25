@@ -2,7 +2,24 @@ import { formatPinDescription, formatPinTitle } from './pinCopy';
 import { pinterestImageUrl, recipePageUrl } from './siteUrl';
 import type { DailyRecipeCandidate } from './selectDailyRecipe';
 
-const PINTEREST_API_BASE = 'https://api.pinterest.com/v5';
+function useSandbox(): boolean {
+  const v = import.meta.env.PINTEREST_USE_SANDBOX?.trim().toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+}
+
+export function getPinterestApiBase(): string {
+  return useSandbox()
+    ? 'https://api-sandbox.pinterest.com/v5'
+    : 'https://api.pinterest.com/v5';
+}
+
+function getOAuthTokenUrl(): string {
+  return `${getPinterestApiBase()}/oauth/token`;
+}
+
+export function getPinterestMode(): 'production' | 'sandbox' {
+  return useSandbox() ? 'sandbox' : 'production';
+}
 
 export interface CreatePinInput {
   receta: DailyRecipeCandidate;
@@ -36,27 +53,28 @@ export function getPinterestEnv() {
 
 export function assertPinterestConfig(): {
   accessToken: string;
-  refreshToken: string;
+  refreshToken: string | null;
   boardId: string;
   appId: string;
   appSecret: string;
 } {
   const env = getPinterestEnv();
+  const sandbox = useSandbox();
   const missing: string[] = [];
   if (!env.accessToken) missing.push('PINTEREST_ACCESS_TOKEN');
-  if (!env.refreshToken) missing.push('PINTEREST_REFRESH_TOKEN');
+  if (!sandbox && !env.refreshToken) missing.push('PINTEREST_REFRESH_TOKEN');
   if (!env.boardId) missing.push('PINTEREST_BOARD_ID');
-  if (!env.appId) missing.push('PINTEREST_APP_ID');
-  if (!env.appSecret) missing.push('PINTEREST_APP_SECRET');
+  if (!sandbox && !env.appId) missing.push('PINTEREST_APP_ID');
+  if (!sandbox && !env.appSecret) missing.push('PINTEREST_APP_SECRET');
   if (missing.length > 0) {
     throw new PinterestConfigError(`Missing Pinterest env: ${missing.join(', ')}`);
   }
-  return env as {
-    accessToken: string;
-    refreshToken: string;
-    boardId: string;
-    appId: string;
-    appSecret: string;
+  return {
+    accessToken: env.accessToken!,
+    refreshToken: env.refreshToken ?? null,
+    boardId: env.boardId!,
+    appId: env.appId ?? '',
+    appSecret: env.appSecret ?? '',
   };
 }
 
@@ -64,6 +82,9 @@ let cachedAccessToken: string | null = null;
 
 async function refreshAccessToken(): Promise<string> {
   const { refreshToken, appId, appSecret } = assertPinterestConfig();
+  if (!refreshToken) {
+    throw new Error('No hay refresh token; genera uno nuevo o usa token Sandbox con PINTEREST_USE_SANDBOX=true');
+  }
 
   const credentials = `${appId}:${appSecret}`;
   const basic =
@@ -75,7 +96,7 @@ async function refreshAccessToken(): Promise<string> {
     refresh_token: refreshToken,
   });
 
-  const res = await fetch('https://api.pinterest.com/v5/oauth/token', {
+  const res = await fetch(getOAuthTokenUrl(), {
     method: 'POST',
     headers: {
       Authorization: `Basic ${basic}`,
@@ -107,7 +128,7 @@ async function getAccessToken(): Promise<string> {
 
 async function pinterestFetch(path: string, init: RequestInit, retry = true): Promise<Response> {
   const token = await getAccessToken();
-  const res = await fetch(`${PINTEREST_API_BASE}${path}`, {
+  const res = await fetch(`${getPinterestApiBase()}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
@@ -150,7 +171,13 @@ export async function createPinterestPin(input: CreatePinInput): Promise<CreateP
   const json = (await res.json()) as CreatePinResult & { message?: string; code?: number };
 
   if (!res.ok) {
-    throw new Error(json.message ?? `Pinterest create pin failed (${res.status})`);
+    const msg = json.message ?? `Pinterest create pin failed (${res.status})`;
+    if (msg.includes('Trial access') && !useSandbox()) {
+      throw new Error(
+        `${msg} — Tu app está en Trial: pide Standard access en developers.pinterest.com o activa PINTEREST_USE_SANDBOX=true con token Sandbox.`,
+      );
+    }
+    throw new Error(msg);
   }
 
   return {
@@ -158,6 +185,98 @@ export async function createPinterestPin(input: CreatePinInput): Promise<CreateP
     link: json.link ?? link,
     title: json.title ?? title,
   };
+}
+
+export type PinterestTokenCheck = {
+  accessTokenPrefixOk: boolean;
+  refreshTokenPrefixOk: boolean;
+  accessTokenWorks: boolean;
+  username: string | null;
+  scopes: string | null;
+  canWritePins: boolean;
+  error: string | null;
+};
+
+/** Verifica que los tokens OAuth sean reales (no el test de 24h) y funcionen. */
+export async function verifyPinterestTokens(retryAfterRefresh = true): Promise<PinterestTokenCheck> {
+  const { accessToken, refreshToken } = getPinterestEnv();
+  const result: PinterestTokenCheck = {
+    accessTokenPrefixOk: accessToken?.startsWith('pina_') ?? false,
+    refreshTokenPrefixOk: refreshToken?.startsWith('pinr_') ?? false,
+    accessTokenWorks: false,
+    username: null,
+    scopes: null,
+    canWritePins: false,
+    error: null,
+  };
+
+  if (!accessToken) {
+    result.error = 'Falta PINTEREST_ACCESS_TOKEN';
+    return result;
+  }
+
+  if (!result.accessTokenPrefixOk) {
+    result.error =
+      'PINTEREST_ACCESS_TOKEN no empieza por pina_ — probablemente es el token de prueba de 24h, no OAuth real';
+    return result;
+  }
+
+  if (refreshToken && !result.refreshTokenPrefixOk) {
+    result.error =
+      'PINTEREST_REFRESH_TOKEN no empieza por pinr_ — debe ser el refresh del flujo OAuth, no el access token';
+    return result;
+  }
+
+  let tokenToUse = accessToken;
+  try {
+    tokenToUse = await getAccessToken();
+  } catch {
+    tokenToUse = accessToken;
+  }
+
+  const res = await fetch(`${getPinterestApiBase()}/user_account`, {
+    headers: { Authorization: `Bearer ${tokenToUse}` },
+  });
+
+  const json = (await res.json()) as {
+    username?: string;
+    message?: string;
+  };
+
+  if (!res.ok) {
+    if (res.status === 401 && refreshToken && retryAfterRefresh) {
+      try {
+        await refreshAccessToken();
+        return verifyPinterestTokens(false);
+      } catch (err) {
+        result.error =
+          err instanceof Error
+            ? `Access token caducado y refresh falló: ${err.message}`
+            : 'Access token caducado y refresh falló';
+        return result;
+      }
+    }
+    result.error = json.message ?? `user_account failed (${res.status})`;
+    return result;
+  }
+
+  result.accessTokenWorks = true;
+  result.username = json.username ?? null;
+
+  const scopeRes = await fetch(`${getPinterestApiBase()}/oauth/token/debug`, {
+    headers: { Authorization: `Bearer ${tokenToUse}` },
+  }).catch(() => null);
+
+  if (scopeRes?.ok) {
+    const scopeJson = (await scopeRes.json()) as { scope?: string };
+    result.scopes = scopeJson.scope ?? null;
+    result.canWritePins = !!result.scopes?.includes('pins:write');
+  } else {
+    // Si debug no está disponible, asumir write si el prefijo OAuth es correcto
+    result.canWritePins = result.accessTokenPrefixOk && result.refreshTokenPrefixOk;
+  }
+
+  return result;
 }
 
 export function verifyCronSecret(request: Request): boolean {

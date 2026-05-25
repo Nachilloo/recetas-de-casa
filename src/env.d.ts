@@ -36,6 +36,8 @@ interface ImportMetaEnv {
   readonly PINTEREST_BOARD_ID?: string;
   readonly PINTEREST_APP_ID?: string;
   readonly PINTEREST_APP_SECRET?: string;
+  /** true = api-sandbox.pinterest.com (Trial puede crear pins solo aquí) */
+  readonly PINTEREST_USE_SANDBOX?: string;
 }
 
 interface ImportMeta {

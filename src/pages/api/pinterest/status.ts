@@ -1,6 +1,11 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../lib/supabase';
-import { getPinterestEnv, verifyCronSecret } from '../../../lib/pinterest/pinterestClient';
+import {
+  getPinterestEnv,
+  getPinterestMode,
+  verifyCronSecret,
+  verifyPinterestTokens,
+} from '../../../lib/pinterest/pinterestClient';
 import type { Database } from '../../../lib/types';
 
 export const prerender = false;
@@ -21,6 +26,7 @@ export const GET: APIRoute = async ({ request }) => {
   const env = getPinterestEnv();
   const envStatus = {
     CRON_SECRET: !!import.meta.env.CRON_SECRET?.trim(),
+    PINTEREST_USE_SANDBOX: getPinterestMode() === 'sandbox',
     PINTEREST_ACCESS_TOKEN: !!env.accessToken,
     PINTEREST_REFRESH_TOKEN: !!env.refreshToken,
     PINTEREST_BOARD_ID: !!env.boardId,
@@ -75,18 +81,37 @@ export const GET: APIRoute = async ({ request }) => {
     }
   }
 
+  let pinterest: Awaited<ReturnType<typeof verifyPinterestTokens>> | null = null;
+  if (missing.length === 0) {
+    pinterest = await verifyPinterestTokens();
+  }
+
   const ready =
     missing.length === 0 &&
     pinHistory.exists &&
-    envStatus.SUPABASE_SERVICE_ROLE_KEY;
+    envStatus.SUPABASE_SERVICE_ROLE_KEY &&
+    pinterest?.accessTokenWorks === true &&
+    pinterest?.canWritePins === true;
+
+  let message = 'Faltan variables o la tabla pin_history no existe';
+  if (missing.length === 0 && getPinterestMode() === 'sandbox') {
+    message =
+      'Modo Sandbox activo. Usa token Sandbox y board ID de api-sandbox.pinterest.com';
+  } else if (missing.length === 0 && pinterest?.error) {
+    message = pinterest.error;
+  } else if (ready) {
+    message = 'Tokens OK con pins:write. Puedes llamar a /api/pinterest/publish-daily';
+  } else if (missing.length === 0 && pinterest?.accessTokenWorks && !pinterest.canWritePins) {
+    message = 'Token válido pero sin pins:write — repite OAuth con scope pins:write';
+  }
 
   return json({
     ok: ready,
-    message: ready
-      ? 'Configuración completa. Puedes llamar a /api/pinterest/publish-daily'
-      : 'Faltan variables o la tabla pin_history no existe',
+    message,
+    mode: getPinterestMode(),
     env: envStatus,
     missing,
+    pinterest,
     pinHistory,
     endpoints: {
       image: '/api/pinterest-image?slug=SLUG',
