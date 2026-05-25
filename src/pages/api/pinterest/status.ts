@@ -24,16 +24,17 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   const env = getPinterestEnv();
+  const has = (v: unknown) => String(v ?? '').trim().length > 0;
   const envStatus = {
-    CRON_SECRET: !!import.meta.env.CRON_SECRET?.trim(),
+    CRON_SECRET: has(import.meta.env.CRON_SECRET),
     PINTEREST_USE_SANDBOX: getPinterestMode() === 'sandbox',
     PINTEREST_ACCESS_TOKEN: !!env.accessToken,
     PINTEREST_REFRESH_TOKEN: !!env.refreshToken,
     PINTEREST_BOARD_ID: !!env.boardId,
     PINTEREST_APP_ID: !!env.appId,
     PINTEREST_APP_SECRET: !!env.appSecret,
-    PUBLIC_SITE_URL: !!import.meta.env.PUBLIC_SITE_URL?.trim(),
-    SUPABASE_SERVICE_ROLE_KEY: !!import.meta.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
+    PUBLIC_SITE_URL: has(import.meta.env.PUBLIC_SITE_URL),
+    SUPABASE_SERVICE_ROLE_KEY: has(import.meta.env.SUPABASE_SERVICE_ROLE_KEY),
   };
 
   const missing = Object.entries(envStatus)

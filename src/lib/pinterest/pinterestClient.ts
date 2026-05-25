@@ -2,8 +2,14 @@ import { formatPinDescription, formatPinTitle } from './pinCopy';
 import { pinterestImageUrl, recipePageUrl } from './siteUrl';
 import type { DailyRecipeCandidate } from './selectDailyRecipe';
 
+/** Vercel puede inyectar env vars como boolean o number, no solo string. */
+function envString(value: string | boolean | number | undefined | null): string {
+  if (value === undefined || value === null) return '';
+  return String(value).trim();
+}
+
 function useSandbox(): boolean {
-  const v = import.meta.env.PINTEREST_USE_SANDBOX?.trim().toLowerCase();
+  const v = envString(import.meta.env.PINTEREST_USE_SANDBOX).toLowerCase();
   return v === '1' || v === 'true' || v === 'yes';
 }
 
@@ -42,11 +48,11 @@ export class PinterestConfigError extends Error {
 }
 
 export function getPinterestEnv() {
-  const accessToken = import.meta.env.PINTEREST_ACCESS_TOKEN?.trim();
-  const refreshToken = import.meta.env.PINTEREST_REFRESH_TOKEN?.trim();
-  const boardId = import.meta.env.PINTEREST_BOARD_ID?.trim();
-  const appId = import.meta.env.PINTEREST_APP_ID?.trim();
-  const appSecret = import.meta.env.PINTEREST_APP_SECRET?.trim();
+  const accessToken = envString(import.meta.env.PINTEREST_ACCESS_TOKEN);
+  const refreshToken = envString(import.meta.env.PINTEREST_REFRESH_TOKEN);
+  const boardId = envString(import.meta.env.PINTEREST_BOARD_ID);
+  const appId = envString(import.meta.env.PINTEREST_APP_ID);
+  const appSecret = envString(import.meta.env.PINTEREST_APP_SECRET);
 
   return { accessToken, refreshToken, boardId, appId, appSecret };
 }
@@ -280,7 +286,7 @@ export async function verifyPinterestTokens(retryAfterRefresh = true): Promise<P
 }
 
 export function verifyCronSecret(request: Request): boolean {
-  const secret = import.meta.env.CRON_SECRET?.trim();
+  const secret = envString(import.meta.env.CRON_SECRET);
   if (!secret) return false;
 
   const auth = request.headers.get('authorization');
