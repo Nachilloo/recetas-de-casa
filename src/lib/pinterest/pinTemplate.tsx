@@ -6,10 +6,12 @@ import type { Receta } from '../types';
 type PinTemplateProps = {
   receta: Pick<Receta, 'title' | 'imagen' | 'categoria' | 'categorias' | 'tiempo'>;
   siteUrl: string;
+  /** Data URL (PNG/JPEG) — Satori no carga WebP remoto. */
+  imageDataUrl: string | null;
 };
 
-export function PinterestPinTemplate({ receta, siteUrl }: PinTemplateProps) {
-  const imageUrl = resolveRecipeImageUrl(receta.imagen, siteUrl);
+export function PinterestPinTemplate({ receta, siteUrl, imageDataUrl }: PinTemplateProps) {
+  const imageUrl = imageDataUrl ?? resolveRecipeImageUrl(receta.imagen, siteUrl);
   const title = truncatePinTitle(receta.title);
   const categoria = categoryLabel(receta);
   const tiempo = receta.tiempo?.trim();

@@ -14,5 +14,5 @@ export function recipePageUrl(siteUrl: string, slug: string, withUtm = false): s
 }
 
 export function pinterestImageUrl(siteUrl: string, slug: string): string {
-  return `${siteUrl.replace(/\/$/, '')}/api/pinterest-image?slug=${encodeURIComponent(slug)}`;
+  return `${siteUrl.replace(/\/$/, '')}/api/pinterest-image?slug=${encodeURIComponent(slug)}&v=2`;
 }

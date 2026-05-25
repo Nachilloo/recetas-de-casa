@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 import { ImageResponse } from '@vercel/og';
+import { fetchPinImageDataUrl } from '../../lib/pinterest/fetchPinImageDataUrl';
+import { resolveRecipeImageUrl } from '../../lib/pinterest/pinCopy';
 import { supabase } from '../../lib/supabase';
 import { pinImageOptions, PinterestPinTemplate } from '../../lib/pinterest/pinTemplate';
 import { getSiteUrl } from '../../lib/pinterest/siteUrl';
@@ -30,10 +32,12 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   const receta = data as Pick<Receta, 'title' | 'imagen' | 'categoria' | 'categorias' | 'tiempo' | 'slug'>;
   const siteUrl = getSiteUrl(request);
+  const remoteImageUrl = resolveRecipeImageUrl(receta.imagen, siteUrl);
+  const imageDataUrl = await fetchPinImageDataUrl(remoteImageUrl);
 
   try {
     const imageResponse = new ImageResponse(
-      PinterestPinTemplate({ receta, siteUrl }),
+      PinterestPinTemplate({ receta, siteUrl, imageDataUrl }),
       pinImageOptions,
     );
 
@@ -43,6 +47,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       status: 200,
       headers: {
         'Content-Type': 'image/png',
+        // v=2 en URL de Pinterest invalida PNGs viejos sin foto (WebP)
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
