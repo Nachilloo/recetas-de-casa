@@ -4,16 +4,13 @@ import RecetaCard from "../components/RecetaCard.astro";
 import { supabase } from "../lib/supabase";
 import { categorias } from "../content/config";
 import { recetaTieneCategoria } from "../lib/recetaCategorias";
+import {
+  elegirHeroConImagen,
+  fetchPoolRecetasAleatorias,
+} from "../lib/recetasAleatorias";
 
-const { data: ultimasRecetas = [], error } = await supabase
-  .from('recetas')
-  .select('*')
-  .order('created_at', { ascending: false })
-  .limit(24);
-
-if (error) {
-  console.error('Error al obtener recetas:', error);
-}
+const SEL_HOME_RECETA =
+  "slug, title, imagen, imagen_alt, tiempo, porciones, dificultad, categoria, categorias, descripcion, tags, calorias, destacada";
 
 let todasLasRecetas: any[] = [];
 {
@@ -33,52 +30,14 @@ let todasLasRecetas: any[] = [];
 const totalRecetas = todasLasRecetas.length;
 const totalCategorias = Object.keys(categorias).length;
 
-function elegirHeroAleatorio<T extends { imagen?: string | null }>(lista: T[]): T | null {
-  if (!lista.length) return null;
-  const conImagen = lista.filter((r) => (r.imagen || '').trim());
-  const pool = conImagen.length ? conImagen : lista;
-  return pool[Math.floor(Math.random() * pool.length)]!;
-}
-
-/** Variar el hero: si hay 2+ destacadas, solo esas; si hay 0 o 1, mezclar con últimas (sin duplicar por slug). */
-function poolRecetaHero(destacadas: any[], ultimas: any[]): any[] {
-  if (destacadas.length >= 2) return destacadas;
-  if (destacadas.length === 0) return ultimas || [];
-  const seen = new Set(destacadas.map((r: any) => r.slug));
-  const out = [...destacadas];
-  for (const r of ultimas || []) {
-    if (r?.slug && !seen.has(r.slug)) {
-      out.push(r);
-      seen.add(r.slug);
-    }
-  }
-  return out;
-}
-
-// Hero: aleatorio en servidor; evitar CDN “pegada” al primer resultado del build
+// Hero e ideas: muestra aleatoria del recetario (no sesgar a las últimas añadidas)
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 
-// Hero: receta aleatoria entre destacadas; con una sola destacada se rota también entre las últimas
-let recetaDestacada: any = null;
-{
-  const { data: todasDestacadas } = await supabase
-    .from('recetas')
-    .select('*')
-    .eq('destacada', true)
-    .order('created_at', { ascending: false })
-    .limit(300);
+const poolHome = await fetchPoolRecetasAleatorias(supabase, SEL_HOME_RECETA, 120);
+const recetaDestacada = elegirHeroConImagen(poolHome);
 
-  const dest = todasDestacadas || [];
-  const poolHero = poolRecetaHero(dest, ultimasRecetas || []);
-
-  recetaDestacada = elegirHeroAleatorio(poolHero);
-  if (!recetaDestacada && ultimasRecetas?.length) {
-    recetaDestacada = elegirHeroAleatorio(ultimasRecetas as any[]);
-  }
-}
-
-const otrasUltimas = (ultimasRecetas || [])
-  .filter((r: any) => r.slug !== recetaDestacada?.slug)
+const ideasRecetas = poolHome
+  .filter((r) => r.slug !== recetaDestacada?.slug)
   .slice(0, 6);
 
 const baseUrl = import.meta.env.BASE_URL;
@@ -276,16 +235,19 @@ const ideas = [
     </section>
 
     {/* ──────────────────────────────────────────────────────────────────────
-        ÚLTIMAS RECETAS
+        ALGUNAS IDEAS — recetas al azar del recetario.
         ────────────────────────────────────────────────────────────────────── */}
     <section class="border-t border-border bg-surface py-16 sm:py-20">
       <div class="mx-auto max-w-7xl px-4 sm:px-6">
         <div class="mb-10 flex items-end justify-between gap-4">
           <div>
-            <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">Recién añadidas</p>
+            <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">Inspiración</p>
             <h2 class="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-              Últimas recetas
+              Algunas ideas
             </h2>
+            <p class="mt-2 max-w-xl text-base text-fg-muted">
+              Seis recetas distintas cada vez que entras. Para descubrir sin ir siempre a lo mismo.
+            </p>
           </div>
           <a
             href={`${baseUrl}recetas/`}
@@ -299,7 +261,7 @@ const ideas = [
         </div>
 
         <div class="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {otrasUltimas.map(receta => (
+          {ideasRecetas.map(receta => (
             <RecetaCard receta={receta} />
           ))}
         </div>

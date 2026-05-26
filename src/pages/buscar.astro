@@ -11,6 +11,7 @@ import {
   recetaCoincideFiltroTiempo,
 } from "../lib/recetaTiempo";
 import { buscarHref, TEXTO_FILTRO_TIEMPO } from "../lib/buscarQuery";
+import { fetchPoolRecetasAleatorias } from "../lib/recetasAleatorias";
 
 const url = Astro.url;
 const termino = url.searchParams.get("q") || "";
@@ -28,6 +29,11 @@ const SEL_ING_TAGS = "slug, ingredientes, tags";
 /** Vista /buscar sin filtros: listado ligero (no descargar ~1500 filas). */
 const MUESTRA_LISTADO = 10;
 const MUESTRA_POOL_MAX = 80;
+
+async function fetchRecetasMuestraAleatoria(select: string): Promise<any[]> {
+  const pool = await fetchPoolRecetasAleatorias(supabase, select, MUESTRA_POOL_MAX);
+  return pool.slice(0, MUESTRA_LISTADO);
+}
 
 const categoriaValida =
   categoria && categoria in categorias ? categoria : "";
@@ -65,42 +71,6 @@ async function fetchAll(table: string, select: string, filters?: { categoria?: s
     offset += PAGE;
   }
   return all;
-}
-
-/** Ventana aleatoria sobre el listado ordenado + mezcla (sin RPC). */
-async function fetchRecetasMuestraAleatoria(select: string): Promise<any[]> {
-  const { count, error: cErr } = await supabase
-    .from("recetas")
-    .select("slug", { count: "exact", head: true });
-
-  if (cErr || count === null || count === 0) {
-    if (cErr) console.error("[buscar] count recetas", cErr);
-    return [];
-  }
-
-  const pool = Math.min(MUESTRA_POOL_MAX, count);
-  const maxOff = Math.max(0, count - pool);
-  const off = Math.floor(Math.random() * (maxOff + 1));
-
-  const { data, error } = await supabase
-    .from("recetas")
-    .select(select)
-    .order("created_at", { ascending: false })
-    .range(off, off + pool - 1);
-
-  if (error) {
-    console.error("[buscar] muestra aleatoria", error);
-    return [];
-  }
-  if (!data?.length) return [];
-
-  const shuffled = [...data];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  const take = Math.min(MUESTRA_LISTADO, shuffled.length);
-  return shuffled.slice(0, take);
 }
 
 const filtros: { categoria?: string; termino?: string } = {};
