@@ -57,3 +57,31 @@ export function recetaCoincideFiltroTiempo(
   if (filtro === 'm30_60') return min >= 30 && min <= 60;
   return min > 60;
 }
+
+/** Filtros de tiempo del generador de menú semanal (techo máximo, no bandas). */
+export type FiltroTiempoMenu = 'all' | 'lt40' | 'lt80';
+
+export function normalizaFiltroTiempoMenu(v: string | null): FiltroTiempoMenu {
+  if (!v || v === 'all') return 'all';
+  if (v === 'lt40' || v === 'lt80') return v;
+  // Menús guardados con valores antiguos de /buscar
+  if (v === 'lt30') return 'lt40';
+  if (v === 'm30_60' || v === 'gt60') return 'lt80';
+  return 'all';
+}
+
+export function recetaCoincideFiltroTiempoMenu(
+  tiempoField: string | null | undefined,
+  filtro: FiltroTiempoMenu
+): boolean {
+  if (filtro === 'all') return true;
+  const min = estimarTiempoMinutos(tiempoField);
+  if (min == null) return false;
+  if (filtro === 'lt40') return min < 40;
+  return min < 80;
+}
+
+export const TEXTO_FILTRO_TIEMPO_MENU: Record<Exclude<FiltroTiempoMenu, 'all'>, string> = {
+  lt40: 'Menos de 40 minutos',
+  lt80: 'Menos de 80 minutos',
+};

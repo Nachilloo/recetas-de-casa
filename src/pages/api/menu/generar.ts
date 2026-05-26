@@ -3,6 +3,12 @@ import OpenAI from 'openai';
 import { supabase, createServerClient } from '../../../lib/supabase';
 import { computePlanStatus, recordMenuUsage } from '../../../lib/plan';
 import { getCategoriasList, recetaTieneCategoria } from '../../../lib/recetaCategorias';
+import { esRecetaMarcadaEconomica } from '../../../lib/recetaEconomica';
+import {
+  normalizaFiltroTiempoMenu,
+  recetaCoincideFiltroTiempoMenu,
+  type FiltroTiempoMenu,
+} from '../../../lib/recetaTiempo';
 
 export const prerender = false;
 
@@ -19,6 +25,7 @@ interface RecetaRow {
   porciones: number;
   ingredientes: string[];
   imagen: string;
+  tags?: string[] | null;
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
@@ -51,15 +58,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const body = await request.json();
     const {
       tipo = 'ambos',
-      personas = 4,
       dificultadMax = 'dificil',
-      tiempoMax = '',
+      tiempoFiltro: tiempoFiltroBody = 'all',
       excluirCategorias = [] as string[],
       aprovechamiento = false,
       temporada = false,
+      soloEconomicas = false,
       alergias: alergiasBody = [] as string[],
       dieta: dietaBody = '' as string,
     } = body;
+
+    const tiempoFiltro = normalizaFiltroTiempoMenu(
+      typeof tiempoFiltroBody === 'string' ? tiempoFiltroBody : 'all'
+    );
 
     let alergias: string[] = Array.isArray(alergiasBody) ? alergiasBody : [];
     let dieta: string = typeof dietaBody === 'string' ? dietaBody : '';
@@ -71,12 +82,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // ── PAYWALL ────────────────────────────────────────────────────
     // Opciones avanzadas y preferencias dietéticas: solo plan Pro
-    const pideOpcionAvanzada = aprovechamiento || temporada;
     const pideDietaOAlergiasPro =
       (Array.isArray(alergias) && alergias.length > 0) ||
       (typeof dieta === 'string' && dieta && dieta !== 'omnivora');
 
-    if (pideOpcionAvanzada && status.plan === 'free') {
+    if (soloEconomicas && status.plan === 'free') {
+      return json(
+        {
+          error: 'paywall_feature',
+          feature: 'menu_economico',
+          message: 'El menú semanal económico está disponible en el plan Pro.',
+          upgrade: '/precios',
+        },
+        402
+      );
+    }
+
+    if ((aprovechamiento || temporada) && status.plan === 'free') {
       return json(
         {
           error: 'paywall_feature',
@@ -140,7 +162,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     while (true) {
       const query = supabase
         .from('recetas')
-        .select('slug, title, categoria, categorias, dificultad, tiempo, porciones, ingredientes, imagen')
+        .select('slug, title, categoria, categorias, dificultad, tiempo, porciones, ingredientes, imagen, tags')
         .in('dificultad', dificultades);
 
       const { data, error: fetchError } = await query.range(offset, offset + PAGE - 1);
@@ -157,6 +179,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       recetas = recetas.filter(
         (r) => !excluirCategorias.some((ex: string) => recetaTieneCategoria(r, ex))
       );
+    }
+
+    if (tiempoFiltro !== 'all') {
+      recetas = recetas.filter((r) => recetaCoincideFiltroTiempoMenu(r.tiempo, tiempoFiltro));
+    }
+
+    if (soloEconomicas) {
+      recetas = recetas.filter((r) => esRecetaMarcadaEconomica(r));
     }
 
     if (recetas.length === 0) {
@@ -201,6 +231,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
          En el resumen nutricional, menciona qué productos de temporada se han incluido.`
       : '';
 
+    const tiempoTexto = textoTiempoPrompt(tiempoFiltro);
+
+    const economicoTexto = soloEconomicas
+      ? `MENÚ ECONÓMICO: Todas las recetas son de bajo coste. Prioriza platos económicos, variados y equilibrados dentro de la lista.`
+      : '';
+
     const alergiasTexto =
       Array.isArray(alergias) && alergias.length > 0
         ? `ALERGIAS / EXCLUSIONES: NUNCA elijas recetas cuyos ingredientes contengan: ${alergias.join(', ')}. Si tienes dudas, descarta la receta.`
@@ -212,7 +248,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         : '';
 
     const prompt = `Eres un nutricionista español experto en dieta mediterránea.
-Genera un menú semanal equilibrado y variado para ${personas} personas.
+Genera un menú semanal equilibrado y variado.
 
 COMIDAS: ${comidasPorDia}
 
@@ -228,10 +264,11 @@ VARIEDAD:
 - No repetir la misma categoría dos comidas seguidas
 - No repetir proteína principal más de 2 veces por semana
 - Variedad de técnicas de cocción (horno, plancha, guiso, crudo)
-${tiempoMax ? `- Tiempo máximo por receta: ${tiempoMax}` : ''}
+${tiempoTexto}
 
 ${aprovechamientoTexto}
 ${temporadaTexto}
+${economicoTexto}
 ${alergiasTexto}
 ${dietaTexto}
 
@@ -320,6 +357,15 @@ IMPORTANTE: Usa EXACTAMENTE los slugs de la lista. Los días son: ${dias.join(',
     );
   }
 };
+
+function textoTiempoPrompt(filtro: FiltroTiempoMenu): string {
+  if (filtro === 'all') return '';
+  const textos: Record<Exclude<FiltroTiempoMenu, 'all'>, string> = {
+    lt40: '- Tiempo de cocina: solo recetas de menos de 40 minutos.',
+    lt80: '- Tiempo de cocina: solo recetas de menos de 80 minutos.',
+  };
+  return textos[filtro];
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

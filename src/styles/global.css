@@ -34,6 +34,7 @@
   /* Estado */
   --color-danger: #b91c1c;
   --color-success: #15803d;
+  --color-violet: #6d28d9;
 
   /* Overlays */
   --color-overlay: rgba(15, 15, 14, 0.45);
@@ -67,6 +68,7 @@
 
   --color-danger: #ef4444;
   --color-success: #22c55e;
+  --color-violet: #a78bfa;
 
   --color-overlay: rgba(0, 0, 0, 0.6);
 

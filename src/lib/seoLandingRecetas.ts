@@ -1,5 +1,8 @@
 import type { Receta } from './types';
 import { getCategoriasList, recetaTieneCategoria } from './recetaCategorias';
+import { esRecetaMarcadaEconomica } from './recetaEconomica';
+
+export { esRecetaMarcadaEconomica };
 
 /** Convierte `tiempo` humano (~«30 min», «1 hora 30 min») a minutos; null si no se parsea. */
 export function tiempoAMinutos(tiempo: string | null | undefined): number | null {
@@ -376,24 +379,6 @@ export function esRecetaAptaPoolLandingBaratas(r: Receta): boolean {
     !esRecetaPrincipalmenteSalsa(r) &&
     !esRecetaExcluidaLandingManual(r)
   );
-}
-
-const TAGS_ECONOMICA = new Set([
-  'economica',
-  'economicas',
-  'receta-economica',
-  'recetas-economicas',
-  'barata',
-  'baratas',
-]);
-
-/** Receta etiquetada como económica en BD (tag explícito). */
-export function esRecetaMarcadaEconomica(r: Pick<Receta, 'tags'>): boolean {
-  return (r.tags ?? []).some((raw) => {
-    const t = raw.toLowerCase().trim();
-    if (TAGS_ECONOMICA.has(t)) return true;
-    return t.includes('econom') || t.includes('barat');
-  });
 }
 
 const TAGS_PAN_BOLLERIA_DESAYUNO = new Set([

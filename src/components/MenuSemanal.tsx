@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import type { FiltroTiempoMenu } from '../lib/recetaTiempo';
+import { normalizaFiltroTiempoMenu, TEXTO_FILTRO_TIEMPO_MENU } from '../lib/recetaTiempo';
 
 interface RecetaMenu {
   slug: string;
@@ -64,11 +66,17 @@ interface MenuGuardado {
   fecha: string;
   nombre: string;
   menuData: MenuData;
-  personas: number;
+  tiempoFiltro?: FiltroTiempoMenu;
   tipo: string;
 }
 
 const STORAGE_KEY = 'menus_guardados';
+
+const OPCIONES_TIEMPO: { value: FiltroTiempoMenu; label: string; desc: string }[] = [
+  { value: 'all', label: 'Cualquier tiempo', desc: 'Sin límite de duración' },
+  { value: 'lt40', label: 'Rápidas', desc: TEXTO_FILTRO_TIEMPO_MENU.lt40 },
+  { value: 'lt80', label: 'Medias', desc: TEXTO_FILTRO_TIEMPO_MENU.lt80 },
+];
 
 /** Prefijo del sitio (p. ej. subcarpeta en GitHub Pages). */
 const siteBase = import.meta.env.BASE_URL.replace(/\/?$/, '/');
@@ -112,10 +120,11 @@ const GENERACION_PASOS = MENU_DIETAS_ALERGIAS_PROXIMA
 
 export default function MenuSemanal() {
   const [tipo, setTipo] = useState<'comida' | 'cena' | 'ambos'>('ambos');
-  const [personas, setPersonas] = useState(4);
+  const [tiempoFiltro, setTiempoFiltro] = useState<FiltroTiempoMenu>('all');
   const [dificultadMax, setDificultadMax] = useState('dificil');
   const [aprovechamiento, setAprovechamiento] = useState(false);
   const [temporada, setTemporada] = useState(false);
+  const [menuEconomico, setMenuEconomico] = useState(false);
   const [alergias, setAlergias] = useState<string[]>([]);
   const [dieta, setDieta] = useState<string>('omnivora');
   const [loading, setLoading] = useState(false);
@@ -165,6 +174,11 @@ export default function MenuSemanal() {
       setDieta('omnivora');
       setAlergias([]);
     }
+    if (!isPro) {
+      setAprovechamiento(false);
+      setTemporada(false);
+      setMenuEconomico(false);
+    }
   }, [planInfo, isPro]);
 
   const isFreeLogged = planInfo?.loggedIn && planInfo.plan === 'free';
@@ -180,12 +194,16 @@ export default function MenuSemanal() {
 
   const guardarMenu = () => {
     if (!menuData) return;
+    const tiempoLabel =
+      tiempoFiltro === 'all'
+        ? 'cualquier tiempo'
+        : TEXTO_FILTRO_TIEMPO_MENU[tiempoFiltro].toLowerCase();
     const nuevo: MenuGuardado = {
       id: Date.now().toString(),
       fecha: new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
-      nombre: `Menú ${tipo === 'ambos' ? 'completo' : tipo} · ${personas} pers.`,
+      nombre: `Menú ${tipo === 'ambos' ? 'completo' : tipo} · ${tiempoLabel}`,
       menuData,
-      personas,
+      tiempoFiltro,
       tipo,
     };
     const updated = [nuevo, ...menusGuardados].slice(0, 10);
@@ -197,7 +215,7 @@ export default function MenuSemanal() {
 
   const cargarMenu = (saved: MenuGuardado) => {
     setMenuData(saved.menuData);
-    setPersonas(saved.personas);
+    setTiempoFiltro(normalizaFiltroTiempoMenu(saved.tiempoFiltro ?? 'all'));
     setTipo(saved.tipo as 'comida' | 'cena' | 'ambos');
   };
 
@@ -220,10 +238,11 @@ export default function MenuSemanal() {
         credentials: 'include',
         body: JSON.stringify({
           tipo,
-          personas,
+          tiempoFiltro,
           dificultadMax,
           aprovechamiento: isPro ? aprovechamiento : false,
           temporada: isPro ? temporada : false,
+          soloEconomicas: isPro ? menuEconomico : false,
           alergias: MENU_DIETAS_ALERGIAS_PROXIMA ? [] : isPro ? alergias : [],
           dieta: MENU_DIETAS_ALERGIAS_PROXIMA ? 'omnivora' : isPro ? dieta : 'omnivora',
         }),
@@ -324,29 +343,27 @@ export default function MenuSemanal() {
             </div>
           </div>
 
-          {/* Personas */}
+          {/* Tiempo de cocina */}
           <div>
             <label className="block text-sm font-semibold text-fg mb-2">
-              Comensales
+              Tiempo de cocina
             </label>
-            <div className="flex items-center gap-3 rounded-lg p-3 border-2 border-border bg-canvas">
-              <button
-                onClick={() => setPersonas(Math.max(1, personas - 1))}
-                className="w-10 h-10 rounded-full border-2 border-border-strong bg-surface text-fg-muted font-bold hover:border-accent hover:text-accent transition-all"
-              >
-                -
-              </button>
-              <span className="text-3xl font-bold text-fg flex-1 text-center">
-                {personas}
-              </span>
-              <button
-                onClick={() => setPersonas(Math.min(12, personas + 1))}
-                className="w-10 h-10 rounded-full border-2 border-border-strong bg-surface text-fg-muted font-bold hover:border-accent hover:text-accent transition-all"
-              >
-                +
-              </button>
+            <div className="flex flex-col gap-2">
+              {OPCIONES_TIEMPO.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setTiempoFiltro(opt.value)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all text-left ${
+                    tiempoFiltro === opt.value
+                      ? 'bg-accent-soft border-2 border-accent text-accent'
+                      : 'bg-canvas border-2 border-border text-fg-muted hover:border-border-strong'
+                  }`}
+                >
+                  <div className="font-semibold">{opt.label}</div>
+                  <div className="text-xs opacity-75">{opt.desc}</div>
+                </button>
+              ))}
             </div>
-            <p className="text-xs text-fg-subtle mt-1 text-center">personas</p>
           </div>
 
           {/* Dificultad */}
@@ -417,6 +434,23 @@ export default function MenuSemanal() {
                   <div className="font-semibold">Productos de temporada</div>
                   <div className="text-xs opacity-75">
                     Prioriza ingredientes de temporada en España
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => !advancedDisabled && setMenuEconomico(!menuEconomico)}
+                disabled={advancedDisabled}
+                className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all text-left ${
+                  menuEconomico && !advancedDisabled
+                    ? 'bg-violet/15 border-2 border-violet text-violet'
+                    : 'bg-canvas border-2 border-border text-fg-muted hover:border-border-strong'
+                } ${advancedDisabled ? 'cursor-not-allowed' : ''}`}
+                title={advancedDisabled ? 'Disponible con plan Pro' : ''}
+              >
+                <div>
+                  <div className="font-semibold">Menú económico</div>
+                  <div className="text-xs opacity-75">
+                    Solo recetas baratas y de bajo coste
                   </div>
                 </div>
               </button>
@@ -714,7 +748,7 @@ export default function MenuSemanal() {
           </div>
 
           {/* Lista de la compra */}
-          <ListaCompra menuData={menuData} personas={personas} />
+          <ListaCompra menuData={menuData} />
         </div>
       )}
 
@@ -965,7 +999,7 @@ function agruparIngredientes(todosRaw: string[]): Record<string, IngredienteAgru
   return resultado;
 }
 
-function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: number }) {
+function ListaCompra({ menuData }: { menuData: MenuData }) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [expandido, setExpandido] = useState<Set<string>>(new Set());
   const [copiadoOk, setCopiadoOk] = useState(false);
@@ -1002,7 +1036,7 @@ function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: num
   };
 
   const copiarLista = () => {
-    const lines: string[] = [`Lista de la compra (${personas} personas)\n`];
+    const lines: string[] = ['Lista de la compra\n'];
     for (const cat of categoriasConItems) {
       const info = CAT_DISPLAY[cat];
       lines.push(`\n${info.emoji} ${info.label}:`);
@@ -1118,7 +1152,7 @@ function ListaCompra({ menuData, personas }: { menuData: MenuData; personas: num
       </div>
 
       <div className="border-t border-border bg-canvas px-6 py-4 text-center text-sm text-fg-muted">
-        Ingredientes de <strong className="text-fg">{menuData.menu.length} días</strong> para <strong className="text-fg">{personas} personas</strong> · Pulsa ▾ para ver cantidades por receta
+        Ingredientes de <strong className="text-fg">{menuData.menu.length} días</strong> · Pulsa ▾ para ver cantidades por receta
       </div>
     </div>
   );
