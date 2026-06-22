@@ -8,6 +8,10 @@ function envString(value: string | boolean | number | undefined | null): string 
   return String(value).trim();
 }
 
+function isValidPinterestRefreshToken(token: string): boolean {
+  return token.startsWith('pinr_') || token.startsWith('pinr.');
+}
+
 function useSandbox(): boolean {
   const v = envString(import.meta.env.PINTEREST_USE_SANDBOX).toLowerCase();
   return v === '1' || v === 'true' || v === 'yes';
@@ -196,6 +200,7 @@ export async function createPinterestPin(input: CreatePinInput): Promise<CreateP
 export type PinterestTokenCheck = {
   accessTokenPrefixOk: boolean;
   refreshTokenPrefixOk: boolean;
+  refreshTokenIssue: string | null;
   accessTokenWorks: boolean;
   username: string | null;
   scopes: string | null;
@@ -208,7 +213,8 @@ export async function verifyPinterestTokens(retryAfterRefresh = true): Promise<P
   const { accessToken, refreshToken } = getPinterestEnv();
   const result: PinterestTokenCheck = {
     accessTokenPrefixOk: accessToken?.startsWith('pina_') ?? false,
-    refreshTokenPrefixOk: refreshToken?.startsWith('pinr_') ?? false,
+    refreshTokenPrefixOk: refreshToken ? isValidPinterestRefreshToken(refreshToken) : false,
+    refreshTokenIssue: null,
     accessTokenWorks: false,
     username: null,
     scopes: null,
@@ -228,9 +234,10 @@ export async function verifyPinterestTokens(retryAfterRefresh = true): Promise<P
   }
 
   if (refreshToken && !result.refreshTokenPrefixOk) {
-    result.error =
-      'PINTEREST_REFRESH_TOKEN no empieza por pinr_ — debe ser el refresh del flujo OAuth, no el access token';
-    return result;
+    result.refreshTokenIssue =
+      'PINTEREST_REFRESH_TOKEN no tiene formato pinr_ o pinr. — repite OAuth y guarda el refresh_token de la respuesta';
+  } else if (!refreshToken && !useSandbox()) {
+    result.refreshTokenIssue = 'Falta PINTEREST_REFRESH_TOKEN — necesario en producción para renovar el access token';
   }
 
   let tokenToUse = accessToken;
@@ -277,9 +284,14 @@ export async function verifyPinterestTokens(retryAfterRefresh = true): Promise<P
     const scopeJson = (await scopeRes.json()) as { scope?: string };
     result.scopes = scopeJson.scope ?? null;
     result.canWritePins = !!result.scopes?.includes('pins:write');
-  } else {
-    // Si debug no está disponible, asumir write si el prefijo OAuth es correcto
-    result.canWritePins = result.accessTokenPrefixOk && result.refreshTokenPrefixOk;
+  } else if (result.accessTokenWorks) {
+    result.canWritePins = result.accessTokenPrefixOk;
+  }
+
+  if (result.refreshTokenIssue && !result.accessTokenWorks) {
+    result.error = result.refreshTokenIssue;
+  } else if (result.refreshTokenIssue) {
+    result.error = `${result.refreshTokenIssue}. El access token actual funciona, pero caducará — corrige el refresh pronto.`;
   }
 
   return result;

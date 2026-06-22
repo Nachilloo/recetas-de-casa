@@ -108,12 +108,15 @@ export const GET: APIRoute = async ({ request }) => {
     pinHistory.exists &&
     envStatus.SUPABASE_SERVICE_ROLE_KEY &&
     pinterest?.accessTokenWorks === true &&
-    pinterest?.canWritePins === true;
+    pinterest?.canWritePins === true &&
+    pinterest?.refreshTokenPrefixOk === true;
 
   let message = 'Faltan variables o la tabla pin_history no existe';
   if (missing.length === 0 && sandbox) {
     message =
       'Modo Sandbox activo. Usa token Sandbox y board ID de api-sandbox.pinterest.com';
+  } else if (missing.length === 0 && pinterest?.refreshTokenIssue && pinterest.accessTokenWorks) {
+    message = pinterest.error ?? pinterest.refreshTokenIssue;
   } else if (missing.length === 0 && pinterest?.error) {
     message = pinterest.error;
   } else if (ready) {
