@@ -25,9 +25,11 @@ export const GET: APIRoute = async ({ request }) => {
 
   const env = getPinterestEnv();
   const has = (v: unknown) => String(v ?? '').trim().length > 0;
+  const sandbox = getPinterestMode() === 'sandbox';
+
   const envStatus = {
     CRON_SECRET: has(import.meta.env.CRON_SECRET),
-    PINTEREST_USE_SANDBOX: getPinterestMode() === 'sandbox',
+    PINTEREST_USE_SANDBOX: sandbox,
     PINTEREST_ACCESS_TOKEN: !!env.accessToken,
     PINTEREST_REFRESH_TOKEN: !!env.refreshToken,
     PINTEREST_BOARD_ID: !!env.boardId,
@@ -37,7 +39,21 @@ export const GET: APIRoute = async ({ request }) => {
     SUPABASE_SERVICE_ROLE_KEY: has(import.meta.env.SUPABASE_SERVICE_ROLE_KEY),
   };
 
-  const missing = Object.entries(envStatus)
+  /** Solo variables obligatorias; PINTEREST_USE_SANDBOX es opcional (false = producción). */
+  const requiredChecks: Record<string, boolean> = {
+    CRON_SECRET: envStatus.CRON_SECRET,
+    PINTEREST_ACCESS_TOKEN: envStatus.PINTEREST_ACCESS_TOKEN,
+    PINTEREST_BOARD_ID: envStatus.PINTEREST_BOARD_ID,
+    PUBLIC_SITE_URL: envStatus.PUBLIC_SITE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: envStatus.SUPABASE_SERVICE_ROLE_KEY,
+  };
+  if (!sandbox) {
+    requiredChecks.PINTEREST_REFRESH_TOKEN = envStatus.PINTEREST_REFRESH_TOKEN;
+    requiredChecks.PINTEREST_APP_ID = envStatus.PINTEREST_APP_ID;
+    requiredChecks.PINTEREST_APP_SECRET = envStatus.PINTEREST_APP_SECRET;
+  }
+
+  const missing = Object.entries(requiredChecks)
     .filter(([, set]) => !set)
     .map(([key]) => key);
 
@@ -95,7 +111,7 @@ export const GET: APIRoute = async ({ request }) => {
     pinterest?.canWritePins === true;
 
   let message = 'Faltan variables o la tabla pin_history no existe';
-  if (missing.length === 0 && getPinterestMode() === 'sandbox') {
+  if (missing.length === 0 && sandbox) {
     message =
       'Modo Sandbox activo. Usa token Sandbox y board ID de api-sandbox.pinterest.com';
   } else if (missing.length === 0 && pinterest?.error) {
