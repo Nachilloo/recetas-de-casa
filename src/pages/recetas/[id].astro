@@ -5,10 +5,16 @@ import RecipeSchema from '../../components/RecipeSchema.astro';
 import BreadcrumbSchema from '../../components/BreadcrumbSchema.astro';
 import FaqSchema from '../../components/FaqSchema.astro';
 import FavoritoButton from '../../components/FavoritoButton.tsx';
+import RecetaCard from '../../components/RecetaCard.astro';
 import { categorias, dificultades } from '../../content/config';
 import { getCategoriasList, primaryCategoria } from '../../lib/recetaCategorias';
 import type { Receta } from '../../lib/types';
 import { sitePageUrl } from '../../lib/siteUrl';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400'
+);
 
 const { id } = Astro.params;
 
@@ -79,27 +85,62 @@ const breadcrumbLd = [
   { name: title, item: recipeUrl },
 ];
 
+const { data: relacionadasRaw } = await supabase
+  .from('recetas')
+  .select('id,slug,title,descripcion,imagen,imagen_alt,tiempo,porciones,dificultad,tags,calorias,categoria,categorias,destacada,created_at,updated_at,ingredientes,pasos,tips,guia_casera,historia')
+  .eq('categoria', categoria)
+  .neq('slug', receta.slug)
+  .order('destacada', { ascending: false })
+  .order('updated_at', { ascending: false })
+  .limit(6);
+
+const recetasRelacionadas = (relacionadasRaw ?? []) as Receta[];
+
 type FaqEntry = { question: string; answer: string };
+
+const numIngredientes = ingredientes?.length ?? 0;
+const numPasos = pasos?.length ?? 0;
 
 const faqItems: FaqEntry[] = [
   {
-    question: `¿Cuánto tiempo lleva preparar ${title}?`,
-    answer: `El tiempo estimado es de ${tiempo}.`,
+    question: `¿Cuánto tiempo se tarda en hacer ${title} desde cero?`,
+    answer: `El tiempo total estimado para preparar ${title} es de ${tiempo}. Incluye tanto la preparación de ingredientes como la cocción. Con práctica puede reducirse un poco.`,
   },
   {
-    question: `¿Para cuántas personas está pensada esta receta?`,
-    answer: `La receta rinde para ${porciones} ${porciones === 1 ? 'persona' : 'personas'}.`,
+    question: `¿Cuántas personas comen con esta receta de ${title}?`,
+    answer: `Esta receta de ${title} está calculada para ${porciones} ${porciones === 1 ? 'persona' : 'personas'}. Si necesitas más raciones, puedes multiplicar las cantidades de los ${numIngredientes} ingredientes proporcionalmente.`,
   },
   {
-    question: `¿Qué nivel de dificultad tiene ${title}?`,
-    answer: `La dificultad indicada es: ${dificultadNombre}.`,
+    question: `¿Es difícil preparar ${title} en casa?`,
+    answer: `${title} tiene dificultad ${dificultadNombre.toLowerCase()}. La receta tiene ${numPasos} ${numPasos === 1 ? 'paso' : 'pasos'}, lo que la hace ${dificultad === 'facil' ? 'ideal para principiantes y cocineros de cualquier nivel' : dificultad === 'media' ? 'accesible si sigues los pasos con atención' : 'recomendable para quienes ya tienen algo de experiencia en cocina'}.`,
   },
 ];
 
+if (calorias) {
+  faqItems.push({
+    question: `¿Cuántas calorías tiene ${title}?`,
+    answer: `Una porción de ${title} aporta aproximadamente ${calorias} kcal. El valor puede variar según el tamaño exacto de la ración y los ingredientes utilizados.`,
+  });
+}
+
+if (listaCategorias.includes('air-fryer')) {
+  faqItems.push({
+    question: `¿Se puede hacer ${title} en la air fryer?`,
+    answer: `Sí, esta receta está adaptada para prepararse en air fryer. Sigue los tiempos y temperaturas indicados en los pasos para conseguir el mejor resultado.`,
+  });
+}
+
 if (tips && tips.length > 0) {
   faqItems.push({
-    question: `¿Qué consejos ayudan a que ${title} salga mejor?`,
+    question: `¿Qué trucos o consejos hacen que ${title} salga mejor?`,
     answer: tips.join(' '),
+  });
+}
+
+if (historia) {
+  faqItems.push({
+    question: `¿De dónde viene la receta de ${title}?`,
+    answer: historia.length > 300 ? historia.slice(0, 297) + '…' : historia,
   });
 }
 ---
@@ -328,6 +369,31 @@ if (tips && tips.length > 0) {
         </dl>
       </div>
     </section>
+
+    {/* Recetas relacionadas */}
+    {recetasRelacionadas.length > 0 && (
+      <section class="border-t border-border bg-canvas py-14" aria-labelledby="relacionadas-heading">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Más recetas</p>
+          <h2 id="relacionadas-heading" class="font-display mt-1 text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
+            Otras recetas de {categoriaNombre}
+          </h2>
+          <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 sm:gap-8">
+            {recetasRelacionadas.slice(0, 6).map((r) => (
+              <RecetaCard receta={r} />
+            ))}
+          </div>
+          <div class="mt-8 text-center">
+            <a
+              href={`${baseUrl}buscar?categoria=${encodeURIComponent(categoria)}`}
+              class="inline-flex items-center gap-2 rounded-[var(--radius)] border border-border bg-surface px-5 py-3 text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent"
+            >
+              Ver todas las recetas de {categoriaNombre}
+            </a>
+          </div>
+        </div>
+      </section>
+    )}
 
     {/* CTA navegación */}
     <section class="border-t border-border bg-surface py-14">

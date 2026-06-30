@@ -6,6 +6,11 @@ import { supabase } from '../../lib/supabase';
 import { categorias } from '../../content/config';
 import { getCategoriasList } from '../../lib/recetaCategorias';
 
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
+
 // Obtener TODAS las recetas desde Supabase (paginando para superar el límite de 1000)
 let recetas: any[] = [];
 let offset = 0;

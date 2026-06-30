@@ -72,16 +72,26 @@ export const GET: APIRoute = async () => {
 
   const urlEntries: string[] = [];
 
+  const HIGH_PRIORITY_PATHS = new Set(['/', '/recetas/']);
+
   for (const path of STATIC_PATHS) {
     const loc = path === '/' ? `${base}/` : `${base}${path}`;
-    urlEntries.push(`<url><loc>${escapeXml(loc)}</loc></url>`);
+    const priority = HIGH_PRIORITY_PATHS.has(path) ? '1.0' : '0.7';
+    const changefreq = HIGH_PRIORITY_PATHS.has(path) ? 'daily' : 'monthly';
+    urlEntries.push(
+      `<url><loc>${escapeXml(loc)}</loc><changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`
+    );
   }
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   for (const { slug, updated_at } of recipeRows) {
     const loc = `${base}/recetas/${encodeURIComponent(slug)}`;
     const lastmod = new Date(updated_at).toISOString().slice(0, 10);
+    const isRecent = new Date(updated_at) > thirtyDaysAgo;
+    const priority = isRecent ? '0.8' : '0.6';
     urlEntries.push(
-      `<url><loc>${escapeXml(loc)}</loc><lastmod>${lastmod}</lastmod></url>`
+      `<url><loc>${escapeXml(loc)}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>${priority}</priority></url>`
     );
   }
 
