@@ -59,14 +59,13 @@ async function handlePublishDaily({
 
     const receta = await selectDailyRecipe(client);
     const siteUrl = getSiteUrl(request);
-    const { boardId, accessToken } = assertPinterestConfig();
+    const { boardId } = assertPinterestConfig();
 
     try {
       const pin = await createPinterestPin({
         receta,
         siteUrl,
         boardId,
-        accessToken,
       });
 
       const pinTitle = formatPinTitle(receta);

@@ -7,6 +7,10 @@
     {
       "path": "/api/pinterest/publish-daily",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/pinterest/refresh-tokens",
+      "schedule": "0 8 1 * *"
     }
   ],
   "redirects": [

@@ -1,6 +1,14 @@
 import { formatPinDescription, formatPinTitle } from './pinCopy';
 import { pinterestImageUrl, recipePageUrl } from './siteUrl';
 import type { DailyRecipeCandidate } from './selectDailyRecipe';
+import {
+  loadStoredPinterestTokens,
+  persistGrant,
+  shouldRefreshTokens,
+  tokensFromEnvFallback,
+  type PinterestTokenGrant,
+  type StoredPinterestTokens,
+} from './pinterestTokens';
 
 /** Vercel puede inyectar env vars como boolean o number, no solo string. */
 function envString(value: string | boolean | number | undefined | null): string {
@@ -35,7 +43,6 @@ export interface CreatePinInput {
   receta: DailyRecipeCandidate;
   siteUrl: string;
   boardId: string;
-  accessToken: string;
 }
 
 export interface CreatePinResult {
@@ -62,8 +69,6 @@ export function getPinterestEnv() {
 }
 
 export function assertPinterestConfig(): {
-  accessToken: string;
-  refreshToken: string | null;
   boardId: string;
   appId: string;
   appSecret: string;
@@ -71,8 +76,6 @@ export function assertPinterestConfig(): {
   const env = getPinterestEnv();
   const sandbox = useSandbox();
   const missing: string[] = [];
-  if (!env.accessToken) missing.push('PINTEREST_ACCESS_TOKEN');
-  if (!sandbox && !env.refreshToken) missing.push('PINTEREST_REFRESH_TOKEN');
   if (!env.boardId) missing.push('PINTEREST_BOARD_ID');
   if (!sandbox && !env.appId) missing.push('PINTEREST_APP_ID');
   if (!sandbox && !env.appSecret) missing.push('PINTEREST_APP_SECRET');
@@ -80,64 +83,98 @@ export function assertPinterestConfig(): {
     throw new PinterestConfigError(`Missing Pinterest env: ${missing.join(', ')}`);
   }
   return {
-    accessToken: env.accessToken!,
-    refreshToken: env.refreshToken ?? null,
     boardId: env.boardId!,
     appId: env.appId ?? '',
     appSecret: env.appSecret ?? '',
   };
 }
 
-let cachedAccessToken: string | null = null;
-
-async function refreshAccessToken(): Promise<string> {
-  const { refreshToken, appId, appSecret } = assertPinterestConfig();
-  if (!refreshToken) {
-    throw new Error('No hay refresh token; genera uno nuevo o usa token Sandbox con PINTEREST_USE_SANDBOX=true');
-  }
-
+function basicAuthHeader(appId: string, appSecret: string): string {
   const credentials = `${appId}:${appSecret}`;
   const basic =
     typeof Buffer !== 'undefined'
       ? Buffer.from(credentials).toString('base64')
       : btoa(credentials);
-  const body = new URLSearchParams({
-    grant_type: 'refresh_token',
-    refresh_token: refreshToken,
-  });
+  return `Basic ${basic}`;
+}
 
+async function exchangeRefreshToken(refreshToken: string): Promise<PinterestTokenGrant> {
+  const { appId, appSecret } = assertPinterestConfig();
   const res = await fetch(getOAuthTokenUrl(), {
     method: 'POST',
     headers: {
-      Authorization: `Basic ${basic}`,
+      Authorization: basicAuthHeader(appId, appSecret),
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body,
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    }),
   });
 
-  const json = (await res.json()) as {
-    access_token?: string;
-    refresh_token?: string;
-    message?: string;
-  };
+  const json = (await res.json()) as PinterestTokenGrant & { message?: string };
 
   if (!res.ok || !json.access_token) {
     throw new Error(json.message ?? `Pinterest token refresh failed (${res.status})`);
   }
 
-  cachedAccessToken = json.access_token;
-  return json.access_token;
+  return json;
 }
 
-async function getAccessToken(): Promise<string> {
-  if (cachedAccessToken) return cachedAccessToken;
-  const { accessToken } = assertPinterestConfig();
-  cachedAccessToken = accessToken;
-  return accessToken;
+async function resolveTokenBundle(): Promise<StoredPinterestTokens> {
+  const stored = await loadStoredPinterestTokens();
+  if (stored) return stored;
+
+  const fromEnv = tokensFromEnvFallback();
+  if (fromEnv) {
+    await persistGrant(
+      {
+        access_token: fromEnv.accessToken,
+        refresh_token: fromEnv.refreshToken,
+        expires_in: 60,
+        refresh_token_expires_in: Math.max(
+          60,
+          Math.floor(((fromEnv.refreshExpiresAt?.getTime() ?? Date.now()) - Date.now()) / 1000),
+        ),
+      },
+      fromEnv,
+    );
+    return { ...fromEnv, accessExpiresAt: new Date(Date.now() - 60_000), source: 'supabase' };
+  }
+
+  throw new Error(
+    'No hay tokens de Pinterest en Supabase ni en env. Ejecuta OAuth y POST /api/pinterest/seed-tokens',
+  );
+}
+
+export async function refreshAndPersistTokens(
+  current?: StoredPinterestTokens | null,
+): Promise<StoredPinterestTokens> {
+  const bundle = current ?? (await resolveTokenBundle());
+  const grant = await exchangeRefreshToken(bundle.refreshToken);
+  return persistGrant(grant, bundle);
+}
+
+export async function getValidAccessToken(forceRefresh = false): Promise<string> {
+  if (useSandbox()) {
+    const env = getPinterestEnv();
+    if (!env.accessToken) {
+      throw new PinterestConfigError('Missing Pinterest env: PINTEREST_ACCESS_TOKEN');
+    }
+    return env.accessToken;
+  }
+
+  let bundle = await resolveTokenBundle();
+
+  if (forceRefresh || shouldRefreshTokens(bundle)) {
+    bundle = await refreshAndPersistTokens(bundle);
+  }
+
+  return bundle.accessToken;
 }
 
 async function pinterestFetch(path: string, init: RequestInit, retry = true): Promise<Response> {
-  const token = await getAccessToken();
+  const token = await getValidAccessToken();
   const res = await fetch(`${getPinterestApiBase()}${path}`, {
     ...init,
     headers: {
@@ -148,7 +185,7 @@ async function pinterestFetch(path: string, init: RequestInit, retry = true): Pr
   });
 
   if (res.status === 401 && retry) {
-    await refreshAccessToken();
+    await getValidAccessToken(true);
     return pinterestFetch(path, init, false);
   }
 
@@ -205,48 +242,61 @@ export type PinterestTokenCheck = {
   username: string | null;
   scopes: string | null;
   canWritePins: boolean;
+  tokenSource: 'supabase' | 'env' | null;
+  accessExpiresAt: string | null;
+  refreshExpiresAt: string | null;
   error: string | null;
 };
 
 /** Verifica que los tokens OAuth sean reales (no el test de 24h) y funcionen. */
-export async function verifyPinterestTokens(retryAfterRefresh = true): Promise<PinterestTokenCheck> {
-  const { accessToken, refreshToken } = getPinterestEnv();
+export async function verifyPinterestTokens(): Promise<PinterestTokenCheck> {
   const result: PinterestTokenCheck = {
-    accessTokenPrefixOk: accessToken?.startsWith('pina_') ?? false,
-    refreshTokenPrefixOk: refreshToken ? isValidPinterestRefreshToken(refreshToken) : false,
+    accessTokenPrefixOk: false,
+    refreshTokenPrefixOk: false,
     refreshTokenIssue: null,
     accessTokenWorks: false,
     username: null,
     scopes: null,
     canWritePins: false,
+    tokenSource: null,
+    accessExpiresAt: null,
+    refreshExpiresAt: null,
     error: null,
   };
 
-  if (!accessToken) {
-    result.error = 'Falta PINTEREST_ACCESS_TOKEN';
+  let bundle: StoredPinterestTokens | null = null;
+  try {
+    bundle = await resolveTokenBundle();
+    if (shouldRefreshTokens(bundle)) {
+      bundle = await refreshAndPersistTokens(bundle);
+    }
+  } catch (err) {
+    result.error = err instanceof Error ? err.message : 'No se pudieron obtener tokens de Pinterest';
+    const env = getPinterestEnv();
+    result.accessTokenPrefixOk = env.accessToken.startsWith('pina_');
+    result.refreshTokenPrefixOk = env.refreshToken ? isValidPinterestRefreshToken(env.refreshToken) : false;
     return result;
   }
+
+  result.tokenSource = bundle.source;
+  result.accessExpiresAt = bundle.accessExpiresAt.toISOString();
+  result.refreshExpiresAt = bundle.refreshExpiresAt?.toISOString() ?? null;
+  result.accessTokenPrefixOk = bundle.accessToken.startsWith('pina_');
+  result.refreshTokenPrefixOk = isValidPinterestRefreshToken(bundle.refreshToken);
+  result.scopes = bundle.scope;
 
   if (!result.accessTokenPrefixOk) {
     result.error =
-      'PINTEREST_ACCESS_TOKEN no empieza por pina_ — probablemente es el token de prueba de 24h, no OAuth real';
+      'El access token no empieza por pina_ — probablemente es el token de prueba de 24h, no OAuth real';
     return result;
   }
 
-  if (refreshToken && !result.refreshTokenPrefixOk) {
+  if (!result.refreshTokenPrefixOk) {
     result.refreshTokenIssue =
-      'PINTEREST_REFRESH_TOKEN no tiene formato pinr_ o pinr. — repite OAuth y guarda el refresh_token de la respuesta';
-  } else if (!refreshToken && !useSandbox()) {
-    result.refreshTokenIssue = 'Falta PINTEREST_REFRESH_TOKEN — necesario en producción para renovar el access token';
+      'El refresh token no tiene formato pinr_ o pinr. — repite OAuth y POST /api/pinterest/seed-tokens';
   }
 
-  let tokenToUse = accessToken;
-  try {
-    tokenToUse = await getAccessToken();
-  } catch {
-    tokenToUse = accessToken;
-  }
-
+  const tokenToUse = bundle.accessToken;
   const res = await fetch(`${getPinterestApiBase()}/user_account`, {
     headers: { Authorization: `Bearer ${tokenToUse}` },
   });
@@ -257,10 +307,31 @@ export async function verifyPinterestTokens(retryAfterRefresh = true): Promise<P
   };
 
   if (!res.ok) {
-    if (res.status === 401 && refreshToken && retryAfterRefresh) {
+    const missingUserAccounts = (json.message ?? '').includes('user_accounts:read');
+    if (missingUserAccounts) {
+      result.accessTokenWorks = result.accessTokenPrefixOk;
+      result.canWritePins = !!bundle.scope?.includes('pins:write') || result.accessTokenPrefixOk;
+      result.error = `${json.message} — el cron de pins puede funcionar igual; incluye user_accounts:read en el próximo OAuth para este diagnóstico.`;
+      return result;
+    }
+
+    if (res.status === 401) {
       try {
-        await refreshAccessToken();
-        return verifyPinterestTokens(false);
+        const refreshed = await refreshAndPersistTokens(bundle);
+        const retry = await fetch(`${getPinterestApiBase()}/user_account`, {
+          headers: { Authorization: `Bearer ${refreshed.accessToken}` },
+        });
+        const retryJson = (await retry.json()) as { username?: string; message?: string };
+        if (retry.ok) {
+          result.accessTokenWorks = true;
+          result.username = retryJson.username ?? null;
+          result.tokenSource = 'supabase';
+          result.accessExpiresAt = refreshed.accessExpiresAt.toISOString();
+          result.refreshExpiresAt = refreshed.refreshExpiresAt?.toISOString() ?? null;
+        } else {
+          result.error = retryJson.message ?? `user_account failed (${retry.status})`;
+          return result;
+        }
       } catch (err) {
         result.error =
           err instanceof Error
@@ -268,13 +339,14 @@ export async function verifyPinterestTokens(retryAfterRefresh = true): Promise<P
             : 'Access token caducado y refresh falló';
         return result;
       }
+    } else {
+      result.error = json.message ?? `user_account failed (${res.status})`;
+      return result;
     }
-    result.error = json.message ?? `user_account failed (${res.status})`;
-    return result;
+  } else {
+    result.accessTokenWorks = true;
+    result.username = json.username ?? null;
   }
-
-  result.accessTokenWorks = true;
-  result.username = json.username ?? null;
 
   const scopeRes = await fetch(`${getPinterestApiBase()}/oauth/token/debug`, {
     headers: { Authorization: `Bearer ${tokenToUse}` },
@@ -282,10 +354,10 @@ export async function verifyPinterestTokens(retryAfterRefresh = true): Promise<P
 
   if (scopeRes?.ok) {
     const scopeJson = (await scopeRes.json()) as { scope?: string };
-    result.scopes = scopeJson.scope ?? null;
+    result.scopes = scopeJson.scope ?? result.scopes;
     result.canWritePins = !!result.scopes?.includes('pins:write');
   } else if (result.accessTokenWorks) {
-    result.canWritePins = result.accessTokenPrefixOk;
+    result.canWritePins = !!result.scopes?.includes('pins:write') || result.accessTokenPrefixOk;
   }
 
   if (result.refreshTokenIssue && !result.accessTokenWorks) {

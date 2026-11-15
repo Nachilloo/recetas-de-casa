@@ -272,6 +272,35 @@ export interface Database {
           error_message?: string | null
         }
       }
+      pinterest_oauth: {
+        Row: {
+          id: string
+          access_token: string
+          refresh_token: string
+          access_expires_at: string
+          refresh_expires_at: string | null
+          scope: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          access_token: string
+          refresh_token: string
+          access_expires_at: string
+          refresh_expires_at?: string | null
+          scope?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          access_token?: string
+          refresh_token?: string
+          access_expires_at?: string
+          refresh_expires_at?: string | null
+          scope?: string | null
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -303,6 +332,8 @@ export type ColeccionInsert = Database['public']['Tables']['colecciones']['Inser
 export type MenuUsage = Database['public']['Tables']['menu_usage']['Row'];
 export type PinHistory = Database['public']['Tables']['pin_history']['Row'];
 export type PinHistoryInsert = Database['public']['Tables']['pin_history']['Insert'];
+export type PinterestOAuth = Database['public']['Tables']['pinterest_oauth']['Row'];
+export type PinterestOAuthInsert = Database['public']['Tables']['pinterest_oauth']['Insert'];
 
 /** Estado consolidado de un usuario para chequeos de gating en UI. */
 export interface PlanStatus {
